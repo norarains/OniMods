@@ -15,6 +15,8 @@ For gameplay audits, select probes from actual work rather than running every fe
 4. Inspect summary safety fields before relying on them. Full batch JSON is in `results[].result`; plain text uses `text`. Do not parse duplicate content or assume `isError=false` means the requested game work completed.
 5. Log a minimal reproducer, expected/actual result, severity, runtime/build identity, elapsed time and response size. Separate observed failures from source-based suspicions and untested proposals. Keep raw evidence local and redact secrets.
 
+For pacing changes, test the advertised direct continue path: healthy windows use one call, include fresh safety/work evidence, and return paused; danger and interruptions stop early; rest is not mistaken for worker starvation; timeout does not require a client pause. Compare response size and calls per window. Test guards with host fixtures rather than creating dangerous live scenarios.
+
 For token/iteration audits, check repeated reads, unnecessary overlays, POI-heavy indexes, repeated material reports, discovery detours, and stale symbol rules. Trust authoritative current map legends; look up only unknown or ambiguous glyphs.
 
 Leave the colony paused. Report passed checks, confirmed bugs, ergonomics costs, and tests still requiring a game restart. Do not restart or mutate merely to complete a checklist outside the user's scope.

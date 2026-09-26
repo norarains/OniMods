@@ -366,7 +366,12 @@ namespace OniMcp.Server
                     processEx = ex;
                 }
 
-                ThreadPool.QueueUserWorkItem(_ => SendPostResponse(response, rpcRequest.Id, result, processEx, sessionId));
+                if (result is DeferredToolResult deferred && processEx == null)
+                    deferred.Resolve().ContinueWith(completed =>
+                        SendPostResponse(response, rpcRequest.Id, completed.Result, null, sessionId),
+                        System.Threading.Tasks.TaskScheduler.Default);
+                else
+                    ThreadPool.QueueUserWorkItem(_ => SendPostResponse(response, rpcRequest.Id, result, processEx, sessionId));
             }), () => CloseStaleHttpResponse(response));
         }
 

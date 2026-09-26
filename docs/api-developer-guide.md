@@ -154,6 +154,55 @@ New integrations should discover the public aggregate entrypoints from `tools/li
 
 当前 legacy 公开工具的 `tools/call` 都要求 `arguments.task` 是非空字符串，用来描述这次调用的用户任务；缺失或空值会在工具分派前被拒绝。
 
+### Bounded autonomous play
+
+Discover `capabilities.boundedContinue` once after connecting or restarting the mod.
+Plan and validate useful work while paused, then call directly:
+
+```json
+{"name":"game_control","arguments":{"domain":"speed","action":"continue","seconds":15,"resetMonitor":true,"task":"Advance planned work and check safety"}}
+```
+
+`advance` is an alias. `seconds` is real elapsed time, defaults to 15 and must be
+1–20; optional `speed=1..3` selects simulation speed. Omit `resetMonitor` on
+subsequent healthy calls. Set it after reviewing or changing the work plan to
+refresh tracked build/dig objects and the progress baseline. This is a direct
+legacy `tools/call` operation, not a batch/program/resource/protocol-task child.
+It requires a loaded paused game and does not support `dryRun`.
+
+The HTTP result is deferred across Unity frames; the Unity thread never sleeps
+waiting for simulation. A frame-driven deadline owns the final pause independently
+of the client. Safety is sampled every 0.5 real seconds; food is cached for up to
+two seconds. No whole-grid scan runs in this loop. Other tool actions are rejected
+during the window except `speed/time` and `speed/pause`; explicit pause interrupts
+the window. Server shutdown, scene changes and monitor failures end the operation.
+A suspended/frozen game process can only execute its pause when Unity runs again.
+
+The compact response includes `isPaused`, elapsed real/simulation time, `safety`,
+`work`, `reasons` and `decision`:
+
+- `continue`: repeat the same operation directly. No additional pause, sleep,
+  snapshot or map call is needed.
+- `replan`: keep paused and inspect the implicated work/alert, refill the queue,
+  or review the objective. The review horizon is 300 simulation seconds.
+- `urgent`: keep paused and investigate the reported health/safety condition.
+  Resetting the monitor never waives a currently critical vital or threatening alert.
+
+Safety includes all live dupe health/breath/calories/stress/body temperature,
+red alert and threatening HUD notifications, plus monitored-world food and new
+bad HUD alerts. Resetting treats existing non-threatening HUD warnings as reviewed.
+Working/idle counts distinguish work-time availability from scheduled rest and
+personal needs. Progress uses tracked build/dig orders, workable timers and research;
+`activityChanges` counts movement/chore transitions, while `ordersRemoved` includes
+completed or cancelled orders. Neither alone proves a requested build completed.
+Perform targeted verification at milestones and preflight hazardous work: this
+monitor does not certify every route, material dependency or utility network.
+
+There is at most one active window. A lost response must not be replayed; wait for
+the bounded deadline, reconnect and establish pause/state once. The normal 20-second
+maximum leaves headroom under the WSL bridge's 25-second HTTP timeout. A larger
+`seconds` value is rejected, not silently clamped.
+
 ### 批量调用与返回格式
 
 `server_control domain=batch action=call_many` 的 `calls` 接收 `{tool, args}` 对象。

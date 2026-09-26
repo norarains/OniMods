@@ -28,7 +28,7 @@ namespace OniMcp.Tools
                     Describe(tool, DupesDescriptions());
                     break;
                 case "game_control":
-                    tool.Description = "Unified game entrypoint for speed, pause/resume, game state, saves, DLC activation, sandbox operations, and UI actions. Use semantic actions and named targets; coordinate input is not accepted here.";
+                    tool.Description = "Unified game entrypoint. Autonomous play: plan a useful batch while paused, then domain=speed action=continue seconds=15. It advances, checks safety/work progress, and returns paused with decision=continue/replan/urgent. On continue, repeat directly without extra reads or replanning; on replan/urgent, inspect only the reasons. Set resetMonitor=true after planning. Direct calls only; no batch/program/task wrapper. Also supports manual speed, game state, saves, launch, DLC, sandbox, and UI.";
                     Describe(tool, GameDescriptions());
                     break;
                 case "navigation_control":
@@ -215,7 +215,9 @@ namespace OniMcp.Tools
         {
             var d = CommonDescriptions();
             d["domain"] = "Game subsystem: launch, speed, state, save, dlc, sandbox, or ui.";
-            d["action"] = "Game action for the selected subsystem. UI feedback actions include notification, popup, speech_bubble, and marker.";
+            d["action"] = "Speed: continue (alias advance), time, pause, resume, set_speed. Prefer continue for autonomous work; it returns fresh safety/progress and pauses. Other actions depend on domain.";
+            d["seconds"] = "Continue window in real seconds, 1-20, default 15. Ends early on danger, unexpected idleness, finished work, or interruption.";
+            d["resetMonitor"] = "Set true on the first continue after planning or periodic review; refreshes tracked orders and progress baseline. Otherwise omit.";
             d["kind"] = "Sandbox or UI subtype.";
             d["uiDomain"] = "UI subsystem: action, feedback.";
             d["name"] = "Save name, or duplicant name for ui/feedback speech_bubble.";

@@ -338,6 +338,42 @@ internal static class Program
                         Assert(json.Property("id") != null && json["result"] != null, "Null-id response envelope incomplete");
                     }
                 });
+                Check("HTTP deferred tool waits across frames without blocking other requests", () =>
+                {
+                    var source = new TaskCompletionSource<CallToolResult>();
+                    bool dispatched = false;
+                    OniToolRegistry.CallOverride = (name, args) =>
+                    {
+                        Assert(DeferredToolCall.IsDirect(args), "Direct HTTP continuation scope missing");
+                        dispatched = true;
+                        return new DeferredToolResult(source.Task);
+                    };
+                    try
+                    {
+                        using (var request = new HttpRequestMessage(HttpMethod.Post, ""))
+                        {
+                            request.Headers.Add("Mcp-Session-Id", sessionId);
+                            request.Headers.Add("Mcp-Protocol-Version", "2025-11-25");
+                            request.Content = new StringContent("{\"jsonrpc\":\"2.0\",\"id\":81,\"method\":\"tools/call\",\"params\":{\"name\":\"test\",\"arguments\":{\"task\":\"continue\"}}}", Encoding.UTF8, "application/json");
+                            var pending = client.SendAsync(request);
+                            var wait = Stopwatch.StartNew();
+                            while (!dispatched && wait.ElapsedMilliseconds < 2000)
+                            { Invoke(_bridge, "Update"); Thread.Sleep(1); }
+                            Assert(dispatched && !pending.IsCompleted, "Deferred call returned before completion");
+                            using (var other = Post(client, "{\"jsonrpc\":\"2.0\",\"id\":82,\"method\":\"tools/list\"}", sessionId))
+                                Assert(ReadJson(other)["result"] != null, "Pending tool blocked Unity request queue");
+                            source.SetResult(CallToolResult.Text("{\"isPaused\":true,\"decision\":\"continue\"}"));
+                            PumpUntil(pending);
+                            using (var response = pending.GetAwaiter().GetResult())
+                            {
+                                var result = ReadJson(response);
+                                Assert((int)result["id"] == 81, "Deferred response lost request identity");
+                                Assert((bool)JObject.Parse((string)result["result"]["content"][0]["text"])["isPaused"], "Deferred final payload lost pause state");
+                            }
+                        }
+                    }
+                    finally { OniToolRegistry.CallOverride = null; source.TrySetResult(CallToolResult.Error("test cleanup")); }
+                });
                 Check("HTTP delete prevents session resurrection and removes pending tasks", () =>
                 {
                     Process(server, "tools/call", sessionId, new JObject { ["name"] = "test", ["task"] = new JObject() });

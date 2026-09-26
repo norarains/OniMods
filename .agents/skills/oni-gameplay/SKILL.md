@@ -27,11 +27,11 @@ Run a complete control loop:
 2. **Orient** around hazards, reachability, dependencies, and the user's scope.
 3. **Decide** on a bounded target state and verification method.
 4. **Act** through a semantic aggregate tool or reviewed virtual-file edit.
-5. **Verify** with an independent targeted read.
+5. **Verify** with an independent targeted observation. A bounded continue result is the fresh post-simulation observation; do not add a duplicate read.
 
 Never act from stale assumptions. Never report success from a write response alone.
 
-For autonomous play, keep the game paused while reading, planning, or issuing commands. Resume only for a short bounded window, pause again, and verify. Direct user instructions override viewer suggestions; gameplay safety overrides speed.
+For autonomous play, keep the game paused while reading, planning, or issuing commands. For autonomous pacing, follow [the play loop](../oni-play-loop/SKILL.md): plan useful work in batches, then repeat advertised bounded continue calls using their returned safety/progress until a concrete replanning trigger. The server pauses before returning each observation. Direct user instructions override viewer suggestions; gameplay safety overrides speed.
 
 ## Scope and authorization
 
@@ -93,7 +93,7 @@ Escalate only the flagged domain:
 - duplicant health/pathing: `dupes_control domain=info action=status_check`
 - exact terrain or utilities: virtual map or `read_control domain=world action=area_snapshot|text_map`
 
-Do not call the same read with identical arguments twice in a row. State what is missing and switch to a narrower read or discovery call.
+Do not repeat an identical read without an intervening state change or a concrete missing-evidence reason. Repeated monitoring after simulation advances is valid, but bounded continue already includes its observation. State what is missing and switch to a narrower read or discovery call.
 
 ## Authoritative glyphs
 

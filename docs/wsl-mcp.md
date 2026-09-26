@@ -50,6 +50,14 @@ POST SSE responses. It does not support independent server push, subscriptions,
 sampling, or elicitation, and removes those advertised capabilities during
 initialization. ONI's normal tools remain available.
 
+For autonomous play on a server advertising `boundedContinue`, use
+`game_control domain=speed action=continue seconds=15`. It runs for at most
+20 real seconds, pauses, and returns safety/work progress in the same response.
+This stays below the bridge's 25-second HTTP timeout. Do not automatically retry
+a timed-out call: the server deadline still pauses the game, but the response
+may have been lost. Reconnect and establish the paused state first. Refresh
+the client's tool catalog after upgrading a DLL to discover new parameters.
+
 Troubleshooting:
 
 - Connection failure: start ONI through Steam and ensure OniMcp is enabled and

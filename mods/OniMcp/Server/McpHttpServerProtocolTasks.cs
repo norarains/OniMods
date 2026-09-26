@@ -34,7 +34,10 @@ namespace OniMcp.Server
                             return CallToolResult.Error("Missing tool name");
                         if (callParams.Task != null)
                             return CreateToolTask(callParams, sessionId);
-                        return OniToolRegistry.CallTool(callParams.Name, callParams.Arguments);
+                        if (request.IsNotification)
+                            return OniToolRegistry.CallTool(callParams.Name, callParams.Arguments);
+                        return DeferredToolCall.Invoke(callParams.Arguments,
+                            () => OniToolRegistry.CallTool(callParams.Name, callParams.Arguments));
 
                     case "resources/list":
                         return new ListResourcesResult { Resources = OniResourceRegistry.GetResourceInfos() };

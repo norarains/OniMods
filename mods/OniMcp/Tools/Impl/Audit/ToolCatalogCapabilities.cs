@@ -21,6 +21,14 @@ namespace OniMcp.Tools
                 ["batchRoute"] = "server_control domain=batch action=call_many calls=[{tool:<operation>,args:{...}}]",
                 ["operationDiscovery"] = "server_control domain=catalog action=search query=<intent> detail=full; inspect operations[].call",
                 ["editMarks"] = editMarks,
+                ["boundedContinue"] = new JObject
+                {
+                    ["call"] = "game_control domain=speed action=continue seconds=15",
+                    ["maxRealSeconds"] = 20, ["returnsPaused"] = true,
+                    ["decisions"] = new JArray("continue", "replan", "urgent"),
+                    ["directOnly"] = true,
+                    ["policy"] = "Plan useful work once; repeat continue without extra reads while decision=continue. Replan only for returned reasons; resetMonitor=true after review."
+                },
                 ["stateRead"] = "world_editor command=read path=/active/index.md includeState=true",
                 ["symbolsRead"] = "world_editor command=symbols queries=[...]",
                 ["help"] = "includeHelp=true; responseMode=full preserves edit diagnostics"

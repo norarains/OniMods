@@ -1,28 +1,39 @@
 ---
 name: oni-mcp-play-loop
-description: 当用户要求 agent 通过 MCP 循环游玩 Oxygen Not Included、自动玩一段时间、继续殖民地，或运行暂停-规划-恢复循环时使用。强制执行严格的 pause → observe → plan → execute → resume briefly → pause → verify 循环，仅在能力声明支持时读取玩家规划标记，限制运行窗口，并在风险或歧义决策前停下等待用户确认。
+description: Use for autonomous ONI play or continuing a colony through MCP. Plan useful batches while paused, then repeat bounded continue calls with compact safety/progress checks; return to careful planning only for concrete triggers.
 ---
 
 # ONI play loop
 
-Use the shared [control contract](../oni-gameplay/SKILL.md) and cached [capabilities](../oni-gameplay/references/capabilities.md). Read the world-editor reference only when editing. This file adds loop timing and stop conditions.
+Use the shared [control contract](../oni-gameplay/SKILL.md) and cached [capabilities](../oni-gameplay/references/capabilities.md). Read the world-editor reference only when editing.
 
-1. Pause (`game_control domain=speed action=pause`). Read, plan, and issue commands only while paused.
-2. Read one safety snapshot: `colony_control domain=snapshot action=get profile=minimal` through the advertised batch route, or `world_editor command=read path=/active/index.md includeState=true syncView=false`. Do not routinely fetch both. Inspect edit marks only when `capabilities.editMarks=true`.
-3. Choose a small, authorized action. Inspect exact cells for liquid-adjacent work, navigation hazards, or irreversible edits. Expand only the flagged domain. Use `dupes_control domain=info action=status_check radius=4 includeReachableSamples=false` for suspected health/navigation issues; ordinary idle status alone does not require a map scan.
-4. Run the child's actual game validator when supported. Outer batch `dryRun=true` checks routing/schema only. To validate placement/order state, execute a normal batch whose child arguments contain `dryRun=true`; never preview and commit the same operation in one dependent batch.
-5. Review `valid`, `actionable`, `reasonCode`, material requirements, hazards, and `validationLevel`. A management `syntax_only` preview is not semantic validation. Research target previews are semantic. Commit with a fresh `dryRun=false confirm=true` call only after a successful relevant preview. Pause/resume and other controls without dry-run support are invoked directly within the user's authorized scope.
-6. Resume only to advance verified work: 8–15 real seconds normally, 3–6 for emergencies, at most 20 for long hauling. Do not add commands during the window. Arrange the pause before resuming (a local try/finally client is useful); do not assume a server-side advance action exists.
-7. Pause immediately, read one compact safety snapshot, and inspect the changed work area only when needed. Verify actual work progress independently of write success. Repeat only within the requested play scope, and leave the game paused at the end.
+## Planning round
 
-For independent validator calls:
+1. Pause. Use one compact safety snapshot or the previous `continue` result; do not fetch both routinely. Inspect only the domains needed for the next objective. Read edit marks only when `capabilities.editMarks=true`.
+2. Plan a coherent batch that supplies available working duplicants with useful, reachable work for several run windows. Consider material budgets, access, prerequisites, priorities, research and recurring life-support work together. Respect meals, rest and personal needs; do not create pointless errands to increase a busy count. Avoid repeated one-tile planning when the whole safe section is already understood.
+3. Inspect exact cells for liquid-adjacent work, navigation hazards or irreversible edits. Run supported semantic validators, review material/hazard/partial-failure evidence, and commit in a fresh call. Outer batch `dryRun=true` validates schema/routing only; run normal batches with child `dryRun=true` for actual game validation. Do not preview and commit dependent edits in the same batch.
+4. Verify that orders/settings were applied with one targeted read. Planned orders are not completed construction. Independent writes may be batched; dependent stages require updated evidence. Then start the fast loop with `resetMonitor=true`.
 
-```json
-{"domain":"batch","action":"call_many","responseMode":"summary","requireAllValid":true,"stopOnError":true,"calls":[{"tool":"building_control","args":{"domain":"planning","action":"build_area","areaId":"<observed area>","prefabId":"Ladder","dryRun":true}}]}
+## Fast round
+
+When cached capabilities advertise `boundedContinue`, call directly:
+
+```text
+game_control domain=speed action=continue seconds=15 task="Advance planned work and check safety"
 ```
 
-For exact map/order edits, follow [the virtual-file protocol](../oni-gameplay/references/world-editor.md). Preview with the outer world-editor `dryRun=true`; commit in a fresh edit with `dryRun=false confirm=true`. Ordinary aggregates do not accept raw coordinates. Never use attack for terrain work.
+Use `resetMonitor=true` only on the first call after a planning/review round. `speed=1..3` is optional; otherwise the selected game speed is preserved. Windows are 1–20 real seconds; use 10–20 for stable work and 3–6 for a carefully inspected delicate operation. The server samples safety during the window, stops early when needed, and returns paused. Do not wrap continue in batch, program, or protocol tasks.
 
-Stop and diagnose on critical health, food, oxygen, heat or power alerts; repeated blocked work; or uncertainty that affects safety. Seek a decision only for consequential choices outside the user's authorization. Never add duplicants without explicit permission or use sandbox/debug resources. During an established livestream, service stream health and comments first; missing unrelated credentials do not block ordinary gameplay.
+Read `decision`, `isPaused`, `reasons`, and the compact safety/work changes:
 
-Report progress, any blocker, and whether the game is paused. Use the user's language and keep routine loop updates brief.
+- **continue + isPaused=true:** immediately repeat continue within the user's play scope. This is a short sanity check, not a new planning round. No separate pause, sleep, snapshot, map, dupe scan, discovery, rewritten plan or per-window commentary. The response already contains the fresh observation.
+- **replan:** stay paused and address the returned reason. Refill exhausted work, investigate persistent work-time idleness/blockage, handle completed research, or review the objective at `review_due`. Expand only the implicated domain. Ordinary idle status alone does not justify a terrain scan.
+- **urgent, isPaused=false, error, or missing monitoring evidence:** stop the fast loop. Confirm/pause if needed, inspect the specific risk and plan carefully. Never blindly repeat an uncertain advance; a transport error may mean the window already ran.
+
+`activityChanges` records movement/chore transitions; `ordersRemoved` can include completed or cancelled orders. Neither proves a requested building finished. Use `workProgressObserved`, queue/research changes and targeted verification at milestones. A stable colony-wide food/stress reading does not replace individual safety checks. Existing non-threatening HUD warnings are considered reviewed when resetting the monitor; threatening alerts cannot be waived.
+
+The server requests a review at most every 300 simulation seconds and pauses at the deadline even if the client disappears. After a timeout, reconnect and read/pause once to establish state; never replay automatically. The monitor covers dupe vitals, threatening/new bad HUD alerts, local food, tracked build/dig work and research. It does not prove every route safe or inspect all utilities: retain preflight and targeted checks for hazardous work.
+
+For an older server without `boundedContinue`, use the fallback: arrange a pause in a local try/finally before resuming for 8–15 real seconds, pause, then one compact snapshot. Do not assume continue exists or emulate waiting inside a synchronous server program.
+
+Leave the game paused when the requested play scope ends. Report milestones, blockers and final pause state briefly. Do not add duplicants without explicit permission or use cheats. During an established livestream, service stream health/comments before continuing; unrelated credentials do not block gameplay.

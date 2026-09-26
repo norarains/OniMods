@@ -103,6 +103,7 @@ namespace OniMcp.Tools
     {
         public static int Calls;
         public static Action<string, JObject> OnCall;
+        public static Func<string, JObject, CallToolResult> CallOverride;
         public static int MiddlewareCalls;
         public static string LastName;
         public static JObject LastArguments;
@@ -226,6 +227,7 @@ namespace OniMcp.Tools
             LastName = name;
             LastArguments = arguments;
             OnCall?.Invoke(name, arguments);
+            if (CallOverride != null) return CallOverride(name, arguments);
             return CallToolResult.Text("ok");
         }
     }

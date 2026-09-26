@@ -113,6 +113,7 @@ namespace OniMcp.Server
 
         public void StopServer()
         {
+            DeferredToolCall.CancelPending();
             _running = false;
             ResetHttpFrontDoorAdmission();
             ResetLegacySseAdmission();

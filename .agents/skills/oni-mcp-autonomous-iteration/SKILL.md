@@ -40,11 +40,11 @@ Use this workflow for end-to-end ONI MCP server improvement, especially when the
    - For a full process restart on Linux, call `game_control domain=launch action=restart_load dryRun=true resume=false`, then repeat with `confirm=true`. The accepted response contains `jobId` and the exact saved path; after Steam relaunch, query `game_control domain=launch action=restart_status jobId=<id>` until `stage=loaded` or `stage=failed`.
    - `restart_load` is intentionally asynchronous across processes. Its relay carries only the old PID and the locally resolved absolute Steam executable, then launches Steam AppID 457140; it never carries the save path or MCP token.
 
-5. Use low-token loop polling for long-run play.
-   - Prefer `colony_control domain=snapshot action=get profile=minimal delta=true deltaKey=<loop> watch=stress,food_kcal,red_alert,alerts watchOnly=true`.
-   - Treat `watch.alert=false`, `red_alert=false`, food above threshold, and low stress as the signal to continue.
-   - Use `server_control domain=batch action=call_many responseMode=summary` for independent status reads.
-   - In batch summaries, inspect `valid/failed/executed`, then child `summary.next`, `summary.tokenHint`, and count fields before asking for full output.
+5. Optimize both planning and routine execution.
+   - Follow [the two-speed play loop](../oni-play-loop/SKILL.md). Plan enough useful work for available workers, then use the advertised bounded continue operation.
+   - A healthy fast round must take one direct continue call, with no extra pause/snapshot/map call or repeated planning. Replan for the returned reasons or the bounded review horizon.
+   - Global snapshot green/watch.alert=false alone is not an individual-health guarantee. Continue includes dupe vitals and work evidence; hazardous plans still need targeted preflight.
+   - Test early stops, final pause, interrupted clients, failed monitoring, rest vs unexpected idle, and actual progress vs activity. Keep session evidence in /tmp; maintain reusable contracts in existing docs.
 
 6. Run tester-agent feedback after deployment.
    - Give the tester only the task and current MCP endpoint assumptions, not your expected fixes.
@@ -68,27 +68,13 @@ python .agents/skills/oni-mcp-autonomous-iteration/scripts/runtime_smoke.py
 
 It verifies JSON-RPC initialize, the exact seven-tool default public surface (or the authenticated full surface), launch status, planning parse, and `world_editor` active-world lifecycle behavior. With a loaded colony it runs snapshot and world-sequence reads directly on the full surface or through public `server_control` batching on the default surface. At the main menu it requires a structured `game_not_loaded` active-file response and only preflights the hidden read calls. It never places orders.
 
-For long-run survival validation, use:
+For a prepared work batch, the helper uses the same bounded operation through the WSL-aware bridge:
 
 ```bash
-python .agents/skills/oni-mcp-autonomous-iteration/scripts/survival_watch.py --target-cycles 100 --poll-seconds 20 --speed 3
+python .agents/skills/oni-mcp-autonomous-iteration/scripts/survival_watch.py --target-cycles 1 --max-seconds 60 --poll-seconds 15 --speed 3
 ```
 
-Before a 100-cycle run, ask MCP for the survival plan:
-
-```text
-colony_control domain=survival action=plan targetCycles=100
-```
-
-Read `canAttemptLongRun`, `decision`, `blockers`, then execute `nextCalls` in order.
-
-For quick validation without waiting a full cycle:
-
-```bash
-python .agents/skills/oni-mcp-autonomous-iteration/scripts/survival_watch.py --target-cycles 1 --max-seconds 10 --allow-partial --ignore-critical-diagnostics
-```
-
-It initializes MCP directly, ensures save is loaded, sets speed, polls `colony_control domain=snapshot action=get profile=minimal`, reports compact cycle/alert metadata, pauses end unless `--no-pause-at-end` passed. reports `alertLevel`, diagnostic alerts, `diagnosticsIgnored`, and `pausedAtEnd`; hard failures are no dupes, max stress 100%, red alert mode, critical/error alert levels, or critical diagnostics unless `--ignore-critical-diagnostics` is passed for script smoke testing.
+It stops paused when continue requests replan/urgent or when its time/cycle budget ends. It does not plan work, load saves, waive hazards, or automatically reset a review request. The agent must plan between batches; a 100-cycle goal is not permission for a blind 100-cycle resume. The first helper call assumes the caller has reviewed the current work batch.
 
 Use these checks as a minimum smoke suite after a launch-related or planning-related change:
 

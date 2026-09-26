@@ -84,10 +84,12 @@ namespace OniMcp.Tools
                 Risk = "low",
                 Aliases = new List<string> { "game_control_speed", "game_pause_resume_speed" },
                 Tags = new List<string> { "game", "speed", "pause", "resume", "time" },
-                Description = "统一读取游戏时间并控制暂停/恢复/速度。action=time、pause、resume 或 set_speed；set_speed 时传 speed=0..3。",
+                Description = "Game time and speed. Prefer action=continue for planned work: run 1-20 real seconds, monitor safety/progress, pause and return continue/replan/urgent in one call. Repeat continue directly when healthy. Other actions: time/pause/resume/set_speed.",
                 Parameters = new Dictionary<string, McpToolParameter>
                 {
-                    ["action"] = new McpToolParameter { Type = "string", Description = "动作：time、pause、resume、set_speed", Required = true, EnumValues = new List<string> { "time", "pause", "resume", "set_speed" } },
+                    ["action"] = new McpToolParameter { Type = "string", Description = "continue/advance runs a bounded monitored window; time/pause/resume/set_speed are manual controls", Required = true, EnumValues = new List<string> { "continue", "advance", "time", "pause", "resume", "set_speed" } },
+                    ["seconds"] = new McpToolParameter { Type = "number", Description = "continue: real seconds, 1-20, default 15", Required = false },
+                    ["resetMonitor"] = new McpToolParameter { Type = "boolean", Description = "continue: refresh work tracking after planning/review, default false", Required = false },
                     ["speed"] = new McpToolParameter
                     {
                         Type = "integer",
@@ -101,6 +103,9 @@ namespace OniMcp.Tools
                     string action = (args["action"]?.ToString() ?? "").Trim().ToLowerInvariant();
                     switch (action)
                     {
+                        case "continue":
+                        case "advance":
+                            return GameContinueRunner.Begin(args);
                         case "time":
                         case "get_time":
                             return GetGameTime().Handler(args);
@@ -171,7 +176,7 @@ namespace OniMcp.Tools
             switch (speed)
             {
                 case 0:
-                    speedControl.Pause();
+                    if (!speedControl.IsPaused) speedControl.Pause();
                     break;
                 case 1:
                 case 2:
@@ -197,7 +202,10 @@ namespace OniMcp.Tools
             if (Game.Instance == null)
                 return CallToolResult.Error("Game not initialized");
 
-            SpeedControlScreen.Instance?.Pause();
+            var control = SpeedControlScreen.Instance;
+            if (control == null) return CallToolResult.Error("SpeedControlScreen not available");
+            // ONI Pause increments a counter; repeated MCP safety pauses must be idempotent.
+            if (!control.IsPaused) control.Pause();
             return CallToolResult.Text("Game paused");
         }
 

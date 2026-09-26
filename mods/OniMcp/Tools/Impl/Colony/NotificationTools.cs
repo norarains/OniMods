@@ -192,7 +192,7 @@ namespace OniMcp.Tools
             };
         }
 
-        private static List<Notification> GetNotifications(bool includePending)
+        internal static List<Notification> GetNotifications(bool includePending)
         {
             var result = new List<Notification>();
             AddRange(result, ScreenNotificationsField?.GetValue(NotificationScreen.Instance) as IEnumerable<Notification>);
