@@ -7,9 +7,25 @@ namespace OniMcp.Tools
 {
     public static partial class BuildPlanningTools
     {
-        private static Vector3 BuildPlacementPosition(int cell, BuildingDef def)
+        private static BuildingFootprintLayout PlacementLayout(BuildingDef def, Orientation orientation)
         {
-            return Grid.CellToPosCBC(cell, def.SceneLayer);
+            return new BuildingFootprintLayout((def.PlacementOffsets ?? new CellOffset[0]).Select(offset =>
+            {
+                var rotated = Rotatable.GetRotatedCellOffset(offset, orientation);
+                return Tuple.Create(rotated.x, rotated.y);
+            }));
+        }
+
+        private static int PlacementOriginCell(BuildingDef def, int x, int y, Orientation orientation)
+        {
+            var layout = PlacementLayout(def, orientation);
+            return Grid.XYToCell(layout.OriginX(x), layout.OriginY(y));
+        }
+
+        private static Vector3 BuildPlacementPosition(int cell, BuildingDef def, Orientation orientation = Orientation.Neutral)
+        {
+            int origin = PlacementOriginCell(def, Grid.CellColumn(cell), Grid.CellRow(cell), orientation);
+            return Grid.CellToPosCBC(origin, def.SceneLayer);
         }
 
         private static Dictionary<string, object> BuildDefPlacementToDictionary(BuildingDef def)
@@ -34,6 +50,7 @@ namespace OniMcp.Tools
             Orientation orientation = Orientation.Neutral)
         {
             int cell = Grid.XYToCell(x, y);
+            var layout = PlacementLayout(def, orientation);
             return new PlacementDetails
             {
                 PrefabId = def.PrefabID,
@@ -41,35 +58,28 @@ namespace OniMcp.Tools
                 AnchorY = y,
                 WorldId = worldId,
                 Orientation = orientation,
-                Width = Math.Max(1, def.WidthInCells),
-                Height = Math.Max(1, def.HeightInCells),
-                PlacementPoint = BuildPlacementPosition(cell, def),
-                Footprint = FootprintCells(def, x, y, worldId).ToList()
+                Width = layout.Width,
+                Height = layout.Height,
+                PlacementPoint = BuildPlacementPosition(cell, def, orientation),
+                Footprint = FootprintCells(def, x, y, worldId, orientation).ToList()
             };
         }
 
-        private static IEnumerable<FootprintCell> FootprintCells(BuildingDef def, int x, int y, int worldId)
+        private static IEnumerable<FootprintCell> FootprintCells(BuildingDef def, int x, int y, int worldId,
+            Orientation orientation = Orientation.Neutral)
         {
-            int width = Math.Max(1, def.WidthInCells);
-            int height = Math.Max(1, def.HeightInCells);
-            for (int dy = 0; dy < height; dy++)
+            foreach (var point in PlacementLayout(def, orientation).Cells(x, y))
             {
-                for (int dx = 0; dx < width; dx++)
+                int fx = point.Item1, fy = point.Item2;
+                bool inBounds = fx >= 0 && fy >= 0 && fx < Grid.WidthInCells && fy < Grid.HeightInCells;
+                int cell = inBounds ? Grid.XYToCell(fx, fy) : Grid.InvalidCell;
+                yield return new FootprintCell
                 {
-                    int fx = x + dx;
-                    int fy = y + dy;
-                    int cell = Grid.XYToCell(fx, fy);
-                    yield return new FootprintCell
-                    {
-                        X = fx,
-                        Y = fy,
-                        Cell = cell,
-                        WorldId = worldId,
-                        Valid = Grid.IsValidCell(cell),
-                        Visible = Grid.IsValidCell(cell) && Grid.IsVisible(cell),
-                        InWorld = Grid.IsValidCell(cell) && ToolUtil.CellMatchesWorld(cell, worldId)
-                    };
-                }
+                    X = fx, Y = fy, Cell = cell, WorldId = worldId,
+                    Valid = inBounds && Grid.IsValidCell(cell),
+                    Visible = inBounds && Grid.IsValidCell(cell) && Grid.IsVisible(cell),
+                    InWorld = inBounds && Grid.IsValidCell(cell) && ToolUtil.CellMatchesWorld(cell, worldId)
+                };
             }
         }
 
@@ -107,7 +117,7 @@ namespace OniMcp.Tools
             if (!string.Equals(rule, "OnBackWall", StringComparison.OrdinalIgnoreCase))
                 return;
 
-            int cell = Grid.XYToCell(placement.AnchorX, placement.AnchorY);
+            int cell = PlacementOriginCell(def, placement.AnchorX, placement.AnchorY, placement.Orientation);
             bool nativeFoundationValid = Grid.IsValidCell(cell)
                 && BuildingDef.CheckFoundation(
                     cell,
@@ -137,19 +147,9 @@ namespace OniMcp.Tools
             int cell = Grid.PosToCell(go);
             int x = Grid.IsValidCell(cell) ? Grid.CellColumn(cell) : -1;
             int y = Grid.IsValidCell(cell) ? Grid.CellRow(cell) : -1;
-            int originX = x >= 0 ? x : expectedX;
-            int originY = y >= 0 ? y : expectedY;
-
-            var building = go.GetComponent<Building>();
-            if (building != null)
-            {
-                int anchorCell = building.GetBottomLeftCell();
-                if (Grid.IsValidCell(anchorCell))
-                {
-                    originX = Grid.CellColumn(anchorCell);
-                    originY = Grid.CellRow(anchorCell);
-                }
-            }
+            bool registered = RegisteredBuildingOccupancy.TryGetBounds(go, cell, def, out int[] bounds);
+            int originX = registered ? bounds[0] : -1;
+            int originY = registered ? bounds[1] : -1;
 
             int worldId = Grid.IsValidCell(cell) && Grid.IsWorldValidCell(cell) ? Grid.WorldIdx[cell] : -1;
 
@@ -161,7 +161,10 @@ namespace OniMcp.Tools
                 ["derivedAnchorX"] = originX,
                 ["derivedAnchorY"] = originY,
                 ["worldId"] = worldId,
-                ["note"] = "derivedAnchor is Building.GetBottomLeftCell when available; placement uses the requested anchor cell directly"
+                ["registeredFootprint"] = registered,
+                ["occupiedBounds"] = bounds,
+                ["occupiedCells"] = RegisteredBuildingOccupancy.Cells(go, cell, def),
+                ["note"] = "Anchor is derived from cells actually registered to this object; missing registration is not a successful placement."
             };
         }
 
@@ -171,19 +174,23 @@ namespace OniMcp.Tools
             int actualY = actual.ContainsKey("derivedAnchorY") ? Convert.ToInt32(actual["derivedAnchorY"]) : -1;
             int actualWorld = actual.ContainsKey("worldId") ? Convert.ToInt32(actual["worldId"]) : -1;
             bool anchorMatches = actualX == expected.AnchorX && actualY == expected.AnchorY;
-            bool worldMatches = actualWorld < 0 || expected.WorldId < 0 || actualWorld == expected.WorldId;
-            bool valid = anchorMatches && worldMatches;
+            bool worldMatches = actualWorld >= 0 && (expected.WorldId < 0 || actualWorld == expected.WorldId);
+            var bounds = actual.ContainsKey("occupiedBounds") ? actual["occupiedBounds"] as int[] : null;
+            bool footprintMatches = bounds != null && actual["occupiedCells"] is List<int> cells
+                && new HashSet<int>(cells).SetEquals(expected.Footprint.Select(point => point.Cell));
+            bool valid = anchorMatches && worldMatches && footprintMatches;
             return new Dictionary<string, object>
             {
                 ["valid"] = valid,
                 ["anchorMatches"] = anchorMatches,
+                ["footprintMatches"] = footprintMatches,
                 ["worldMatches"] = worldMatches,
                 ["expectedAnchor"] = new { x = expected.AnchorX, y = expected.AnchorY },
                 ["actualDerivedAnchor"] = new { x = actualX, y = actualY },
                 ["expectedWorldId"] = expected.WorldId,
                 ["actualWorldId"] = actualWorld,
                 ["next"] = valid
-                    ? "Verify with world_area_snapshot/world_text_map before placing the next footprint batch."
+                    ? "Placement verified against registered cells. Verify completed work at milestones."
                     : "Cancel the misplaced blueprint before retrying from the expected anchor."
             };
         }

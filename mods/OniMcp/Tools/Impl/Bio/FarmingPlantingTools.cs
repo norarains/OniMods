@@ -68,11 +68,12 @@ namespace OniMcp.Tools
                 Description = "兼容入口：请优先使用 colony_control domain=bio bioDomain=farming action=set。设置或取消种植箱/农砖的种子请求；可选 removeOccupant=true 先铲除当前植物",
                 Parameters = LookupParams(new Dictionary<string, McpToolParameter>
                 {
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Validate without changing planting or uproot requests.", Required = false },
                     ["seedTag"] = new McpToolParameter { Type = "string", Description = "种子 prefab/tag，例如 BasicPlantSeed；action=set 时必填", Required = false },
                     ["mutationTag"] = new McpToolParameter { Type = "string", Description = "植物突变/亚种 tag；未使用突变时留空", Required = false },
                     ["action"] = new McpToolParameter { Type = "string", Description = "set 或 cancel，默认 set", Required = false, EnumValues = new List<string> { "set", "cancel" } },
                     ["removeOccupant"] = new McpToolParameter { Type = "boolean", Description = "若已有植物，是否先调用 OrderRemoveOccupant 铲除，默认 false", Required = false },
-                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "removeOccupant=true 时必须为 true", Required = false }
+                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "Required for every committed change; previews need no confirmation", Required = false }
                 }),
                 Handler = args =>
                 {
@@ -81,10 +82,13 @@ namespace OniMcp.Tools
                         return CallToolResult.Error("PlantablePlot target not found");
 
                     string action = (args["action"]?.ToString() ?? "set").Trim().ToLowerInvariant();
+                    bool dryRun = ToolUtil.GetBool(args, "dryRun", false);
+                    if (action != "set" && action != "cancel") return CallToolResult.Error("action must be set or cancel");
+                    if (!dryRun && !ToolUtil.GetBool(args, "confirm", false)) return CallToolResult.Error("confirm=true is required to change planting requests");
                     if (action == "cancel")
                     {
-                        plot.CancelActiveRequest();
-                        return CallToolResult.Text(JsonConvert.SerializeObject(PlotInfo(plot), McpJsonUtil.Settings));
+                        if (!dryRun) plot.CancelActiveRequest();
+                        return CallToolResult.Text(JsonConvert.SerializeObject(new { dryRun, committed = !dryRun, plot = PlotInfo(plot) }, McpJsonUtil.Settings));
                     }
 
                     bool removeOccupant = ToolUtil.GetBool(args, "removeOccupant", false);
@@ -92,9 +96,8 @@ namespace OniMcp.Tools
                     {
                         if (!removeOccupant)
                             return CallToolResult.Error("Plot already has an occupant; pass removeOccupant=true and confirm=true to uproot first");
-                        if (!ToolUtil.GetBool(args, "confirm", false))
+                        if (!dryRun && !ToolUtil.GetBool(args, "confirm", false))
                             return CallToolResult.Error("confirm=true is required when removeOccupant=true");
-                        plot.OrderRemoveOccupant();
                     }
 
                     string seedName = args["seedTag"]?.ToString();
@@ -129,6 +132,11 @@ namespace OniMcp.Tools
                         ? Tag.Invalid
                         : TagManager.Create(args["mutationTag"].ToString().Trim());
                     float worldInventoryAmount = AvailableSeedAmount(plot.gameObject, seedTag);
+                    if (dryRun)
+                        return CallToolResult.Text(JsonConvert.SerializeObject(new { valid = true, dryRun = true, committed = false,
+                            seedTag = seedTag.Name, removeOccupant, worldInventoryAmount,
+                            inventoryNote = "Inventory does not prove fetchability; inspect resources/search_items if delivery stalls.", plot = PlotInfo(plot) }, McpJsonUtil.Settings));
+                    if (plot.Occupant != null && removeOccupant) plot.OrderRemoveOccupant();
                     plot.CancelActiveRequest();
                     plot.CreateOrder(seedTag, mutationTag);
                     var after = PlotInfo(plot);

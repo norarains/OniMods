@@ -21,8 +21,9 @@ namespace OniMcp.Tools
                 Description = "兼容入口：请优先使用 building_control domain=receptacle action=list。列出 ReceptacleSideScreen / SingleEntityReceptacle 通用实体请求控件，包含特殊火箭货舱；不含种植箱和孵化器",
                 Parameters = RectParams(new Dictionary<string, McpToolParameter>
                 {
+                    ["id"] = new McpToolParameter { Type = "integer", Description = "Exact receptacle InstanceID; planters use colony_control bio/farming.", Required = false },
                     ["query"] = new McpToolParameter { Type = "string", Description = "按建筑名、prefabId、请求对象或当前 occupant 筛选", Required = false },
-                    ["includeOptions"] = new McpToolParameter { Type = "boolean", Description = "是否返回可请求实体选项，默认 true", Required = false },
+                    ["includeOptions"] = new McpToolParameter { Type = "boolean", Description = "是否返回可请求实体选项，默认 false（按需展开）", Required = false },
                     ["limit"] = new McpToolParameter { Type = "integer", Description = "最多返回数量，默认 100，最大 500", Required = false }
                 }),
                 Handler = args =>
@@ -34,10 +35,12 @@ namespace OniMcp.Tools
                     var rect = hasRect ? ToolUtil.GetRect(args) : null;
                     int worldId = hasRect || ToolUtil.GetInt(args, "worldId").HasValue ? ToolUtil.ResolveWorldId(args) : -1;
                     string query = args["query"]?.ToString();
-                    bool includeOptions = ToolUtil.GetBool(args, "includeOptions", true);
+                    bool includeOptions = ToolUtil.GetBool(args, "includeOptions", false);
                     int limit = ToolUtil.ClampLimit(args, 100, 500);
 
+                    int? id = ToolUtil.GetInt(args, "id");
                     var rows = AllReceptacles()
+                        .Where(item => !id.HasValue || item.GetComponent<KPrefabID>()?.InstanceID == id.Value)
                         .Where(item => MatchesTarget(item.gameObject, rect, worldId))
                         .Select(item => ReceptacleInfo(item, includeOptions))
                         .Where(info => MatchesQuery(info, query))
@@ -49,7 +52,9 @@ namespace OniMcp.Tools
                     {
                         ["returned"] = rows.Count,
                         ["worldId"] = worldId >= 0 ? (object)worldId : null,
-                        ["receptacles"] = rows
+                        ["receptacles"] = rows,
+                        ["next"] = rows.Count == 0 && id.HasValue
+                            ? "If this ID is a planter, use colony_control domain=bio kind=farming action=list_planting id=" + id.Value : null
                     });
                 }
             };

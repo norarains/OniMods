@@ -55,6 +55,12 @@ namespace OniMcp.Tools
         internal static void NotifyMissingDescription(string toolName) { }
     }
 
+    internal static class GameContinueRunner
+    {
+        internal static bool Busy;
+        internal static CallToolResult Guard(string name, JObject args) => Busy ? CallToolResult.Error("continue is running") : null;
+    }
+
     internal static class CoreToolEnglishDescriptions { internal static McpTool Apply(McpTool tool) => tool; }
     internal static class ServerControlEntryTools { internal static McpTool ControlServer() => GameStubs.Tool("server_control"); }
     internal static class WorldEditorTools { internal static McpTool ControlWorldEditor() => GameStubs.Tool("world_editor"); }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 using OniMcp.Core;
@@ -119,6 +120,37 @@ namespace OniMcp.Tools
                     return value;
             }
             return 0;
+        }
+
+        private static int AppliedBuildMapCells(CallToolResult result, IEnumerable<System.Tuple<int, int>> requested)
+        {
+            var body = ParseWorldEditorResult(result);
+            if (body == null || ToolUtil.GetBool(body, "dryRun", false) || !(body["results"] is JArray rows)) return 0;
+            var requestedCells = new HashSet<string>(requested.Select(point => point.Item1 + ":" + point.Item2));
+            var applied = new HashSet<string>();
+            foreach (var row in rows.OfType<JObject>())
+            {
+                if (row["valid"]?.Value<bool>() == false || !(ToolUtil.GetBool(row, "planned", false)
+                    || ToolUtil.GetBool(row, "alreadyPresent", false) || ToolUtil.GetBool(row, "alreadyConnected", false))) continue;
+                var footprint = row["footprint"] as JArray ?? new JArray();
+                foreach (var cell in footprint.OfType<JObject>().Concat(new[] { row }))
+                {
+                    if (cell["x"] == null || cell["y"] == null) continue;
+                    string key = cell["x"] + ":" + cell["y"];
+                    if (requestedCells.Contains(key)) applied.Add(key);
+                }
+            }
+            return applied.Count;
+        }
+
+        private static int AlreadySatisfiedOrderCells(CallToolResult result, string action)
+        {
+            var body = ParseWorldEditorResult(result);
+            if (result == null || result.IsError || body == null || action != "dig"
+                || ToolUtil.GetBool(body, "dryRun", false) || ToolUtil.GetBool(body, "preview", false)) return 0;
+            // Native dig processing reaches not_solid only after visibility and world checks.
+            // It never includes obstructed/hidden/invalid cells or unreachable solid targets.
+            return Math.Max(0, (int?)body["execution"]?["skipped"]?["not_solid"] ?? 0);
         }
 
         private static JObject ParseWorldEditorResult(CallToolResult result)

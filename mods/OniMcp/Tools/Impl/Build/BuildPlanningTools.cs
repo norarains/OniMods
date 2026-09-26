@@ -177,7 +177,7 @@ namespace OniMcp.Tools
                     ["orientation"] = Orientation.ToString(),
                     ["width"] = Width,
                     ["height"] = Height,
-                    ["footprintCells"] = Width * Height,
+                    ["footprintCells"] = Footprint.Count,
                     ["placementPoint"] = new
                     {
                         x = Math.Round(PlacementPoint.x, 3),

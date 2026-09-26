@@ -17,7 +17,9 @@ internal static class AuditRegression
             Handler = args => CallToolResult.Text(payload.ToString()) };
         Func<string, JToken> call = mode => JObject.Parse(ToolBatchTools.CallMany().Handler(JObject.Parse(
             "{calls:[{tool:'audit_snapshot'}],responseMode:'" + mode + "'}")).Content[0].Text)["results"][0];
+        payload["observation"] = JObject.Parse("{schema:1,worldId:1,findings:[{id:'printing_pod_ready:-1',severity:'info',actionable:true}],coverage:{available:true,notChecked:['navigation']}}");
         var summary = call("summary")["summary"];
+        Check(JToken.DeepEquals(payload["observation"], summary["observation"]), "canonical findings and coverage survive summary batching without a second read");
         Check((bool)summary["paused"] && (int)summary["cycle"] == 2 && (string)summary["alertLevel"] == "critical", "snapshot time and alert level survive batching");
         Check((int)summary["metrics"]["food_kcal"] == 0 && (bool)summary["metrics"]["red_alert"], "dangerous metrics retained");
         Check(JToken.DeepEquals(payload["watch"], summary["watch"]), "watch evidence retained");

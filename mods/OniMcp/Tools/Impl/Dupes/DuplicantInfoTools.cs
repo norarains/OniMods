@@ -328,7 +328,7 @@ namespace OniMcp.Tools
                 ["needs"] = needs.ToDictionary(),
                 ["environment"] = environment,
                 ["scanRect"] = new[] { x - radius, y - radius, x + radius, y + radius },
-                ["nextRead"] = risk == "ok" ? null : $"world_editor command=zoom x={x} y={y} radius={radius} worldId={worldId} views=default syncView=false"
+                ["nextRead"] = risk == "ok" ? null : reasons.All(reason => reason.StartsWith("idle_", StringComparison.Ordinal)) ? idle?["next"] : $"world_editor command=zoom x={x} y={y} radius={radius} worldId={worldId} views=default syncView=false"
             };
             if (includeDetails)
             {

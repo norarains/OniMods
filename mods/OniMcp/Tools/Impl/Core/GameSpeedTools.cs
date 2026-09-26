@@ -84,7 +84,7 @@ namespace OniMcp.Tools
                 Risk = "low",
                 Aliases = new List<string> { "game_control_speed", "game_pause_resume_speed" },
                 Tags = new List<string> { "game", "speed", "pause", "resume", "time" },
-                Description = "Game time and speed. Prefer action=continue for planned work: run 1-20 real seconds, monitor safety/progress, pause and return continue/replan/urgent in one call. Repeat continue directly when healthy. Other actions: time/pause/resume/set_speed.",
+                Description = "Game time and speed. Prefer action=continue for planned work: run 1-20 real seconds, monitor safety/progress, pause and return recommendedAction=continue/review/urgent in one call. Repeat continue directly when healthy. Other actions: time/pause/resume/set_speed.",
                 Parameters = new Dictionary<string, McpToolParameter>
                 {
                     ["action"] = new McpToolParameter { Type = "string", Description = "continue/advance runs a bounded monitored window; time/pause/resume/set_speed are manual controls", Required = true, EnumValues = new List<string> { "continue", "advance", "time", "pause", "resume", "set_speed" } },

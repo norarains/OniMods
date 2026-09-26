@@ -38,7 +38,7 @@ namespace OniMcp.Tools
             var results = new JArray();
             bool anyError = false;
             bool childPartial = false;
-            int appliedCells = 0;
+            int appliedCells = 0, satisfiedCells = 0;
             foreach (var group in executableChanges.GroupBy(ChangeKind))
             {
                 CallToolResult result;
@@ -54,8 +54,8 @@ namespace OniMcp.Tools
                 bool failed = WorldEditorResultFailed(result, args);
                 anyError = anyError || failed;
                 childPartial = childPartial || ResultReportsPartial(result);
-                if (!failed)
-                    appliedCells += ResultAppliedCount(result);
+                appliedCells += ResultAppliedCount(result);
+                satisfiedCells += ResultFieldInt(ParseWorldEditorResult(result), "alreadySatisfiedCells");
                 results.Add(new JObject
                 {
                     ["kind"] = group.Key,
@@ -72,9 +72,10 @@ namespace OniMcp.Tools
                 ["sourcePath"] = args["sourcePath"]?.ToString(),
                 ["changedCells"] = changes.Count,
                 ["executedCells"] = appliedCells,
-                ["remainingCells"] = Math.Max(0, changes.Count - appliedCells),
-                ["partial"] = partial || childPartial || (anyError && appliedCells > 0),
-                ["next"] = partial ? "Re-read the map, then submit a fresh patch for the remaining cells." : "complete",
+                ["alreadySatisfiedCells"] = satisfiedCells,
+                ["remainingCells"] = Math.Max(0, changes.Count - appliedCells - satisfiedCells),
+                ["partial"] = partial || childPartial || changes.Count > appliedCells + satisfiedCells,
+                ["next"] = partial || childPartial || changes.Count > appliedCells + satisfiedCells ? "Re-read the map, then submit a fresh patch for the remaining cells." : "complete",
                 ["results"] = results
             };
             return anyError ? CallToolResult.Error(JsonResultText(summary)) : JsonResult(summary);
@@ -85,7 +86,7 @@ namespace OniMcp.Tools
             var byToken = cells.GroupBy(c => c.ToToken);
             var results = new JArray();
             bool anyError = false;
-            int applied = 0;
+            int applied = 0, satisfied = 0;
             foreach (var group in byToken)
             {
                 int priority = Math.Max(1, Math.Min(ParsePriority(group.Key) ?? ToolUtil.GetInt(parentArgs, "priority") ?? 5, 9));
@@ -117,8 +118,8 @@ namespace OniMcp.Tools
                     var result = OrdersControlEntryTools.ControlOrders().Handler(orderArgs);
                     bool failed = WorldEditorResultFailed(result, parentArgs);
                     anyError = anyError || failed;
-                    if (!failed)
-                        applied += ResultAppliedCount(result);
+                    applied += ResultAppliedCount(result);
+                    satisfied += AlreadySatisfiedOrderCells(result, action);
                     results.Add(new JObject
                     {
                         ["token"] = group.Key,
@@ -133,7 +134,7 @@ namespace OniMcp.Tools
                 }
             }
 
-            var summary = new JObject { ["ok"] = !anyError, ["applied"] = applied, ["failed"] = anyError ? 1 : 0, ["results"] = results };
+            var summary = new JObject { ["ok"] = !anyError, ["applied"] = applied, ["alreadySatisfiedCells"] = satisfied, ["failed"] = anyError ? 1 : 0, ["results"] = results };
             return anyError ? CallToolResult.Error(JsonResultText(summary)) : JsonResult(summary);
         }
 
@@ -178,7 +179,7 @@ namespace OniMcp.Tools
         private static CallToolResult ApplyBuildMapEdit(JObject parentArgs, IEnumerable<MapEditCell> cells)
         {
             var results = new JArray();
-            bool anyError = false;
+            bool anyError = false, childPartial = false;
             int applied = 0;
             foreach (var group in cells.GroupBy(c => c.ToToken))
             {
@@ -212,12 +213,12 @@ namespace OniMcp.Tools
                 var result = BuildingControlTools.ControlBuildingFromVirtualFile(buildArgs);
                 bool failed = WorldEditorResultFailed(result, parentArgs);
                 anyError = anyError || failed;
+                childPartial |= ResultReportsPartial(result);
                 // Count changed map cells in this token group, not child "planned" anchors.
                 // Multi-cell footprints map N cells -> 1 lower-left anchor; using anchor count
                 // made remainingCells look incomplete and flagged partial success incorrectly.
                 int groupCells = group.Count();
-                if (!failed && !ToolUtil.GetBool(parentArgs, "dryRun", false))
-                    applied += groupCells;
+                applied += AppliedBuildMapCells(result, group.Select(cell => System.Tuple.Create(cell.X, cell.Y)));
                 results.Add(new JObject
                 {
                     ["token"] = group.Key,
@@ -233,7 +234,7 @@ namespace OniMcp.Tools
                 });
             }
 
-            var summary = new JObject { ["ok"] = !anyError, ["applied"] = applied, ["failed"] = anyError ? 1 : 0, ["results"] = results };
+            var summary = new JObject { ["ok"] = !anyError, ["applied"] = applied, ["partial"] = childPartial, ["failed"] = anyError ? 1 : 0, ["results"] = results };
             return anyError ? CallToolResult.Error(JsonResultText(summary)) : JsonResult(summary);
         }
 

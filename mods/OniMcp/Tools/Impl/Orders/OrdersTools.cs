@@ -22,6 +22,7 @@ Tags = new List<string> { "orders", "priority", "area", "designation", "dig", "s
                 {
                     ["domain"] = new McpToolParameter { Type = "string", Description = "priority, area, or designation. Omit to infer from action.", Required = false, EnumValues = new List<string> { "priority", "area", "designation" } },
                     ["action"] = new McpToolParameter { Type = "string", Description = "priority: list/set_building/set_area; area: dig/sweep(扫|捡|捡起)/mop(擦)/disinfect(毒|消毒)/cancel(消)/harvest(收); designation: deconstruct(拆)/attack(杀)/capture|wrangle(捕)/empty_conduits|empty_pipe/cut_conduits|cut/manual_delivery.", Required = true },
+                    ["query"] = new McpToolParameter { Type = "string", Description = "Filter priority targets by name or prefab ID.", Required = false },
                     ["id"] = new McpToolParameter { Type = "integer", Description = "Single target InstanceID.", Required = false },
                     ["x"] = new McpToolParameter { Type = "integer", Description = "Single target X for designation actions.", Required = false },
                     ["y"] = new McpToolParameter { Type = "integer", Description = "Single target Y for designation actions.", Required = false },

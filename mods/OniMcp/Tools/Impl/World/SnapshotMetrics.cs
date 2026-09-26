@@ -167,6 +167,19 @@ namespace OniMcp.Tools
             };
         }
 
+        private static Dictionary<string, object> BuildObservationMetrics(ContinueSample sample, Dictionary<string, object> alerts)
+        {
+            int count = Convert.ToInt32(alerts["count"]);
+            return new Dictionary<string, object>
+            {
+                ["dupes"] = sample.LocalDupeCount,
+                ["stress"] = Math.Round(sample.Dupes.Select(item => item.Stress).DefaultIfEmpty(0).Max(), 1),
+                ["food_kcal"] = Math.Round(sample.FoodKcal), ["red_alert"] = sample.RedAlert,
+                ["alerts"] = count,
+                ["alertLevel"] = HasSeverity(alerts, "critical") ? "red" : HasSeverity(alerts, "warning") ? "yellow" : count > 0 ? "info" : "green"
+            };
+        }
+
         private static Dictionary<string, object> BuildMetrics(List<DupeSnapshot> dupes, FoodSnapshot food, BuildingSnapshot buildings, Dictionary<string, object> atmosphere, Dictionary<string, object> redAlert, Dictionary<string, object> alerts)
         {
             int alertCount = Convert.ToInt32(alerts["count"]);
@@ -177,7 +190,7 @@ namespace OniMcp.Tools
 
             var result = new Dictionary<string, object>
             {
-                ["dupes"] = dupes.Count > 0 ? dupes.Count : Components.LiveMinionIdentities.Count,
+                ["dupes"] = dupes.Count,
                 ["stress"] = Math.Round(maxStress, 1),
                 ["stressed_dupes"] = dupes.Count(item => item.Stress >= 40f),
                 ["low_stamina"] = dupes.Count(item => item.Stamina > 0f && item.Stamina < 30f),

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace OniMcp.Tools
@@ -25,6 +26,19 @@ namespace OniMcp.Tools
                 return false;
             bounds = new[] { minX, minY, maxX, maxY };
             return true;
+        }
+
+        internal static List<int> Cells(GameObject instance, int origin, BuildingDef def)
+        {
+            var cells = new List<int>();
+            if (!TryGetBounds(instance, origin, def, out int[] bounds)) return cells;
+            for (int y = bounds[1]; y <= bounds[3]; y++)
+                for (int x = bounds[0]; x <= bounds[2]; x++)
+                {
+                    int cell = Grid.XYToCell(x, y);
+                    if (Contains(instance, cell, def)) cells.Add(cell);
+                }
+            return cells;
         }
 
         internal static bool Contains(GameObject instance, int cell, BuildingDef def)

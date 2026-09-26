@@ -19,6 +19,7 @@ internal static class ErgonomicsRegression
         TestResponses();
         TestRepeatedDiagnostics();
         TestCapturedDiagnostics();
+        TestGeometryCompaction();
         TestPriority();
         TestStorage();
         TestOccupancy();
@@ -82,6 +83,24 @@ internal static class ErgonomicsRegression
             Console.WriteLine(name + " captured response: " + input.ToString(Formatting.None).Length + " -> " + output.ToString(Formatting.None).Length + " characters");
         }
     }
+    private static void TestGeometryCompaction()
+    {
+        var valid = JObject.Parse("{x:288,y:74,valid:true,visible:true,inWorld:true}");
+        var source = new JObject { ["anchor"] = JObject.Parse("{x:288,y:74}"),
+            ["footprint"] = new JArray(valid, valid.DeepClone()), ["risks"] = new JArray("liquid_adjacent") };
+        var compact = WorldEditorResponsePolicy.Normalize(source, true);
+        Check(compact["footprint"] == null && (int)compact["footprintCount"] == 2, "valid footprint rows compress to count and bounds");
+        Check((string)compact["risks"][0] == "liquid_adjacent" && compact["anchor"] != null, "hazards and exact anchor remain in summary");
+        source["footprint"][0]["visible"] = false;
+        Check(WorldEditorResponsePolicy.Normalize(source, true)["footprint"] != null, "invalid footprint evidence is never summarized away");
+        Check(WorldEditorResponsePolicy.Normalize(source, false)["footprint"] != null, "full mode retains geometry");
+        var wire = JObject.Parse("{failed:0,segments:[{from:[1,1],to:[5,1]}],path:[1,2,3,4,5],autoDigQueued:2,connectResult:{failed:0,results:[{valid:true}]}}");
+        var result = WorldEditorResponsePolicy.Normalize(wire, true);
+        Check(result["connectResult"] == null && result["segments"] != null && (int)result["autoDigQueued"] == 2, "successful wire details compress while keeping path and side effects");
+        wire["failed"] = 1;
+        Check(WorldEditorResponsePolicy.Normalize(wire, true)["connectResult"] != null, "failed wiring retains child diagnostics");
+    }
+
     private static void TestPriority()
     {
         Check(WorldEditorTools.ReadPriority("挖 @(297,73):6") == 6, "priority after coordinates");

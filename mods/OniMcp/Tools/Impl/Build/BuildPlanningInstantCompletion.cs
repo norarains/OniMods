@@ -291,7 +291,7 @@ namespace OniMcp.Tools
             BuildingDef def, PlacementDetails placement, Orientation orientation)
         {
             var snapshot = new InstantBuildTargetSnapshot();
-            int cell = Grid.XYToCell(placement.AnchorX, placement.AnchorY);
+            int cell = PlacementOriginCell(def, placement.AnchorX, placement.AnchorY, placement.Orientation);
             def.RunOnArea(cell, orientation, offsetCell =>
                 snapshot.GridObjects[offsetCell] = Grid.Objects[offsetCell, (int)def.ObjectLayer]);
             foreach (var complete in Components.BuildingCompletes.Items)
@@ -381,7 +381,7 @@ namespace OniMcp.Tools
             Orientation orientation = rotatable == null ? Orientation.Neutral : rotatable.GetOrientation();
             var completionPlacement = BuildPlacementDetails(def, placement.AnchorX, placement.AnchorY, placement.WorldId, orientation);
             string facadeId = blueprint.GetComponent<BuildingFacade>()?.CurrentFacade;
-            int cell = Grid.XYToCell(completionPlacement.AnchorX, completionPlacement.AnchorY);
+            int cell = PlacementOriginCell(def, completionPlacement.AnchorX, completionPlacement.AnchorY, orientation);
             var safetyFailure = ExistingBlueprintCompletionSafetyFailure(def, completionPlacement, blueprint);
             if (safetyFailure != null) return safetyFailure;
             blueprint.DeleteObject();
@@ -487,7 +487,7 @@ namespace OniMcp.Tools
                 var actual = ActualPlacementDetails(go, def, placement.AnchorX, placement.AnchorY);
                 var rotatable = go.GetComponent<Rotatable>();
                 Orientation orientation = rotatable == null ? Orientation.Neutral : rotatable.GetOrientation();
-                int cell = Grid.XYToCell(placement.AnchorX, placement.AnchorY);
+                int cell = PlacementOriginCell(def, placement.AnchorX, placement.AnchorY, placement.Orientation);
                 if (GetBool(ComparePlacement(placement, actual), "valid")
                     && IsCompletedBuildFullyRegistered(def, placement, cell, orientation, go, out _))
                     return go;

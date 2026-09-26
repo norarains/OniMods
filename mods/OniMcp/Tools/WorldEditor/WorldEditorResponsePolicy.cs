@@ -95,6 +95,45 @@ namespace OniMcp.Tools
             }
         }
 
+        private static void CompactSuccessfulGeometry(JObject output)
+        {
+            if (output["footprint"] is JArray footprint && footprint.Count > 0
+                && footprint.All(cell => cell["valid"]?.Value<bool>() == true
+                    && cell["visible"]?.Value<bool>() == true && cell["inWorld"]?.Value<bool>() == true))
+            {
+                output["footprintCount"] = footprint.Count;
+                output["footprintBounds"] = new JArray(footprint.Min(c => (int)c["x"]), footprint.Min(c => (int)c["y"]),
+                    footprint.Max(c => (int)c["x"]), footprint.Max(c => (int)c["y"]));
+                output.Remove("footprint");
+            }
+            if (output["support"] is JObject support && support["valid"]?.Value<bool>() == true)
+            {
+                foreach (string field in new[] { "cells", "supportCells" })
+                    if (support[field] is JArray cells)
+                    {
+                        support[field + "Count"] = cells.Count;
+                        support.Remove(field);
+                    }
+            }
+            if (output["placementCheck"] is JObject check && check["valid"]?.Value<bool>() == true
+                && output["actualPlacement"] is JObject actual)
+            {
+                actual.Remove("occupiedCells"); // exact registered-cell verification is retained in placementCheck
+                actual.Remove("note");
+            }
+            // Successful auto-wiring retains endpoints, full path segments, counts and digging side effects.
+            // Failure responses retain every child diagnostic for targeted recovery.
+            if (output["connectResult"] is JObject connection && output["segments"] is JArray
+                && output["failed"]?.Value<int>() == 0 && connection["failed"]?.Value<int>() == 0
+                && !connection.Descendants().OfType<JProperty>().Any(property =>
+                    (property.Name == "risks" || property.Name == "warnings" || property.Name == "obstructions") && property.Value.HasValues
+                    || property.Name == "partial" && property.Value.Type == JTokenType.Boolean && property.Value.Value<bool>()))
+            {
+                output.Remove("connectResult");
+                output.Remove("path");
+            }
+        }
+
         internal static JToken Normalize(JToken token, bool compact, int depth = 0)
         {
             if (token == null || depth > 40)
@@ -122,7 +161,10 @@ namespace OniMcp.Tools
                     && JToken.DeepEquals(output["error"], output["result"]))
                     output.Remove("error");
                 if (compact)
+                {
                     CompactRepeatedDiagnostics(output);
+                    CompactSuccessfulGeometry(output);
+                }
                 return output;
             }
             if (token is JArray array)

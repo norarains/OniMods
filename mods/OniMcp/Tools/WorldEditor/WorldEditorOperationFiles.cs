@@ -257,6 +257,8 @@ namespace OniMcp.Tools
             var parts = new List<string>();
             AddSummaryPart(parts, obj, "planned");
             AddSummaryPart(parts, obj, "marked");
+            foreach (string key in new[] { "changed", "applied", "succeeded", "count", "matched", "dryRun", "committed", "markedForHarvest", "harvestWhenReady", "canBeHarvested", "target", "id" })
+                AddSummaryPart(parts, obj, key);
             AddSummaryPart(parts, obj, "executedCells");
             AddSummaryPart(parts, obj, "remainingCells");
             AddSummaryPart(parts, obj, "failed");

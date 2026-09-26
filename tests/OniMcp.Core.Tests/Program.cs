@@ -20,6 +20,7 @@ internal static class Program
         Run("task descriptions require nonempty JSON strings", TaskDescriptions);
         Run("invalid tool names return errors", InvalidNames);
         Run("tool calls still enforce coordinate and task constraints", ToolConstraints);
+        Run("active continue guard prevents handler execution", ContinueGuard);
         Run("tool cache respects visibility after all-tools access", CacheVisibility);
         Run("metadata list callers cannot corrupt cached tool count", MetadataIsolation);
         Run("all static resources dispatch to their registered operation", StaticResources);
@@ -149,6 +150,18 @@ internal static class Program
             ["target"] = new JObject { ["x"] = 4 }
         }).IsError, "Nested coordinates escaped validation.");
         Require(!OniToolRegistry.CallTool("legacy_game_control", new JObject { ["task"] = "inspect" }).IsError, "Alias dispatch failed.");
+    }
+
+    private static void ContinueGuard()
+    {
+        int before = GameStubs.HandlerCalls;
+        GameContinueRunner.Busy = true;
+        try
+        {
+            Require(OniToolRegistry.CallTool("game_control", new JObject { ["task"] = "inspect" }).IsError, "Busy guard must return an error.");
+            Require(GameStubs.HandlerCalls == before, "An active continue must prevent another tool handler from running.");
+        }
+        finally { GameContinueRunner.Busy = false; }
     }
 
     private static void CacheVisibility()

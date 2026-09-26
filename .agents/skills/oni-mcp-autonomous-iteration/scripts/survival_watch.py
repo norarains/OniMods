@@ -57,9 +57,9 @@ def run_windows(bridge, target_cycles, max_seconds, window_seconds, speed, emit=
         emit(json.dumps(result, ensure_ascii=False))
         if result.get("isPaused") is not True:
             raise RuntimeError("continue did not confirm pause")
-        decision = result.get("decision")
+        decision = result.get("recommendedAction") if result.get("schemaVersion") == 2 else result.get("decision")
         if decision != "continue":
-            return 2 if decision in {"replan", "urgent"} else 1
+            return 2 if decision in {"review", "replan", "urgent"} else 1
         advanced += result.get("gameSecondsAdvanced", 0)
     return 0
 

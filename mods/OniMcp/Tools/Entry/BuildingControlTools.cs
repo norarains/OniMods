@@ -52,6 +52,7 @@ namespace OniMcp.Tools
                     ["tag"] = new McpToolParameter { Type = "string", Description = "Target tag or element for domain=filter action=set kind=single.", Required = false },
                     ["tags"] = new McpToolParameter { Type = "array", Description = "Tag list to write for domain=storage/filter.", Required = false },
                     ["itemTag"] = new McpToolParameter { Type = "string", Description = "Target item tag for domain=tile_selection action=set.", Required = false },
+                    ["includeOptions"] = new McpToolParameter { Type = "boolean", Description = "Include selectable receptacle/entity options; default false.", Required = false },
                     ["entityTag"] = new McpToolParameter { Type = "string", Description = "Entity tag for domain=receptacle action=request.", Required = false },
                     ["additionalTag"] = new McpToolParameter { Type = "string", Description = "Additional tag for domain=receptacle action=request.", Required = false },
                     ["clear"] = new McpToolParameter { Type = "boolean", Description = "Clear the current selection for domain=filter/tile_selection.", Required = false },

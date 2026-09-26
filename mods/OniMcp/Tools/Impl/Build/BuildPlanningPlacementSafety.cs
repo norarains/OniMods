@@ -448,11 +448,11 @@ namespace OniMcp.Tools
             int x,
             int y,
             int worldId,
-            HashSet<int> reservedCells)
+            HashSet<int> reservedCells, Orientation orientation = Orientation.Neutral)
         {
             if (def == null || reservedCells == null)
                 return null;
-            var overlaps = FootprintCells(def, x, y, worldId)
+            var overlaps = FootprintCells(def, x, y, worldId, orientation)
                 .Where(item => item.Valid && reservedCells.Contains(item.Cell))
                 .Select(item => item.ToDictionary())
                 .ToList();
@@ -471,11 +471,11 @@ namespace OniMcp.Tools
             int x,
             int y,
             int worldId,
-            HashSet<int> reservedCells)
+            HashSet<int> reservedCells, Orientation orientation = Orientation.Neutral)
         {
             if (def == null || reservedCells == null)
                 return;
-            foreach (var item in FootprintCells(def, x, y, worldId).Where(item => item.Valid))
+            foreach (var item in FootprintCells(def, x, y, worldId, orientation).Where(item => item.Valid))
                 reservedCells.Add(item.Cell);
         }
     }

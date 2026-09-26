@@ -177,6 +177,11 @@ namespace OniMcp.Tools
             BuildCritterCellMap().TryGetValue(cell, out var critter);
             sb.AppendLine("- 建筑: " + FormatCellGameObject(building));
             sb.AppendLine("- 挖掘标记: " + FormatDigOrder(digPlacer));
+            var harvest = building?.GetComponent<HarvestDesignatable>();
+            if (harvest != null)
+                sb.AppendLine("- Harvest: ready=" + harvest.CanBeHarvested() + ", marked=" + harvest.MarkedForHarvest + ", whenReady=" + harvest.HarvestWhenReady);
+            var uproot = building?.GetComponent<Uprootable>();
+            if (uproot != null) sb.AppendLine("- Uproot marked: " + uproot.IsMarkedForUproot);
             sb.AppendLine("- 复制人/仿生人: " + FormatCellDupe(minion));
             sb.AppendLine("- 小动物: " + FormatCellGameObject(critter));
 

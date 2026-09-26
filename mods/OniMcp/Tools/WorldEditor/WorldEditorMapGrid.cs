@@ -215,7 +215,7 @@ if (symbol == '←' || symbol == '→' || symbol == '↑' || symbol == '↓') re
                 foreach (string detail in details.Distinct())
                     sb.AppendLine(detail);
             }
-            AppendBuildingParameterReferences(sb, xMin, xMax, yMin, yMax);
+            if (includeHelp) AppendBuildingParameterReferences(sb, xMin, xMax, yMin, yMax);
             if (includeHelp)
                 AppendMapFileIndex(sb);
             return sb.ToString();
@@ -283,7 +283,7 @@ if (symbol == '←' || symbol == '→' || symbol == '↑' || symbol == '↓') re
             if (mode == OverlayModes.Rooms.ID) return RoomSymbol(cell);
             if (minion != null) return '人';
             if (critter != null) return '物';
-            return !string.IsNullOrEmpty(buildingId) ? GetUniqueChar(buildingId, buildingName) : MaterialSymbol(elemId, elemName);
+            return !string.IsNullOrEmpty(buildingId) ? GetUniqueChar(StripCompleteSuffix(buildingId), buildingName) : MaterialSymbol(elemId, elemName);
         }
 
         private static void AppendCellDetails(List<string> details, HashedString mode, int x, int y, int cell, string elemName, float tempC, GameObject building, string buildingId, string buildingName, GameObject minion, GameObject critter)

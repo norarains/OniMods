@@ -64,15 +64,17 @@ namespace OniMcp.Tools
                     bool watchOnly = ToolUtil.GetBool(args, "watchOnly", false);
                     bool needAtmosphere = includeAtmosphere || WatchNeedsAtmosphere(watchKeys);
 
-                    List<DupeSnapshot> dupes = (includeDupes || includeAlerts || minimal || watchOnly || watchKeys.Count > 0) ? BuildDupes(worldId) : new List<DupeSnapshot>();
-                    FoodSnapshot food = (includeFood || includeAlerts || minimal || watchOnly || watchKeys.Count > 0) ? BuildFood(worldId, foodLimit, visibleOnly) : null;
-                    BuildingSnapshot buildings = (includeBuildings || includeAlerts || minimal || watchOnly || watchKeys.Count > 0) ? BuildBuildings(worldId) : null;
+                    bool compactObservation = minimal && watchKeys.Count == 0 && !watchOnly && !needAtmosphere && visibleOnly;
+                    List<DupeSnapshot> dupes = !compactObservation && (includeDupes || includeAlerts || minimal || watchOnly || watchKeys.Count > 0) ? BuildDupes(worldId) : new List<DupeSnapshot>();
+                    FoodSnapshot food = !compactObservation && (includeFood || includeAlerts || minimal || watchOnly || watchKeys.Count > 0) ? BuildFood(worldId, foodLimit, visibleOnly) : null;
+                    BuildingSnapshot buildings = !compactObservation && (includeBuildings || includeAlerts || minimal || watchOnly || watchKeys.Count > 0) ? BuildBuildings(worldId) : null;
                     Dictionary<string, object> atmosphere = needAtmosphere ? BuildAtmosphere(worldId) : null;
                     var redAlert = BuildRedAlert(worldId);
+                    var observation = ColonyObservationRuntime.Read(worldId);
                     var alerts = includeAlerts || minimal || watchOnly || watchKeys.Count > 0
-                        ? BuildAlerts(dupes, food, buildings, atmosphere, redAlert)
+                        ? BuildAlerts(observation)
                         : new Dictionary<string, object> { ["count"] = 0, ["items"] = new List<Dictionary<string, object>>() };
-                    var metrics = BuildMetrics(dupes, food, buildings, atmosphere, redAlert, alerts);
+                    var metrics = compactObservation ? BuildObservationMetrics(observation, alerts) : BuildMetrics(dupes, food, buildings, atmosphere, redAlert, alerts);
                     var time = BuildTime();
                     var colony = BuildColony();
 
@@ -98,14 +100,13 @@ namespace OniMcp.Tools
                         snapshot["research"] = BuildResearch();
                     if (!minimal && needAtmosphere)
                         snapshot["atmosphere"] = atmosphere;
-                    if (!minimal && includeAlerts)
-                        snapshot["alerts"] = alerts;
 
                     if (watchKeys.Count > 0)
                         snapshot["watch"] = BuildWatch(watchKeys, metrics, args["thresholds"] as JObject ?? args["threshold"] as JObject);
                     if (watchOnly)
                         snapshot = BuildWatchOnlySnapshot(profile, worldId, time, metrics, snapshot.ContainsKey("watch") ? snapshot["watch"] : BuildWatch(DefaultWatchKeys(), metrics, args["thresholds"] as JObject ?? args["threshold"] as JObject));
 
+                    snapshot["observation"] = ColonyObservation.Serialize(observation);
                     snapshot["cost"] = new Dictionary<string, object>
                     {
                         ["singleTool"] = true,

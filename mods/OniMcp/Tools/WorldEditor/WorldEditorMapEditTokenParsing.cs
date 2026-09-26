@@ -79,12 +79,20 @@ namespace OniMcp.Tools
             string name = ExtractBuildTokenName(token);
             if (!string.IsNullOrWhiteSpace(name) && name.Length > 1)
             {
-                var defs = Assets.BuildingDefs.Where(def => def != null && !string.IsNullOrEmpty(def.PrefabID)).ToList();
+                var defs = Assets.BuildingDefs.Where(def => def != null && !string.IsNullOrEmpty(def.PrefabID))
+                    .GroupBy(def => def.PrefabID, StringComparer.OrdinalIgnoreCase).Select(group => group.First()).ToList();
                 // Resolve all exact IDs before considering names or partial matches.
                 // Asset registration order must not turn Ladder into LadderBed.
                 var matches = defs.Where(def => string.Equals(MapTokenPart(def.PrefabID), name, StringComparison.OrdinalIgnoreCase)).ToList();
                 if (matches.Count == 0)
                     matches = defs.Where(def => string.Equals(MapTokenPart(def.Name), name, StringComparison.OrdinalIgnoreCase)).ToList();
+                if (matches.Count == 0)
+                {
+                    var ids = new HashSet<string>(GeneratedGlyphEntries.Where(entry => entry.Kind == "Building"
+                        && string.Equals(MapTokenPart(entry.Name), name, StringComparison.OrdinalIgnoreCase))
+                        .Select(entry => entry.Id), StringComparer.OrdinalIgnoreCase);
+                    matches = defs.Where(def => ids.Contains(def.PrefabID)).ToList();
+                }
                 if (matches.Count == 0)
                     matches = defs.Where(def => MapTokenPart(def.PrefabID).IndexOf(name, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
                 if (matches.Count != 1)

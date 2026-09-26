@@ -59,11 +59,11 @@ namespace OniMcp.Tools
             var harvestIds = reachableHarvestables.Select(item => item["id"]).Where(id => Convert.ToInt32(id) > 0).Take(6).ToList();
             var foodAccessPlan = BuildFoodAccessPlan(allReadyHarvestables, reachableHarvestables, includeConstructionPlan);
             float foodNeed = dupes * foodPerDupe;
+            var observation = ColonyObservationRuntime.Read(-1);
+            var findings = ColonyObservation.Findings(observation);
             var blockers = new List<Dictionary<string, object>>();
             var nextCalls = new List<string>();
 
-            if (dupes <= 0)
-                AddBlocker(blockers, "critical", "dupes", "No live duplicants detected.");
             if (foodKcal < foodNeed)
             {
                 AddBlocker(blockers, "critical", "food", $"Food stock {Math.Round(foodKcal, 1)} kcal below {Math.Round(foodNeed, 1)} kcal threshold for {dupes} dupes.");
@@ -81,30 +81,21 @@ namespace OniMcp.Tools
                         nextCalls.Add("execute accessPlan.frontierDigAction; it is dryRun=true");
                 }
             }
-            if (oxygenProducers == 0)
+            if (findings.Any(item => item.Code == "no_oxygen_producer"))
             {
-                AddBlocker(blockers, "warning", "oxygen", "No oxygen producer building detected.");
                 nextCalls.Add("building_control domain=planning action=parse_plan plan=\"藻类制氧机@基地\" worldId=0 limit=5");
                 nextCalls.Add("building_control domain=planning action=build_area plan=\"藻类制氧机@基地\" worldId=0 dryRun=true limit=5");
             }
-            if (toilets == 0)
-                AddBlocker(blockers, "warning", "hygiene", "No toilet detected.");
-            if (beds < dupes)
-                AddBlocker(blockers, "info", "sleep", $"Beds {beds}/{dupes}.");
-            if (maxStress >= 60f)
-                AddBlocker(blockers, "warning", "stress", $"Max stress {Math.Round(maxStress, 1)}%.");
+            nextCalls.Add("game_control domain=speed action=continue seconds=15 resetMonitor=true (only after reviewing findings and planning useful work)");
 
-            nextCalls.Add("colony_control domain=diagnostic action=alerts limit=10");
-            nextCalls.Add("python .agents/skills/oni-mcp-autonomous-iteration/scripts/survival_watch.py --target-cycles 100 --poll-seconds 20 --speed 3");
-
-            bool hasCritical = blockers.Any(item => string.Equals(item["severity"]?.ToString(), "critical", StringComparison.OrdinalIgnoreCase));
+            bool hasCritical = findings.Any(item => item.Severity == "critical") || blockers.Any(item => string.Equals(item["severity"]?.ToString(), "critical", StringComparison.OrdinalIgnoreCase));
             var constructionPlan = ExtractConstructionPlan(foodAccessPlan);
             var nextActions = BuildNextActions(foodAccessPlan, constructionPlan);
             return new Dictionary<string, object>
             {
                 ["targetCycles"] = targetCycles,
                 ["canAttemptLongRun"] = !hasCritical,
-                ["decision"] = hasCritical ? "fix_critical_before_100_cycle_run" : "long_run_allowed_with_monitoring",
+                ["planningRecommendation"] = hasCritical ? "address_findings_and_constraints" : "prepare_monitored_work_batch",
                 ["metrics"] = new Dictionary<string, object>
                 {
                     ["cycle"] = GameUtil.GetCurrentCycle(),
@@ -119,7 +110,9 @@ namespace OniMcp.Tools
                     ["readyHarvestables"] = allReadyHarvestables.Count,
                     ["reachableHarvestables"] = reachableHarvestables.Count
                 },
-                ["blockers"] = blockers,
+                ["planningConstraints"] = blockers,
+                ["planningScope"] = "Requested food horizon and infrastructure plan; these are not additional live alerts.",
+                ["observation"] = ColonyObservation.Serialize(observation, findings),
                 ["reachability"] = new Dictionary<string, object>
                 {
                     ["readyHarvestables"] = allReadyHarvestables.Count,
@@ -149,7 +142,7 @@ namespace OniMcp.Tools
                     ["reason"] = "critical_food"
                 },
                 ["nextCalls"] = nextCalls.Distinct().Take(12).ToList(),
-                ["tokenHint"] = "Read canAttemptLongRun, decision, blockers, nextActions. Prefer structured nextActions over nextCalls; keep survival_watch as the final proof gate."
+                ["tokenHint"] = "Read canAttemptLongRun (planning estimate only), planningRecommendation, planningConstraints, observation, nextActions. Prefer structured nextActions over nextCalls; use bounded continue for reviewed work."
             };
         }
 

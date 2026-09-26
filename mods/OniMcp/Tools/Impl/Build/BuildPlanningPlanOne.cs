@@ -295,7 +295,7 @@ int cell = Grid.XYToCell(x, y);
             if (!facadeResult.Valid)
                 return ErrorResult(prefabId, x, y, facadeResult.Error);
 
-            var supportResult = ValidateSupport(def, x, y, ToolUtil.GetBool(args, "allowUnsupported", false), plannedSupportCells);
+            var supportResult = ValidateSupport(def, x, y, ToolUtil.GetBool(args, "allowUnsupported", false), plannedSupportCells, orientation);
             if (!supportResult.Valid)
                 return ErrorResult(prefabId, x, y, supportResult.Error, supportResult.ToDictionary());
 
@@ -409,19 +409,20 @@ int cell = Grid.XYToCell(x, y);
             Dictionary<string, object> fallbackPlacement = null;
             Dictionary<string, object> instantCompletion = null;
             bool completedImmediately = IsAuthorizedVirtualFileInstantBuild(args);
+            int originCell = PlacementOriginCell(def, x, y, orientation);
             GameObject go;
             if (completedImmediately)
             {
-                if (!TryBuildVirtualFileInstantBuild(def, placement, args, cell, orientation,
+                if (!TryBuildVirtualFileInstantBuild(def, placement, args, originCell, orientation,
                     materialResult.Elements, facadeResult.ResponseId, out go, out instantCompletion))
                     return InstantCompletionFailureResult(def, placement, null, instantCompletion, placedByThisRequest: false);
             }
             else
             {
-                var pos = BuildPlacementPosition(cell, def);
+                var pos = BuildPlacementPosition(cell, def, orientation);
                 go = def.TryPlace(null, pos, orientation, materialResult.Elements, facadeResult.TryPlaceId);
                 if (go == null && autoDig != null)
-                    go = TryPlaceWithBuildTool(def, cell, orientation, materialResult.Elements,
+                    go = TryPlaceWithBuildTool(def, originCell, orientation, materialResult.Elements,
                         facadeResult.ResponseId, placement, args, out fallbackPlacement);
                 if (go == null)
                 {
@@ -436,6 +437,11 @@ int cell = Grid.XYToCell(x, y);
             }
             RegisterSupportBlueprint(prefabId, x, y, plannedSupportCells);
             var actualPlacement = ActualPlacementDetails(go, def, x, y);
+            var placementCheck = ComparePlacement(placement, actualPlacement);
+            if (!GetBool(placementCheck, "valid"))
+                return ErrorResult(prefabId, x, y, "Native placement does not match the requested footprint; inspect before retrying.",
+                    new Dictionary<string, object> { ["mutationAttempted"] = true, ["blueprintPlaced"] = !completedImmediately,
+                        ["buildingCompleted"] = completedImmediately, ["actualPlacement"] = actualPlacement, ["placementCheck"] = placementCheck });
             var placedPowerAutoConnect = TryAutoConnectPower(def, x, y, orientation, args, plannedSupportCells, autoDigContext);
             return new Dictionary<string, object>
             {
@@ -453,7 +459,7 @@ int cell = Grid.XYToCell(x, y);
                 ["footprint"] = placement.Footprint.Select(cellInfo => cellInfo.ToDictionary()).ToList(),
                 ["actualPlacement"] = actualPlacement,
                 ["actualAnchor"] = ActualAnchorArray(actualPlacement),
-                ["placementCheck"] = ComparePlacement(placement, actualPlacement),
+                ["placementCheck"] = placementCheck,
                 ["fallbackPlacement"] = fallbackPlacement,
                 ["support"] = supportResult.ToDictionary(),
                 ["material"] = materialResult.Elements.Select(tag => tag.Name).ToList(),

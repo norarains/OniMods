@@ -129,7 +129,9 @@ namespace OniMcp.Tools
             {
                 if (summary[property.Name] != null)
                     continue;
-                if (property.Value is JArray arr)
+                if (property.Name == "observation" || property.Name == "findings" || property.Name == "planningConstraints")
+                    summary[property.Name] = property.Value.DeepClone();
+                else if (property.Value is JArray arr)
                     summary[property.Name + "Count"] = arr.Count;
                 else if (property.Value is JObject obj && IsSummaryObjectName(property.Name))
                     summary[property.Name] = CompactNestedObject(obj);

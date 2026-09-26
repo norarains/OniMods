@@ -9,6 +9,9 @@
     <StartupObject>BenchmarkMetadataRegressionEntry</StartupObject>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Core/ColonyObservation.cs" Link="Source/ColonyObservation.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Build/BuildingFootprintLayout.cs" Link="Source/BuildingFootprintLayout.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/WorldEditor/WorldEditorGeneratedGlyphData.cs" Link="Source/WorldEditorGeneratedGlyphData.cs" />
     <Compile Include="../../mods/OniMcp/Core/DeferredToolCall.cs" Link="Source/DeferredToolCall.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Core/BoundedGameWindow.cs" Link="Source/BoundedGameWindow.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Core/GameContinuePolicy.cs" Link="Source/GameContinuePolicy.cs" />

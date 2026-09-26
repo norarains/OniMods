@@ -179,7 +179,7 @@ namespace OniMcp.Tools
             {
                 ["action"] = new McpToolParameter { Type = "string", Description = "list、request、cancel_request、remove_occupant、cancel_remove 或 batch", Required = false, EnumValues = new List<string> { "list", "request", "cancel_request", "remove_occupant", "cancel_remove", "batch" } },
                 ["query"] = new McpToolParameter { Type = "string", Description = "action=list 时按建筑名、prefabId、请求对象或当前 occupant 筛选", Required = false },
-                ["includeOptions"] = new McpToolParameter { Type = "boolean", Description = "action=list 时是否返回可请求实体选项，默认 true", Required = false },
+                ["includeOptions"] = new McpToolParameter { Type = "boolean", Description = "action=list 时是否返回可请求实体选项，默认 false（按需展开）", Required = false },
                 ["limit"] = new McpToolParameter { Type = "integer", Description = "action=list 时最多返回数量，默认 100，最大 500", Required = false },
                 ["entityTag"] = new McpToolParameter { Type = "string", Description = "action=request 时请求的实体 prefab/tag", Required = false },
                 ["additionalTag"] = new McpToolParameter { Type = "string", Description = "可选附加过滤 tag，例如突变植物 SubSpeciesID", Required = false },

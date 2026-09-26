@@ -22,6 +22,7 @@ namespace OniMcp.Tools
                 Description = "兼容入口：请优先使用 orders_control domain=priority action=list。列出可设置优先级的对象，可按区域、世界和名称筛选",
                 Parameters = RectParams(new Dictionary<string, McpToolParameter>
                 {
+                    ["id"] = new McpToolParameter { Type = "integer", Description = "Filter by exact object InstanceID.", Required = false },
                     ["query"] = new McpToolParameter { Type = "string", Description = "按名称或 prefabId 关键词筛选", Required = false },
                     ["includeInactive"] = new McpToolParameter { Type = "boolean", Description = "是否包含当前不可设置优先级的对象，默认 false", Required = false },
                     ["limit"] = new McpToolParameter { Type = "integer", Description = "最多返回数量，默认 100，最大 500", Required = false }
@@ -39,8 +40,11 @@ namespace OniMcp.Tools
                     int limit = Math.Max(1, Math.Min(ToolUtil.GetInt(args, "limit") ?? 100, 500));
 
                     var items = new List<Dictionary<string, object>>();
+                    int? id = ToolUtil.GetInt(args, "id");
                     foreach (var prioritizable in Components.Prioritizables.Items)
                     {
+                        if (id.HasValue && prioritizable?.GetComponent<KPrefabID>()?.InstanceID != id.Value)
+                            continue;
                         if (!MatchesPriorityTarget(prioritizable, rect, worldId, query, includeInactive))
                             continue;
 
@@ -72,6 +76,8 @@ namespace OniMcp.Tools
                 Description = "兼容入口：请优先使用 orders_control domain=priority action=set_building。设置建筑或可优先级对象的差事优先级",
                 Parameters = LookupParams(new Dictionary<string, McpToolParameter>
                 {
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Validate and report the proposed priority without changing it.", Required = false },
+                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "Required to apply the priority change.", Required = false },
                     ["priority"] = new McpToolParameter { Type = "integer", Description = "优先级 1-9", Required = true },
                     ["topPriority"] = new McpToolParameter { Type = "boolean", Description = "是否设为红色最高优先级，默认 false", Required = false }
                 }),
@@ -88,8 +94,17 @@ namespace OniMcp.Tools
                     int priority = Math.Max(1, Math.Min(ToolUtil.GetInt(args, "priority") ?? 5, 9));
                     bool top = ToolUtil.GetBool(args, "topPriority", false);
                     var setting = new PrioritySetting(top ? PriorityScreen.PriorityClass.topPriority : PriorityScreen.PriorityClass.basic, top ? 1 : priority);
-                    prioritizable.SetMasterPriority(setting);
-                    return CallToolResult.Text($"Set priority for {go.GetProperName()} to {(top ? "topPriority" : priority.ToString())}");
+                    bool dryRun = ToolUtil.GetBool(args, "dryRun", false);
+                    var before = PriorityTargetToDictionary(prioritizable);
+                    if (!dryRun && !ToolUtil.GetBool(args, "confirm", false))
+                        return CallToolResult.Error("confirm=true is required to change priority; use dryRun=true to preview.");
+                    if (!dryRun) prioritizable.SetMasterPriority(setting);
+                    return CallToolResult.Text(JsonConvert.SerializeObject(new
+                    {
+                        valid = true, dryRun, committed = !dryRun, before,
+                        requested = new { priority = setting.priority_value, priorityClass = setting.priority_class.ToString() },
+                        target = PriorityTargetToDictionary(prioritizable)
+                    }, McpJsonUtil.Settings));
                 }
             };
         }
@@ -112,7 +127,8 @@ namespace OniMcp.Tools
                     ["query"] = new McpToolParameter { Type = "string", Description = "可选名称或 prefabId 关键词筛选", Required = false },
                     ["includeInactive"] = new McpToolParameter { Type = "boolean", Description = "是否包含当前不可设置优先级的对象，默认 false", Required = false },
                     ["limit"] = new McpToolParameter { Type = "integer", Description = "最多修改数量，默认 200，最大 1000", Required = false },
-                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "区域超过 100 格时必须为 true", Required = false }
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Preview matching targets without changing priorities.", Required = false },
+                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "Required for every committed change; previews need no confirmation", Required = false }
                 }),
                 Handler = args =>
                 {
@@ -120,9 +136,9 @@ namespace OniMcp.Tools
                         return CallToolResult.Error("areaId or x1/y1/x2/y2 are required");
 
                     var rect = ToolUtil.GetRect(args);
-                    int cells = RectCellCount(rect);
-                    if (cells > 100 && !ToolUtil.GetBool(args, "confirm", false))
-                        return CallToolResult.Error("confirm=true is required when changing priorities in more than 100 cells");
+                    bool dryRun = ToolUtil.GetBool(args, "dryRun", false);
+                    if (!dryRun && !ToolUtil.GetBool(args, "confirm", false))
+                        return CallToolResult.Error("confirm=true is required to change priorities; use dryRun=true to preview.");
 
                     int worldId = ToolUtil.ResolveWorldId(args);
                     string query = args["query"]?.ToString();
@@ -141,14 +157,17 @@ namespace OniMcp.Tools
                         if (changed.Count >= limit)
                             continue;
 
-                        prioritizable.SetMasterPriority(setting);
+                        if (!dryRun) prioritizable.SetMasterPriority(setting);
                         changed.Add(PriorityTargetToDictionary(prioritizable));
                     }
 
                     return CallToolResult.Text(JsonConvert.SerializeObject(new Dictionary<string, object>
                     {
                         ["matched"] = matched,
-                        ["changed"] = changed.Count,
+                        ["dryRun"] = dryRun,
+                        ["committed"] = !dryRun,
+                        ["wouldChange"] = changed.Count,
+                        ["changed"] = dryRun ? 0 : changed.Count,
                         ["skippedByLimit"] = Math.Max(0, matched - changed.Count),
                         ["worldId"] = worldId,
                         ["rect"] = rect,
@@ -174,6 +193,7 @@ namespace OniMcp.Tools
                 Parameters = RectParams(new Dictionary<string, McpToolParameter>
                 {
                     ["action"] = new McpToolParameter { Type = "string", Description = "list、set_building 或 set_area", Required = true, EnumValues = new List<string> { "list", "set_building", "set_area" } },
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Preview priority changes without mutation.", Required = false },
                     ["id"] = new McpToolParameter { Type = "integer", Description = "action=set_building 时的目标对象 InstanceID", Required = false },
                     ["x"] = new McpToolParameter { Type = "integer", Description = "action=set_building 时的目标格子 X", Required = false },
                     ["y"] = new McpToolParameter { Type = "integer", Description = "action=set_building 时的目标格子 Y", Required = false },
@@ -182,7 +202,7 @@ namespace OniMcp.Tools
                     ["query"] = new McpToolParameter { Type = "string", Description = "action=list/set_building/set_area 时按名称或 prefabId 关键词筛选", Required = false },
                     ["includeInactive"] = new McpToolParameter { Type = "boolean", Description = "action=list/set_area 时是否包含当前不可设置优先级的对象，默认 false", Required = false },
                     ["limit"] = new McpToolParameter { Type = "integer", Description = "action=list/set_area 时最多返回或修改数量", Required = false },
-                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "action=set_area 且区域超过 100 格时必须为 true", Required = false }
+                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "action=set_area 且Required for every committed change; previews need no confirmation", Required = false }
                 }),
                 Handler = args =>
                 {

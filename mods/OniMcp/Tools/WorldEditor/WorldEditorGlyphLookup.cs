@@ -68,7 +68,7 @@ namespace OniMcp.Tools
                 ["nextActions"] = new JArray(new JObject
                 {
                     ["label"] = "reuse_authoritative_mapping",
-                    ["rule"] = "Reuse these mappings in the same runtime turn. Do not guess unknown entries."
+                    ["rule"] = "Reuse these mappings in the current game runtime and overlay; refresh after a game restart or overlay change. Do not guess unknown entries."
                 })
             };
 

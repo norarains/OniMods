@@ -37,6 +37,9 @@ internal static class GameplayRegression
         Check(WorldEditorTools.ResolveBuildFixture("LadderTypo:7") == null, "unknown full name must not fall back to its first glyph");
         Check(WorldEditorTools.ResolveBuildFixture("梯:7") == "Ladder", "single glyph shorthand remains available");
         Check(WorldEditorTools.ResolveBuildFixture("derFast:7") == "LadderFast", "unique legacy substring remains available");
+        Assets.BuildingDefs.Add(new TestBuildingDef { PrefabID = "Tile", Name = "Tile" });
+        Assets.BuildingDefs.Add(new TestBuildingDef { PrefabID = "Tile", Name = "Tile" });
+        Check(WorldEditorTools.ResolveBuildFixture("砖块:6#火") == "Tile", "generated display names resolve even with English runtime names and duplicate registration");
         Assets.BuildingDefs.Clear();
     }
 
@@ -61,6 +64,14 @@ internal static class GameplayRegression
         Check(WorldEditorTools.AppliedFixture("{preview:true,planned:2}") == 0, "preview counts are not mutations");
         Check(WorldEditorTools.AppliedFixture("{dryRun:false,changed:0,matched:1}") == 0, "matched-only target is not a mutation");
         Check(WorldEditorTools.AppliedFixture("{applied:1,changed:1}") == 1, "aliases must not be summed");
+        Check(WorldEditorTools.SatisfiedFixture("{dryRun:false,execution:{skipped:{not_solid:2,not_visible:3,foundation_or_constructed_tile:1}}}", "dig") == 2, "only native non-solid dig skips count as already satisfied");
+        Check(WorldEditorTools.SatisfiedFixture("{dryRun:true,execution:{skipped:{not_solid:2}}}", "dig") == 0, "preview is not completion");
+        Check(WorldEditorTools.SatisfiedFixture("{execution:{skipped:{not_solid:2}}}", "sweep") == 0, "other order skips cannot masquerade as completed digging");
+        Check(WorldEditorTools.SatisfiedFixture("{execution:{unreachableTargets:2,skipped:{not_visible:2}}}", "dig") == 0, "unreachable/hidden targets remain unresolved");
+        var partialBuild = "{dryRun:false,failed:1,results:[{planned:true,valid:true,x:10,y:10,footprint:[{x:10,y:10},{x:11,y:10}]},{valid:false,x:12,y:10}]}";
+        Check(WorldEditorTools.BuildCellsFixture(partialBuild) == 2, "partial build retains only successful footprint cells even when the child returns an error");
+        Check(WorldEditorTools.BuildCellsFixture("{dryRun:true,results:[{planned:true,x:10,y:10}]}") == 0, "build previews never count as applied cells");
+        Check(WorldEditorTools.BuildCellsFixture("{results:[{planned:false,valid:false,x:10,y:10},{planned:true,x:12,y:10}]}") == 1, "failed anchor is excluded from applied cell count");
         var material = JObject.Parse("{valid:false,shortageKg:20}");
         var body = new JObject { ["materialSelection"] = material, ["materials"] = material.DeepClone() };
         var compact = WorldEditorResponsePolicy.Normalize(body, true);
@@ -109,6 +120,8 @@ namespace OniMcp.Tools
     public static partial class WorldEditorTools
     {
         internal static string ResolveBuildFixture(string token) => TryResolveBuildPrefabFromToken(token, token[0], out string id) ? id : null;
+        internal static int SatisfiedFixture(string json, string action) => AlreadySatisfiedOrderCells(CallToolResult.Text(json), action);
+        internal static int BuildCellsFixture(string json) => AppliedBuildMapCells(CallToolResult.Error(json), new[] { System.Tuple.Create(10, 10), System.Tuple.Create(11, 10), System.Tuple.Create(12, 10) });
         internal static int AppliedFixture(string json) => ResultAppliedCount(CallToolResult.Text(json));
         internal static JObject GlyphFixture(List<JObject> rows, string input, string direction, string mode) => LookupGlyphQuery(rows, input, direction, mode, null, 20);
         private static List<JObject> FilterGlyphRowsByView(List<JObject> rows, string view) => rows;

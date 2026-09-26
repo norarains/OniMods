@@ -47,7 +47,7 @@ namespace OniMcp.Tools
                 Handler = args =>
                 {
                     var diagnostics = BuildDiagnostics(args);
-                    return CallToolResult.Text(JsonConvert.SerializeObject(diagnostics["alerts"], McpJsonUtil.Settings));
+                    return CallToolResult.Text(JsonConvert.SerializeObject(diagnostics["observation"], McpJsonUtil.Settings));
                 }
             };
         }
@@ -268,110 +268,18 @@ namespace OniMcp.Tools
 
         private static Dictionary<string, object> BuildDiagnostics(Newtonsoft.Json.Linq.JObject args)
         {
-            int dupes = Components.LiveMinionIdentities.Count;
-            bool visibleOnly = ToolUtil.GetBool(args, "visibleOnly", true);
-            float caloriesKcal = Components.Edibles.Items
-                .Where(e => e != null && e.gameObject != null && ToolUtil.VisibleCellAllowed(Grid.PosToCell(e), visibleOnly))
-                .Sum(e => ToolUtil.SafeFloat(e.Calories) / 1000f);
-            float stressMax = 0f;
-            foreach (var dupe in Components.LiveMinionIdentities.Items)
-            {
-                stressMax = Math.Max(stressMax, DupeAmountUtil.StressValue(dupe));
-            }
-
-            int activeWorldId = ClusterManager.Instance?.activeWorldId ?? 0;
-            float oxygenKg = 0f;
-            float pollutedOxygenKg = 0f;
-            int breathableCells = 0;
-            for (int cell = 0; cell < Grid.CellCount; cell++)
-            {
-                if (!Grid.IsWorldValidCell(cell) || Grid.WorldIdx[cell] != activeWorldId || !Grid.IsVisible(cell))
-                    continue;
-                var element = Grid.Element[cell];
-                if (element == null) continue;
-                if (element.id == SimHashes.Oxygen)
-                {
-                    oxygenKg += ToolUtil.SafeFloat(Grid.Mass[cell]);
-                    breathableCells++;
-                }
-                else if (element.id == SimHashes.ContaminatedOxygen)
-                {
-                    pollutedOxygenKg += ToolUtil.SafeFloat(Grid.Mass[cell]);
-                    breathableCells++;
-                }
-            }
-
-            var buildingCounts = CountBuildings();
-        int oxygenProducers = CountByPrefab(buildingCounts, "OxygenDiffuser") + CountByPrefab(buildingCounts, "MineralDeoxidizer") + CountByPrefab(buildingCounts, "Electrolyzer");
-            int beds = CountByPrefab(buildingCounts, "Bed") + CountByPrefab(buildingCounts, "LuxuryBed");
-            int toilets = CountByPrefab(buildingCounts, "Outhouse") + CountByPrefab(buildingCounts, "FlushToilet");
-            int researchStations = CountByPrefab(buildingCounts, "ResearchCenter") + CountByPrefab(buildingCounts, "AdvancedResearchCenter");
-            int batteries = CountByPrefab(buildingCounts, "Battery") + CountByPrefab(buildingCounts, "BatterySmart");
-
-            var alerts = new List<Dictionary<string, object>>();
-            AddAlert(alerts, caloriesKcal < dupes * 2000f, "critical", "food", $"食物库存偏低：{Math.Round(caloriesKcal, 1)} kcal，复制人 {dupes} 个。");
-            AddAlert(alerts, oxygenProducers == 0, "warning", "oxygen", "未检测到制氧设备。");
-            AddAlert(alerts, breathableCells < dupes * 20, "warning", "oxygen", $"已揭示可呼吸格子偏少：{breathableCells}。");
-            AddAlert(alerts, beds < dupes, "warning", "sleep", $"床位不足：{beds}/{dupes}。");
-            AddAlert(alerts, toilets == 0, "warning", "hygiene", "未检测到厕所。");
-            AddAlert(alerts, researchStations == 0, "info", "research", "未检测到研究站。");
-            AddAlert(alerts, batteries == 0, "info", "power", "未检测到电池。");
-            AddAlert(alerts, stressMax > 40f, "warning", "stress", $"复制人最高压力 {Math.Round(stressMax, 1)}。");
-
+            int worldId = ToolUtil.GetInt(args, "worldId") ?? (ClusterManager.Instance?.activeWorldId ?? 0);
+            var sample = ColonyObservationRuntime.Read(worldId);
+            string query = args["query"]?.ToString();
+            var findings = ColonyObservation.Findings(sample).Where(item => string.IsNullOrWhiteSpace(query)
+                || item.Id.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0
+                || item.Message.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
             return new Dictionary<string, object>
             {
-                ["cycle"] = GameUtil.GetCurrentCycle(),
-                ["duplicants"] = dupes,
-                ["foodKcal"] = Math.Round(caloriesKcal, 1),
-                ["visibleOnly"] = visibleOnly,
-                ["oxygenKgVisible"] = Math.Round(oxygenKg, 1),
-                ["pollutedOxygenKgVisible"] = Math.Round(pollutedOxygenKg, 1),
-                ["breathableCellsVisible"] = breathableCells,
-                ["buildings"] = new Dictionary<string, object>
-                {
-                    ["oxygenProducers"] = oxygenProducers,
-                    ["beds"] = beds,
-                    ["toilets"] = toilets,
-                    ["researchStations"] = researchStations,
-                    ["batteries"] = batteries
-                },
-                ["maxStress"] = Math.Round(stressMax, 1),
-                ["alertCount"] = alerts.Count,
-                ["alerts"] = alerts
+                ["observation"] = ColonyObservation.Serialize(sample, findings),
+                ["filter"] = query,
+                ["next"] = "Findings use the same IDs and severity policy as snapshot and continue. Use a target read for local atmosphere/navigation."
             };
-        }
-
-        private static Dictionary<string, int> CountBuildings()
-        {
-            var counts = new Dictionary<string, int>();
-            var seen = new HashSet<string>();
-            foreach (var building in Components.BuildingCompletes.Items)
-            {
-                if (building == null) continue;
-                var def = building.Def;
-                string prefabId = def?.PrefabID ?? building.name;
-                var pos = building.transform.GetPosition();
-                string key = prefabId + "|" + Math.Round(pos.x) + "|" + Math.Round(pos.y) + "|" + building.GetMyWorldId();
-                if (!seen.Add(key)) continue;
-                counts[prefabId] = counts.ContainsKey(prefabId) ? counts[prefabId] + 1 : 1;
-            }
-            return counts;
-        }
-
-        private static int CountByPrefab(Dictionary<string, int> counts, string prefab)
-        {
-            return counts.Where(kv => kv.Key.IndexOf(prefab, StringComparison.OrdinalIgnoreCase) >= 0).Sum(kv => kv.Value);
-        }
-
-        private static void AddAlert(List<Dictionary<string, object>> alerts, bool condition, string severity, string category, string message)
-        {
-            if (!condition) return;
-            alerts.Add(new Dictionary<string, object>
-            {
-                ["severity"] = severity,
-                ["category"] = category,
-                ["message"] = message
-            });
         }
 
         private static bool TryGetDiagnosticContext(Newtonsoft.Json.Linq.JObject args, out ColonyDiagnosticUtility utility, out int worldId, out string error)

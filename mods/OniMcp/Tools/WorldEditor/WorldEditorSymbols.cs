@@ -217,6 +217,8 @@ namespace OniMcp.Tools
         {
             if (string.IsNullOrWhiteSpace(id))
                 return string.Empty;
+            if (id.EndsWith("UnderConstruction", StringComparison.OrdinalIgnoreCase))
+                return id.Substring(0, id.Length - "UnderConstruction".Length);
             return id.EndsWith("Complete", StringComparison.OrdinalIgnoreCase)
                 ? id.Substring(0, id.Length - "Complete".Length)
                 : id;

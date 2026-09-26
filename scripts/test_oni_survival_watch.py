@@ -40,6 +40,14 @@ class BoundedWatchTests(unittest.TestCase):
             self.assertEqual(watch.run_windows(bridge, 100, 60, 15, 3, emit=lambda _: None), 2)
             self.assertEqual(len(bridge.calls), 1)
 
+    def test_version_two_recommendation(self):
+        bridge = FakeBridge([{"schemaVersion": 2, "recommendedAction": "continue", "isPaused": True, "gameSecondsAdvanced": 60}])
+        self.assertEqual(watch.run_windows(bridge, .1, 60, 15, 3, emit=lambda _: None), 0)
+        for action in ("review", "urgent"):
+            bridge = FakeBridge([{"schemaVersion": 2, "recommendedAction": action, "isPaused": True}])
+            self.assertEqual(watch.run_windows(bridge, 1, 60, 15, 3, emit=lambda _: None), 2)
+            self.assertEqual(len(bridge.calls), 1)
+
     def test_timeout_does_not_replay_an_advance(self):
         bridge = FakeBridge([TimeoutError("lost result")])
         with self.assertRaises(TimeoutError):

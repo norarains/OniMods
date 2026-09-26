@@ -26,6 +26,7 @@ namespace OniMcp.Tools
                 Description = "兼容入口：请优先使用 colony_control domain=bio bioDomain=farming action=list。列出种植箱/农砖等 PlantablePlot 的种植请求、当前植物和可接受种子类型",
                 Parameters = RectParams(new Dictionary<string, McpToolParameter>
                 {
+                    ["id"] = new McpToolParameter { Type = "integer", Description = "Exact planter InstanceID.", Required = false },
                     ["query"] = new McpToolParameter { Type = "string", Description = "按建筑名、prefabId、请求种子或当前植物筛选", Required = false },
                     ["limit"] = new McpToolParameter { Type = "integer", Description = "最多返回数量，默认 100，最大 500", Required = false }
                 }),
@@ -37,9 +38,11 @@ namespace OniMcp.Tools
                     string query = args["query"]?.ToString();
                     int limit = Math.Max(1, Math.Min(ToolUtil.GetInt(args, "limit") ?? 100, 500));
 
+                    int? id = ToolUtil.GetInt(args, "id");
                     var plots = Components.BuildingCompletes.Items
                         .Select(building => building?.GetComponent<PlantablePlot>())
                         .Where(plot => plot != null && ToolUtil.GameObjectMatchesWorld(plot.gameObject, worldId))
+                        .Where(plot => !id.HasValue || plot.GetComponent<KPrefabID>()?.InstanceID == id.Value)
                         .Where(plot => rect == null || CellInRect(Grid.PosToCell(plot.gameObject), rect, worldId))
                         .Where(plot => PlantingMatches(plot, query))
                         .OrderBy(plot => TargetName(plot.gameObject))
@@ -70,6 +73,7 @@ namespace OniMcp.Tools
                 Description = "统一读取/设置种植槽、种子目录、收获标记和区域铲除。action=list_planting/seed_catalog/list_harvestables/set_harvestable/set_planting/batch_set_planting/uproot；兼容 list/set/batch。",
                 Parameters = RectParams(LookupParams(new Dictionary<string, McpToolParameter>
                 {
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Preview planting changes without mutation.", Required = false },
                     ["action"] = new McpToolParameter { Type = "string", Description = "操作：list_planting/list、seed_catalog/list_seeds/seeds、list_harvestables、set_harvestable、set_planting/set/plant、batch_set_planting/batch、uproot", Required = true, EnumValues = new List<string> { "list_planting", "list", "seed_catalog", "list_seeds", "seeds", "list_harvestables", "set_harvestable", "set_planting", "set", "plant", "batch_set_planting", "batch", "uproot" } },
                     ["seedTag"] = new McpToolParameter { Type = "string", Description = "set_planting/batch_set_planting 且 plantingAction=set 时的种子 prefab/tag，例如 BasicPlantSeed", Required = false },
                     ["mutationTag"] = new McpToolParameter { Type = "string", Description = "植物突变/亚种 tag；未使用突变时留空", Required = false },
@@ -195,6 +199,7 @@ namespace OniMcp.Tools
                 Description = "兼容入口：请优先使用 colony_control domain=bio bioDomain=farming action=set_harvestable。按单个对象设置收获状态：mark、when_ready、cancel",
                 Parameters = LookupParams(new Dictionary<string, McpToolParameter>
                 {
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Validate the harvest change without mutation.", Required = false },
                     ["action"] = new McpToolParameter { Type = "string", Description = "mark、when_ready、cancel，默认 mark", Required = false, EnumValues = new List<string> { "mark", "when_ready", "cancel" } },
                     ["readyOnly"] = new McpToolParameter { Type = "boolean", Description = "action=mark 时是否要求当前可收获，默认 true", Required = false }
                 }),
@@ -205,6 +210,13 @@ namespace OniMcp.Tools
                         return CallToolResult.Error("HarvestDesignatable target not found");
 
                     string action = (args["action"]?.ToString() ?? "mark").Trim().ToLowerInvariant();
+                    if (action != "mark" && action != "when_ready" && action != "cancel")
+                        return CallToolResult.Error("action must be mark, when_ready, or cancel");
+                    if (action == "mark" && !HarvestMarkPolicy.ShouldMarkNow(harvestable.CanBeHarvested(), ToolUtil.GetBool(args, "readyOnly", true)))
+                        return CallToolResult.Error("Target is not ready to harvest; use action=when_ready for future harvest");
+                    if (ToolUtil.GetBool(args, "dryRun", false))
+                        return CallToolResult.Text(JsonConvert.SerializeObject(new { valid = true, dryRun = true, committed = false,
+                            action, before = HarvestableInfo(harvestable) }, McpJsonUtil.Settings));
                     if (action == "cancel")
                     {
                         harvestable.gameObject.Trigger(CancelEvent);
@@ -216,10 +228,6 @@ namespace OniMcp.Tools
                     }
                     else
                     {
-                        bool readyOnly = ToolUtil.GetBool(args, "readyOnly", true);
-                        bool canHarvest = harvestable.CanBeHarvested();
-                        if (!HarvestMarkPolicy.ShouldMarkNow(canHarvest, readyOnly))
-                            return CallToolResult.Error("Target is not ready to harvest; use action=when_ready for future harvest");
                         harvestable.MarkForHarvest();
                     }
 

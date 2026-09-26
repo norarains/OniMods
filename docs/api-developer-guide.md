@@ -178,25 +178,46 @@ during the window except `speed/time` and `speed/pause`; explicit pause interrup
 the window. Server shutdown, scene changes and monitor failures end the operation.
 A suspended/frozen game process can only execute its pause when Unity runs again.
 
-The compact response includes `isPaused`, elapsed real/simulation time, `safety`,
-`work`, `reasons` and `decision`:
+Schema version 2 returns `isPaused`, elapsed real/simulation time,
+`recommendedAction`, `endedBy`, `triggers`, `observation` and `changes`.
 
-- `continue`: repeat the same operation directly. No additional pause, sleep,
-  snapshot or map call is needed.
-- `replan`: keep paused and inspect the implicated work/alert, refill the queue,
-  or review the objective. The review horizon is 300 simulation seconds.
-- `urgent`: keep paused and investigate the reported health/safety condition.
-  Resetting the monitor never waives a currently critical vital or threatening alert.
+- `recommendedAction=continue`: repeat directly; no extra snapshot or map read.
+- `review`: keep paused, inspect the referenced finding or work transition, and
+  update the plan. The periodic review horizon is 300 simulation seconds.
+- `urgent`: keep paused and address the reported safety condition.
 
-Safety includes all live dupe health/breath/calories/stress/body temperature,
-red alert and threatening HUD notifications, plus monitored-world food and new
-bad HUD alerts. Resetting treats existing non-threatening HUD warnings as reviewed.
-Working/idle counts distinguish work-time availability from scheduled rest and
-personal needs. Progress uses tracked build/dig orders, workable timers and research;
-`activityChanges` counts movement/chore transitions, while `ordersRemoved` includes
-completed or cancelled orders. Neither alone proves a requested build completed.
-Perform targeted verification at milestones and preflight hazardous work: this
-monitor does not certify every route, material dependency or utility network.
+`endedBy` is the termination mechanism: `window_complete` means the deadline,
+`attention_required` means a monitoring trigger, `preflight` means no time was
+advanced, and interruption codes identify an explicit pause/context loss/failure.
+The response completes the call. Recommendations do not create a blocking protocol
+state. `triggers` explain why review was recommended, with finding IDs when applicable.
+
+`observation.findings` is the canonical current-condition list, shared by paused
+snapshots and diagnostics. Stable IDs include scope/target; records carry severity,
+actionability and a short explanation. Coverage states freshness and unchecked
+navigation, local atmosphere and fetchability. Snapshot legacy alert counts and
+watch thresholds are projections/queries, not independent finding rules. Diagnostic
+`alerts` is a compatibility route to this observation. Raw HUD notification controls,
+targeted navigation assessments and historical reports retain their distinct purposes.
+Survival plans return `planningConstraints` for their requested horizon, separately
+from the shared observation.
+
+`changes` identifies added/resolved/changed findings and work/food changes during
+the window. `resetMonitor=true` refreshes work tracking and acknowledges only findings
+already reported by that session. Acknowledged nonurgent conditions remain visible;
+new conditions, changed severity/actionability and urgent conditions still interrupt.
+Printing Pod choices and skill points are opportunities. A missing advanced researcher
+remains a pending finding even before a skill point is available. Research moving to
+a queued technology and construction ending while recurring work continues do not
+force replanning. Skill eligibility and morale still require a targeted check.
+
+Vitals cover all live duplicants; food, infrastructure and work cover the requested
+world. Food below 2 nominal cycles per dupe is a warning, below 1 is critical.
+`activityChanges` counts movement/chore transitions and `ordersRemoved` includes
+completed or cancelled orders; neither proves successful construction. Verify at
+milestones and preflight hazardous work. The loop does not certify every route,
+material dependency or utility network. Version 1 clients used `decision`, `reasons`
+and `stopReason`; discover the version and migrate rather than polling both schemas.
 
 There is at most one active window. A lost response must not be replayed; wait for
 the bounded deadline, reconnect and establish pause/state once. The normal 20-second

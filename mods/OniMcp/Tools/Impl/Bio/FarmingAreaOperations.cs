@@ -24,6 +24,7 @@ namespace OniMcp.Tools
                 Description = "兼容入口：请优先使用 colony_control domain=bio bioDomain=farming action=batch。按区域批量设置或取消种植请求；适合一次给多块农砖/种植箱安排同一种种子",
                 Parameters = RectParams(new Dictionary<string, McpToolParameter>
                 {
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Validate selected plots without mutation.", Required = false },
                     ["seedTag"] = new McpToolParameter { Type = "string", Description = "种子 prefab/tag，例如 BasicPlantSeed；action=set 时必填", Required = false },
                     ["mutationTag"] = new McpToolParameter { Type = "string", Description = "植物突变/亚种 tag；未使用突变时留空", Required = false },
                     ["action"] = new McpToolParameter { Type = "string", Description = "set 或 cancel，默认 set", Required = false, EnumValues = new List<string> { "set", "cancel" } },
@@ -31,18 +32,19 @@ namespace OniMcp.Tools
                     ["removeOccupant"] = new McpToolParameter { Type = "boolean", Description = "若已有植物，是否先调用 OrderRemoveOccupant 铲除，默认 false", Required = false },
                     ["query"] = new McpToolParameter { Type = "string", Description = "按种植槽名称、prefabId、当前植物或请求种子筛选", Required = false },
                     ["limit"] = new McpToolParameter { Type = "integer", Description = "最多处理数量，默认 100，最大 500", Required = false },
-                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "必须为 true；区域超过 100 格或 removeOccupant=true 时也必须为 true", Required = true }
+                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "Required for committed changes; dryRun needs no confirmation", Required = false }
                 }),
                 Handler = args =>
                 {
                     if (!HasRectInput(args))
                         return CallToolResult.Error("areaId or x1/y1/x2/y2 are required");
-                    if (!ToolUtil.GetBool(args, "confirm", false))
+                    bool dryRun = ToolUtil.GetBool(args, "dryRun", false);
+                    if (!dryRun && !ToolUtil.GetBool(args, "confirm", false))
                         return CallToolResult.Error("confirm=true is required to batch change planting requests");
 
                     var rect = ToolUtil.GetRect(args);
                     int cells = RectCellCount(rect);
-                    if (cells > 100 && !ToolUtil.GetBool(args, "confirm", false))
+                    if (!dryRun && cells > 100 && !ToolUtil.GetBool(args, "confirm", false))
                         return CallToolResult.Error("confirm=true is required when changing planting requests in more than 100 cells");
 
                     string action = (args["action"]?.ToString() ?? "set").Trim().ToLowerInvariant();
@@ -97,6 +99,7 @@ namespace OniMcp.Tools
                             }
 
                             var before = PlotInfo(plot);
+                            if (dryRun) { changedCount++; AddBatchDetail(changed, PlotInfo(plot)); continue; }
                             plot.CancelActiveRequest();
                             bool cleared = !plot.requestedEntityTag.IsValid && plot.GetActiveRequest == null;
                             if (cleared)
@@ -146,8 +149,9 @@ namespace OniMcp.Tools
                                 AddBatchDetail(unchanged, BatchPlotOutcome("occupant_present_remove_disabled", plot));
                                 continue;
                             }
-                            plot.OrderRemoveOccupant();
+                            if (!dryRun) plot.OrderRemoveOccupant();
                         }
+                        if (dryRun) { changedCount++; AddBatchDetail(changed, PlotInfo(plot)); continue; }
                         plot.CancelActiveRequest();
                         plot.CreateOrder(seedTag, mutationTag);
                         bool requestedPlantingMatches = RequestedPlantingMatches(plot, seedTag, mutationTag);
@@ -176,7 +180,10 @@ namespace OniMcp.Tools
                     {
                         ["action"] = action,
                         ["seedTag"] = seedTag.IsValid ? seedTag.Name : null,
-                        ["changed"] = changedCount,
+                        ["dryRun"] = dryRun,
+                        ["committed"] = !dryRun,
+                        ["wouldChange"] = changedCount,
+                        ["changed"] = dryRun ? 0 : changedCount,
                         ["failed"] = failedCount,
                         ["unchanged"] = unchangedCount,
                         ["worldId"] = worldId,
@@ -204,10 +211,11 @@ namespace OniMcp.Tools
                 Description = "兼容入口：请优先使用 colony_control domain=bio bioDomain=farming action=uproot。按区域标记或取消铲除植物",
                 Parameters = RectParams(new Dictionary<string, McpToolParameter>
                 {
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Preview uproot markers and priority changes without mutation.", Required = false },
                     ["action"] = new McpToolParameter { Type = "string", Description = "mark 或 cancel，默认 mark", Required = false, EnumValues = new List<string> { "mark", "cancel" } },
                     ["priority"] = new McpToolParameter { Type = "integer", Description = "铲除差事优先级 1-9，默认 5", Required = false },
                     ["topPriority"] = new McpToolParameter { Type = "boolean", Description = "是否设为红色最高优先级，默认 false", Required = false },
-                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "区域超过 100 格时必须为 true；mark 操作建议传 true", Required = false }
+                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "Required for committed changes; dryRun needs no confirmation", Required = false }
                 }),
                 Handler = args =>
                 {
@@ -215,12 +223,14 @@ namespace OniMcp.Tools
                         return CallToolResult.Error("areaId or x1/y1/x2/y2 are required");
 
                     var rect = ToolUtil.GetRect(args);
-                    int cells = RectCellCount(rect);
-                    if (cells > 100 && !ToolUtil.GetBool(args, "confirm", false))
-                        return CallToolResult.Error("confirm=true is required when changing uproot orders in more than 100 cells");
+                    bool dryRun = ToolUtil.GetBool(args, "dryRun", false);
+                    if (!dryRun && !ToolUtil.GetBool(args, "confirm", false))
+                        return CallToolResult.Error("confirm=true is required to change uproot orders");
 
                     int worldId = ToolUtil.ResolveWorldId(args);
-                    bool mark = (args["action"]?.ToString() ?? "mark").Trim().ToLowerInvariant() != "cancel";
+                    string action = (args["action"]?.ToString() ?? "mark").Trim().ToLowerInvariant();
+                    if (action != "mark" && action != "cancel") return CallToolResult.Error("action must be mark or cancel");
+                    bool mark = action == "mark";
                     int changed = 0;
                     var results = new List<Dictionary<string, object>>();
                     foreach (var uprootable in Components.Uprootables.Items)
@@ -236,17 +246,23 @@ namespace OniMcp.Tools
                         {
                             if (!uprootable.CanUproot())
                                 continue;
-                            uprootable.MarkForUproot();
-                            ApplyPriority(go, args);
-                            results.Add(TargetInfo(go, "marked"));
+                            if (!dryRun)
+                            {
+                                uprootable.MarkForUproot();
+                                ApplyPriority(go, args);
+                            }
+                            results.Add(TargetInfo(go, dryRun ? "would_mark" : "marked"));
                         }
                         else
                         {
                             if (!uprootable.IsMarkedForUproot)
                                 continue;
-                            uprootable.ForceCancelUproot();
-                            go.Trigger(CancelEvent);
-                            results.Add(TargetInfo(go, "cancelled"));
+                            if (!dryRun)
+                            {
+                                uprootable.ForceCancelUproot();
+                                go.Trigger(CancelEvent);
+                            }
+                            results.Add(TargetInfo(go, dryRun ? "would_cancel" : "cancelled"));
                         }
                         changed++;
                     }
@@ -254,7 +270,10 @@ namespace OniMcp.Tools
                     return CallToolResult.Text(JsonConvert.SerializeObject(new Dictionary<string, object>
                     {
                         ["action"] = mark ? "mark" : "cancel",
-                        ["changed"] = changed,
+                        ["dryRun"] = dryRun,
+                        ["committed"] = !dryRun,
+                        ["wouldChange"] = changed,
+                        ["changed"] = dryRun ? 0 : changed,
                         ["worldId"] = worldId,
                         ["rect"] = rect,
                         ["targets"] = results.Take(200).ToList(),

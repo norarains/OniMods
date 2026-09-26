@@ -15,6 +15,7 @@ internal static class ContinueRegression
     internal static void Run()
     {
         TestDecisions();
+        ObservationRegression.Run();
         TestWindows();
         TestDeferredCalls();
         Console.WriteLine("Bounded continue regression checks passed: " + checks);
@@ -22,8 +23,8 @@ internal static class ContinueRegression
 
     private static ContinueSample Sample(double time = 0, bool working = true)
     {
-        var s = new ContinueSample { WorldId = 1, GameSeconds = time, FoodKcal = 5000, PendingBuilds = 0, PendingDigs = 0 };
-        s.Dupes.Add(new ContinueDupe { Id = 1, WorldId = 1, Cell = 50, Valid = true, Working = working,
+        var s = new ContinueSample { WorldId = 1, GameSeconds = time, FoodKcal = 5000, PendingBuilds = 0, PendingDigs = 0, PrintingReady = false, InfrastructureKnown = false, AdvancedResearchBlocked = false, CanLearnAdvancedResearch = false, Beds = 1, Toilets = 1, OxygenProducers = 1, ResearchQueueCount = 0, AdvancedResearchBuildingId = null };
+        s.Dupes.Add(new ContinueDupe { Id = 1, WorldId = 1, Cell = 50, SkillPoints = 0, AdvancedResearchSkill = false, Valid = true, Working = working,
             Chore = "Build", Breath = 100, Health = 100, Calories = 2000000, Stress = 0, BodyTemperature = 310 });
         return s;
     }
@@ -75,7 +76,7 @@ internal static class ContinueRegression
         next = Sample(121); next.PendingIds.Add(10); next.Dupes[0].Cell++;
         Check(Has(p.Observe(next), "orders_not_progressing"), "movement cannot hide an unproductive queue forever");
         s = Sample(); s.PendingIds.Add(10); p.Reset(s);
-        next = Sample(1);
+        next = Sample(1, false);
         d = p.Observe(next);
         Check(d.Completed == 1 && Has(d, "orders_finished"), "exhausted tracked queue triggers planning");
         p.Reset(Sample()); next = Sample(40); next.WorkProgress = 5;
@@ -84,7 +85,7 @@ internal static class ContinueRegression
         next = Sample(30); next.ResearchId = "Basic"; next.ResearchProgress = 30;
         Check(p.Observe(next).WorkProgress, "research can keep a stable loop running");
         next = Sample(31);
-        Check(Has(p.Observe(next), "research_changed"), "completed/changed research needs a decision");
+        Check(Has(p.Observe(next), "research_queue_empty"), "completed/changed research needs a decision");
         p.Reset(Sample(0, false));
         Check(Has(p.Observe(Sample(300, false)), "review_due"), "bounded planning horizon prevents endless stale plans");
         p.Reset(Sample(300, false));

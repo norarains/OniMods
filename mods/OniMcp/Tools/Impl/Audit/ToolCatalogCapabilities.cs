@@ -25,9 +25,10 @@ namespace OniMcp.Tools
                 {
                     ["call"] = "game_control domain=speed action=continue seconds=15",
                     ["maxRealSeconds"] = 20, ["returnsPaused"] = true,
-                    ["decisions"] = new JArray("continue", "replan", "urgent"),
+                    ["schemaVersion"] = 2,
+                    ["recommendedActions"] = new JArray("continue", "review", "urgent"),
                     ["directOnly"] = true,
-                    ["policy"] = "Plan useful work once; repeat continue without extra reads while decision=continue. Replan only for returned reasons; resetMonitor=true after review."
+                    ["policy"] = "Plan useful work once; repeat continue without extra reads while recommendedAction=continue. Review triggers and observation.findings; resetMonitor=true acknowledges only already reported nonurgent findings."
                 },
                 ["stateRead"] = "world_editor command=read path=/active/index.md includeState=true",
                 ["symbolsRead"] = "world_editor command=symbols queries=[...]",

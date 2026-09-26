@@ -129,7 +129,7 @@ namespace OniMcp.Tools
 
         private static int PowerInputCell(BuildingDef def, int anchorX, int anchorY, Orientation orientation)
         {
-            int anchorCell = Grid.XYToCell(anchorX, anchorY);
+            int anchorCell = def == null ? Grid.InvalidCell : PlacementOriginCell(def, anchorX, anchorY, orientation);
             if (!Grid.IsValidCell(anchorCell) || def == null)
                 return Grid.InvalidCell;
             CellOffset rotated = Rotatable.GetRotatedCellOffset(def.PowerInputOffset, orientation);

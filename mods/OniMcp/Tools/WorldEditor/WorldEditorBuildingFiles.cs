@@ -129,6 +129,17 @@ namespace OniMcp.Tools
             sb.AppendLine(JsonConvert.SerializeObject(new JObject { ["config"] = config, ["state"] = state }, Formatting.Indented));
             sb.AppendLine("```");
             sb.AppendLine();
+            var plot = go.GetComponent<PlantablePlot>();
+            var priority = go.GetComponent<Prioritizable>();
+            if (plot != null)
+            {
+                sb.AppendLine("## Planting");
+                sb.AppendLine("- Requested seed: " + (plot.requestedEntityTag.IsValid ? plot.requestedEntityTag.Name : "none") + "; request active: " + (plot.GetActiveRequest != null));
+                sb.AppendLine("- Set seed through /active/ops/farming.md: `call action=set id=" + config["id"] + " seedTag=<seed> dryRun=true`; commit with confirm=true.");
+                sb.AppendLine("- Inventory counts do not prove fetchability. Use resources/search_items for the selected seed when delivery stalls.");
+            }
+            if (priority != null)
+                sb.AppendLine("- Priority: " + priority.GetMasterPriority().priority_value + ". Edit through /active/ops/orders.md: `call domain=priority action=set_building id=" + config["id"] + " priority=7 dryRun=true`; commit with confirm=true.");
             sb.AppendLine("## Related Files");
             sb.AppendLine("- Production and other building actions: /active/ops/build.md");
             sb.AppendLine("- Storage and filters: /active/ops/storage.md");
@@ -363,7 +374,7 @@ namespace OniMcp.Tools
                 .OrderBy(item => item.Go.GetComponent<KPrefabID>()?.InstanceID ?? item.Go.GetInstanceID()).ToList();
             if (buildings.Count == 0) return;
             sb.AppendLine("## Building Parameter Files");
-            foreach (var item in buildings)
+            foreach (var item in buildings.Where(item => BuildingIndexFilter.Category(item.Go.GetComponent<Building>()?.Def?.PrefabID ?? "") != "poi").Take(12))
             {
                 JObject info = BuildingConfigSnapshot(item.Go); string file = GetBuildingDetailFileName(item.Go);
                 sb.AppendLine("- " + info["name"] + " @(" + info["x"] + "," + info["y"] + ") -> [/active/"
