@@ -320,7 +320,7 @@ namespace OniMcp.Tools
 
         private static IEnumerable<string> DefaultZoomViews()
         {
-            return new[] { "default", "power", "oxygen", "temperature" };
+            return new[] { "default" };
         }
 
         private static IEnumerable<ZoomView> ResolveZoomViews(IEnumerable<string> views)

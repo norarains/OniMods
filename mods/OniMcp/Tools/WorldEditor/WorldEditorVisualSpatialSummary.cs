@@ -29,7 +29,6 @@ namespace OniMcp.Tools
             var cavities = FindSpatialRegions(xMin, xMax, yMin, yMax, IsOpenGasCell);
             var platforms = FindHorizontalRuns(xMin, xMax, yMin, yMax, IsFoundationCell);
 
-            sb.AppendLine("- Terrain silhouette: solids form walls/ceilings; open gas regions are traversable cavities; liquid regions include their visible surface and depth.");
             AppendRegionLines(sb, "Liquid", liquid, 6, DescribeLiquidRegion);
             AppendRegionLines(sb, "Open cavity", cavities.OrderByDescending(item => item.Count).ToList(), 6, DescribeCavityRegion);
             AppendRunLines(sb, "Floor/platform", platforms, 8);
@@ -205,7 +204,10 @@ namespace OniMcp.Tools
                 int bx2 = item.Value.Max(pos => pos.x);
                 int by1 = item.Value.Min(pos => pos.y);
                 int by2 = item.Value.Max(pos => pos.y);
-                sb.AppendLine("- Building footprint: " + StripLinkTags(item.Key.GetProperName()) + " "
+                var prefab = item.Key.GetComponent<KPrefabID>();
+                sb.AppendLine("- Building footprint: " + StripLinkTags(item.Key.GetProperName())
+                    + " [" + (prefab?.PrefabTag.Name ?? item.Key.name) + ", id="
+                    + (prefab?.InstanceID ?? item.Key.GetInstanceID()) + "] "
                     + bx1 + "," + by1 + ".." + bx2 + "," + by2 + " (" + item.Value.Count + " occupied cells).");
             }
         }

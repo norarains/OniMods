@@ -79,6 +79,20 @@ namespace OniMcp.Tools
                     else output.Remove("previews");
                 }
             }
+            // Keep anchor-specific evidence; publish equal material reports once per list.
+            foreach (string listName in new[] { "results", "previews", "errors" })
+            {
+                if (!(output[listName] is JArray rows) || rows.Count < 2 || rows.Any(row => !(row is JObject)))
+                    continue;
+                var common = rows[0]["materialSelection"];
+                if (common == null || !rows.All(row => JToken.DeepEquals(common, row["materialSelection"])))
+                    continue;
+                var shared = output["shared"] as JObject ?? new JObject();
+                shared[listName] = new JObject { ["materialSelection"] = common.DeepClone() };
+                output["shared"] = shared;
+                foreach (JObject row in rows)
+                    row.Remove("materialSelection");
+            }
         }
 
         internal static JToken Normalize(JToken token, bool compact, int depth = 0)

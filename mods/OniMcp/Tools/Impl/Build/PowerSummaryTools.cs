@@ -93,7 +93,8 @@ namespace OniMcp.Tools
 
                         var circuit = GetCircuit(circuits, generator.CircuitID);
                         circuit.GeneratorCount++;
-                        circuit.GeneratorOperational++;
+                        if (operational)
+                            circuit.GeneratorOperational++;
                         circuit.GeneratorWatts += rating;
 
                         if (includeDetails && generators.Count < limit)
@@ -128,7 +129,8 @@ namespace OniMcp.Tools
 
                         var circuit = GetCircuit(circuits, consumer.CircuitID);
                         circuit.ConsumerCount++;
-                        circuit.ConsumerOperational++;
+                        if (operational)
+                            circuit.ConsumerOperational++;
                         circuit.ConsumerBaseWatts += baseWatts;
                         circuit.ConsumerNeededWatts += neededWatts;
                         circuit.ConsumerUsedWatts += usedWatts;
@@ -160,7 +162,10 @@ namespace OniMcp.Tools
                             ["consumerNeededWatts"] = Round(consumerNeededWatts, 1),
                             ["consumerUsedWatts"] = Round(consumerUsedWatts, 1),
                             ["netRatedWatts"] = Round(generatorWatts - consumerBaseWatts, 1),
-                            ["netActiveWatts"] = Round(generatorWatts - consumerNeededWatts, 1),
+                            ["netCapacityWatts"] = Round(generatorWatts - consumerNeededWatts, 1),
+                            ["generationMeasured"] = false,
+                            ["activeGenerationWatts"] = null,
+                            ["netActiveWatts"] = null,
                             ["batteryWattsUsed"] = Round(batteryWattsUsed, 1)
                         },
                         ["circuits"] = circuits.Values
@@ -174,7 +179,7 @@ namespace OniMcp.Tools
                         ["items"] = diagnostics,
                         ["next"] = diagnostics.Count == 0
                             ? "No unconnected consumers detected in this summary."
-                            : "Use building_power_ports on the returned coordinates or a small rect around the device to verify exact port cells and missing wires."
+                            : "Read the reported /active/map/cell_X_Y.md through world_editor for exact port/wire state. Newly built networks may need a simulation tick before CircuitID refreshes; verify before replacing wires."
                     };
 
                     if (includeDetails)

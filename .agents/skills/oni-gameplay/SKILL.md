@@ -95,26 +95,11 @@ Escalate only the flagged domain:
 
 Do not call the same read with identical arguments twice in a row. State what is missing and switch to a narrower read or discovery call.
 
-## Mandatory glyph lookup
+## Authoritative glyphs
 
-Before interpreting a map glyph, generating a glyph from a building/element/entity name, or reading connection/overlay glyphs, announce in `commentary` that this skill requires an authoritative glyph lookup. Then call:
+Use the current map's runtime-generated, versioned legend when it resolves a token. Cache these mappings and explicit symbol lookups across turns for the same server runtime and overlay. Invalidate on restart/reconnect, schema change, or overlay change. Do not guess from glyph shape, old legends, or memory.
 
-```text
-world_editor command=symbols queries=["<all unknown glyphs or names>"] direction=auto
-```
-
-- Batch every unknown glyph/name from the current map in one call; do not issue one lookup per cell.
-- Do not guess from Chinese characters, an old legend, or memory. Unknown results with `count=0` remain unknown.
-- Use `view=<overlay>` to disambiguate context-sensitive overlay meanings.
-- Reuse results already queried in the same runtime and same turn.
-
-Examples:
-
-```text
-world_editor command=symbols queries=["砖","?","┼"] direction=code_to_meaning matchMode=auto view=logic
-world_editor command=symbols queries=["砖块","氧气","研究站"] direction=meaning_to_code matchMode=auto
-world_editor command=symbols queries=["零","■","晒","美","微","低","枯"] direction=auto perQueryLimit=20
-```
+Batch only unknown or ambiguous names/glyphs in one `world_editor command=symbols queries=[...] direction=auto view=<overlay>` call. For an explicit direction, use `direction=code_to_meaning` (glyph to meaning) or `direction=meaning_to_code` (name to glyph). `count=0` remains unknown; inspect the exact cell and use its prefab/InstanceID. No separate lookup or repeated commentary is needed for already resolved tokens.
 
 ## Spatial and camera discipline
 
@@ -130,8 +115,8 @@ world_editor command=symbols queries=["零","■","晒","美","微","低","枯"]
 
 For construction:
 
-1. Resolve the prefab with `building_control domain=planning action=search_defs`.
-2. Resolve valid materials with `building_control domain=planning action=materials`.
+1. If not already resolved by the current map/discovery, resolve the prefab with `building_control domain=planning action=search_defs`.
+2. Reuse current preview material evidence, or resolve valid materials with `building_control domain=planning action=materials`.
 3. Check support, obstruction, and placement constraints with `placement_candidates` or a map-edit dry-run.
 4. Use semantic `areaId`/plan placement, or exact map tokens through `world_editor`.
 5. Re-read the target area.

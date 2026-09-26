@@ -111,7 +111,6 @@ namespace OniMcp.Tools
                         ["singleTool"] = true,
                         ["deltaAvailable"] = true,
                         ["watchOnly"] = watchOnly,
-                        ["replaces"] = new[] { "game_control domain=speed action=time", "colony_control domain=read action=status", "colony_control domain=diagnostic action=diagnostics", "colony_control domain=diagnostic action=alerts", "read_control domain=resources action=food", "colony_control domain=read action=dupes", "colony_control domain=management kind=research action=status" },
                         ["fullGridScan"] = needAtmosphere
                     };
                     if (needAtmosphere)

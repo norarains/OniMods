@@ -34,6 +34,7 @@ internal static class Program
         };
         ErgonomicsRegression.Run();
         GameplayRegression.Run();
+        AuditRegression.Run();
         TestBatchFailures();
         TestProgramValidation();
         TestProgramExecution();

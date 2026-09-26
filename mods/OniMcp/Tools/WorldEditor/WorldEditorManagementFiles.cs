@@ -110,8 +110,26 @@ namespace OniMcp.Tools
                 string verb = NormalizeManagementVerb(FirstWord(line));
                 if (!ManagementCommandSupported(relative, verb))
                     return CallToolResult.Error("Unsupported management command: " + line);
+                if (relative == "management/research.md" && verb == "research")
+                {
+                    var previewArgs = ParseCommandKeyValues(line);
+                    previewArgs["dryRun"] = true;
+                    var preview = ResearchTools.SetResearch().Handler(previewArgs);
+                    if (preview.IsError)
+                        return preview;
+                    return JsonResult(new JObject
+                    {
+                        ["ok"] = true, ["phase"] = "preflight", ["validationLevel"] = "semantic",
+                        ["commands"] = new JArray(lines), ["result"] = WorldEditorResponsePolicy.Body(preview)
+                    });
+                }
             }
-            return JsonResult(new JObject { ["ok"] = true, ["phase"] = "preflight", ["commands"] = new JArray(lines) });
+            return JsonResult(new JObject
+            {
+                ["ok"] = true, ["phase"] = "preflight", ["validationLevel"] = "syntax_only",
+                ["commands"] = new JArray(lines),
+                ["next"] = "Command syntax accepted. Verify target IDs and prerequisites with a read before execution."
+            });
         }
 
         private static IEnumerable<string> ExtractManagementCommandLines(string text)

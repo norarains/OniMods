@@ -4,7 +4,8 @@
 
 ## Rule
 
-Always prefix shell commands with `rtk`.
+Check `command -v rtk` once per session. When available, prefix supported shell commands with `rtk`.
+When unavailable, use ordinary commands with focused output; do not repeatedly probe or stop work to install it.
 
 Examples:
 

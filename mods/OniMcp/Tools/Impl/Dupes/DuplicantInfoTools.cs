@@ -27,11 +27,11 @@ namespace OniMcp.Tools
                     ["id"] = new McpToolParameter { Type = "integer", Description = "复制人 InstanceID；detail 必填 id 或 name，其他 action 留空返回全部", Required = false },
                     ["name"] = new McpToolParameter { Type = "string", Description = "复制人名称；detail 必填 id 或 name，其他 action 留空返回全部", Required = false },
                     ["worldId"] = new McpToolParameter { Type = "integer", Description = "status_check：世界 ID；默认全部世界", Required = false },
-                    ["radius"] = new McpToolParameter { Type = "integer", Description = "status_check：周边可达性扫描半径，默认 8，最大 20", Required = false },
+                    ["radius"] = new McpToolParameter { Type = "integer", Description = "status_check：周边可达性扫描半径，默认 4，最大 20", Required = false },
                     ["targetX"] = new McpToolParameter { Type = "integer", Description = "status_check：可选目标格 X", Required = false },
                     ["targetY"] = new McpToolParameter { Type = "integer", Description = "status_check：可选目标格 Y", Required = false },
                     ["targetWorldId"] = new McpToolParameter { Type = "integer", Description = "status_check：目标格世界 ID", Required = false },
-                    ["includeReachableSamples"] = new McpToolParameter { Type = "boolean", Description = "status_check：是否返回少量可达格样本，默认 true", Required = false },
+                    ["includeReachableSamples"] = new McpToolParameter { Type = "boolean", Description = "status_check：是否返回少量可达格样本，默认 false", Required = false },
                     ["includeDetails"] = new McpToolParameter { Type = "boolean", Description = "status_check：是否附加属性、技能、日程和完整 needs 摘要，默认 false", Required = false },
                     ["detailMode"] = new McpToolParameter { Type = "string", Description = "status_check：compact 或 full，默认 compact", Required = false, EnumValues = new List<string> { "compact", "full" } },
                     ["limit"] = new McpToolParameter { Type = "integer", Description = "status_check：最多返回复制人数，默认 50，最大 100", Required = false }
@@ -143,11 +143,11 @@ namespace OniMcp.Tools
                     ["id"] = new McpToolParameter { Type = "integer", Description = "复制人 InstanceID；留空检查全部", Required = false },
                     ["name"] = new McpToolParameter { Type = "string", Description = "复制人名称；留空检查全部", Required = false },
                     ["worldId"] = new McpToolParameter { Type = "integer", Description = "世界 ID；默认全部世界，指定后只检查该世界复制人", Required = false },
-                    ["radius"] = new McpToolParameter { Type = "integer", Description = "周边可达性扫描半径，默认 8，最大 20", Required = false },
+                    ["radius"] = new McpToolParameter { Type = "integer", Description = "周边可达性扫描半径，默认 4，最大 20", Required = false },
                     ["targetX"] = new McpToolParameter { Type = "integer", Description = "可选目标格 X；提供 targetX/targetY 后检查每个复制人是否能到达", Required = false },
                     ["targetY"] = new McpToolParameter { Type = "integer", Description = "可选目标格 Y；提供 targetX/targetY 后检查每个复制人是否能到达", Required = false },
                     ["targetWorldId"] = new McpToolParameter { Type = "integer", Description = "目标格世界 ID，默认 worldId 或当前激活世界", Required = false },
-                    ["includeReachableSamples"] = new McpToolParameter { Type = "boolean", Description = "是否返回少量可达格样本，默认 true", Required = false },
+                    ["includeReachableSamples"] = new McpToolParameter { Type = "boolean", Description = "是否返回少量可达格样本，默认 false", Required = false },
                     ["includeDetails"] = new McpToolParameter { Type = "boolean", Description = "是否附加属性、技能、日程和完整 needs 摘要，默认 false，排查空闲/优先级/技能问题时打开", Required = false },
                     ["detailMode"] = new McpToolParameter { Type = "string", Description = "详情模式：compact=过滤零值/缺失本地化字符串，full=完整旧式明细；默认 compact", Required = false, EnumValues = new List<string> { "compact", "full" } },
                     ["limit"] = new McpToolParameter { Type = "integer", Description = "最多返回复制人数，默认 50，最大 100", Required = false }
@@ -157,10 +157,10 @@ namespace OniMcp.Tools
                     if (Game.Instance == null)
                         return CallToolResult.Error("Game not initialized");
 
-                    int radius = Math.Max(1, Math.Min(ToolUtil.GetInt(args, "radius") ?? 8, 20));
+                    int radius = Math.Max(1, Math.Min(ToolUtil.GetInt(args, "radius") ?? 4, 20));
                     int limit = Math.Max(1, Math.Min(ToolUtil.GetInt(args, "limit") ?? 50, 100));
                     int worldId = ToolUtil.GetInt(args, "worldId") ?? -1;
-                    bool includeReachableSamples = ToolUtil.GetBool(args, "includeReachableSamples", true);
+                    bool includeReachableSamples = ToolUtil.GetBool(args, "includeReachableSamples", false);
                     bool includeDetails = ToolUtil.GetBool(args, "includeDetails", false);
                     string detailMode = NormalizeDupeDetailMode(args["detailMode"]?.ToString());
                     int? targetX = ToolUtil.GetInt(args, "targetX");
@@ -216,8 +216,8 @@ namespace OniMcp.Tools
                             ["ok"] = checks.Count(item => item["risk"].ToString() == "ok")
                         },
                         ["recommendedFollowUp"] = flagged.Count == 0
-                            ? "No suspected trapped duplicants. Use world_area_snapshot only if visual terrain confirmation is needed."
-                            : "For flagged dupes, inspect the returned rect with world_area_snapshot preset=construction before issuing dig/build/move rescue actions."
+                            ? "No suspected trapped duplicants; no additional map read needed."
+                            : "Inspect only newly flagged hazards with world_editor command=zoom views=default syncView=false before rescue actions. Idle alone does not require a terrain scan."
                     }, McpJsonUtil.Settings));
                 }
             };
@@ -328,7 +328,7 @@ namespace OniMcp.Tools
                 ["needs"] = needs.ToDictionary(),
                 ["environment"] = environment,
                 ["scanRect"] = new[] { x - radius, y - radius, x + radius, y + radius },
-                ["nextRead"] = risk == "ok" ? null : $"world_area_snapshot x1={x - radius} y1={y - radius} x2={x + radius} y2={y + radius} worldId={worldId} preset=construction encoding=rle"
+                ["nextRead"] = risk == "ok" ? null : $"world_editor command=zoom x={x} y={y} radius={radius} worldId={worldId} views=default syncView=false"
             };
             if (includeDetails)
             {

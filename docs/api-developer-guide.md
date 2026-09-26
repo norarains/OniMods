@@ -38,6 +38,8 @@ X-Oni-Mcp-Token: <token>
 
 ### 2. 配置 MCP 客户端
 
+WSL 客户端连接 Windows ONI 时，使用 [WSL stdio bridge 配置](wsl-mcp.md)。
+
 Claude Desktop / Cursor 的示例配置:
 
 ```json
@@ -132,7 +134,7 @@ Default public surface: compact aggregate tools:
 
 Internal virtual-file operations are not direct MCP tools:
 
-- `colony_control`, `coordinate_control`, `dupes_control`, `read_control`, and `search_control` are registered only for validated `world_editor` virtual-file routing.
+- `colony_control`, `dupes_control`, `read_control`, and `search_control` are available through validated virtual-file routing or the batch route advertised in `capabilities.batchOperations`. `coordinate_control` remains internal to virtual-file routing and is not batch-callable.
 - Do not send those names as `tools/call params.name`. Use `world_editor`, structured resources, or one of the public aggregate tools above.
 - Exact orders read `/active/ops/tools.md` and edit the matching typed operation file. Raw-coordinate compatibility entries remain internal and are not a public client surface.
 
@@ -151,6 +153,29 @@ New integrations should discover the public aggregate entrypoints from `tools/li
 - 建造相关结果应返回材料可行性，至少说明需要材料、可用材料和缺口。
 
 当前 legacy 公开工具的 `tools/call` 都要求 `arguments.task` 是非空字符串，用来描述这次调用的用户任务；缺失或空值会在工具分派前被拒绝。
+
+### 批量调用与返回格式
+
+`server_control domain=batch action=call_many` 的 `calls` 接收 `{tool, args}` 对象。
+内部操作的调用示例可从 catalog search 返回的 `operations[].call` 获取。
+`responseMode=summary` 的子结果位于 `results[].summary`，保留快照的暂停状态、
+周期、警报、metrics、watch 和 delta 数据。`responseMode=full` 的 JSON 子结果位于
+`results[].result`；纯文本使用 `text`，非文本内容使用 `content`，不重复返回完整 JSON 字符串。
+
+外层 batch 的 `dryRun=true` 只检查路由和参数。运行游戏预检时，正常执行 batch，
+并在支持预检的子调用中设置 `dryRun=true`。研究管理预检标记为
+`validationLevel=semantic`；其他管理预检的 `syntax_only` 不证明目标存在或可执行。
+
+### 状态字段语义
+
+- 电力摘要的 `netCapacityWatts` 是额定容量减当前需求，不能代表实际发电量。
+  `generationMeasured=false` 表示未测量，`activeGenerationWatts` 和 `netActiveWatts` 不提供数值。
+- 研究状态包含一个 active 记录及 target/queue ID；`includeDetails=true` 展开当前科技详情。
+  已完成科技的 `progress` 为 100。
+- 单材料建筑按配方质量检查库存，`build_area` 在一批 anchors 间共享材料预算。
+  预算不锁定游戏库存；未知或多材料需求不能视为材料充足。
+- 紧凑编辑结果把重复材料报告放在 `shared.<results|previews|errors>.materialSelection`，
+  各 anchor 保留独有的坐标和错误。`responseMode=full` 保留完整诊断副本。
 
 ## 调用示例
 

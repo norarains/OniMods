@@ -4,7 +4,7 @@
 
 ## Priority Order
 
-1. Livestream health and live-room comments come before gameplay and code work.
+1. During an established livestream, stream health and live-room comments come before gameplay and code work.
 2. Direct user instructions come before viewer suggestions.
 3. Gameplay safety comes before speed.
 4. Code changes require explicit permission if the user says to stop coding.
@@ -12,10 +12,10 @@
 ## Bilibili Live Room
 
 - Use `.agents/skills/bilibili-live-comments/` when reading or sending live-room comments.
-- Read comments regularly during autonomous play.
+- Read comments regularly during autonomous play when a live session is established.
 - When sending comments, keep them short and prefix assistant messages with `>`.
 - Store Bilibili cookies only in `.env` as `BILI_COOKIE`; never print or commit cookies.
-- If `BILI_COOKIE` is missing or expired, ask the user for a fresh cookie.
+- Ask for a fresh `BILI_COOKIE` only when an authorized live-room action requires authentication and the cookie is missing or expired. Ordinary gameplay and public read access must not wait for unrelated credentials.
 - `.env` must stay ignored by git.
 
 ## ONI Control

@@ -62,7 +62,8 @@ namespace OniMcp.Tools
                         ["detail"] = NormalizeDetail(detail),
                         ["returned"] = matches.Count,
                         ["note"] = SearchNote(NormalizeDetail(detail)),
-                        ["tools"] = matches
+                        ["tools"] = matches,
+                        ["operations"] = SearchBatchOperations(query, group, mode, risk, detail, limit)
                     };
                     return CallToolResult.Text(JsonConvert.SerializeObject(result, McpJsonUtil.Settings));
                 }

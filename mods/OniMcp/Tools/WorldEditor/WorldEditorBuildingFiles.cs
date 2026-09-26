@@ -65,14 +65,31 @@ namespace OniMcp.Tools
             return JObject.FromObject(StateControlTools.SnapshotState(go));
         }
 
-        private static string ReadBuildingIndexMarkdown()
+        private static string ReadBuildingIndexMarkdown(JObject args = null)
         {
+            args = args ?? new JObject();
+            int worldId = ToolUtil.GetInt(args, "worldId") ?? (ClusterManager.Instance?.activeWorldId ?? -1);
+            int limit = Math.Max(1, Math.Min(ToolUtil.GetInt(args, "limit") ?? 30, 100));
+            int offset = Math.Max(0, ToolUtil.GetInt(args, "offset") ?? 0);
+            bool includePoi = ToolUtil.GetBool(args, "includePoi", false);
+            string query = args?["query"]?.ToString() ?? "";
+            string category = args?["category"]?.ToString() ?? "";
+            var matches = LiveCompletedBuildings()
+                .Where(go => ToolUtil.GameObjectMatchesWorld(go, worldId))
+                .Where(go => BuildingIndexFilter.Matches(
+                    go.GetComponent<KPrefabID>()?.PrefabTag.Name ?? go.name,
+                    ToolUtil.CleanName(go.GetProperName()), query, category, includePoi))
+                .OrderBy(go => go.GetComponent<KPrefabID>()?.InstanceID ?? go.GetInstanceID()).ToList();
             var sb = new StringBuilder("# Completed Buildings\n\n");
-            sb.AppendLine("Each linked instance file exposes supported editable side-screen parameters. Files are stable by InstanceID.");
+            int returned = Math.Min(limit, Math.Max(0, matches.Count - offset));
+            sb.AppendLine("- worldId=" + worldId + ", total=" + matches.Count + ", offset=" + offset
+                + ", returned=" + returned + ", includePoi=" + includePoi.ToString().ToLowerInvariant());
+            if (offset + returned < matches.Count)
+                sb.AppendLine("- More: read this path with offset=" + (offset + returned) + " and the same filters.");
             sb.AppendLine();
             sb.AppendLine("| Building | Prefab | ID | Position | Parameters |");
             sb.AppendLine("| --- | --- | ---: | --- | --- |");
-            foreach (var go in LiveCompletedBuildings().OrderBy(go => go.GetComponent<KPrefabID>()?.InstanceID ?? go.GetInstanceID()))
+            foreach (var go in matches.Skip(offset).Take(limit))
             {
                 JObject config = BuildingConfigSnapshot(go);
                 string file = GetBuildingDetailFileName(go);

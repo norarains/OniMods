@@ -19,6 +19,7 @@ namespace OniMcp.Tools
                 ["publicTools"] = new JArray(OniToolRegistry.GetVisibleTools().Select(tool => tool.Name).OrderBy(name => name)),
                 ["batchOperations"] = batch,
                 ["batchRoute"] = "server_control domain=batch action=call_many calls=[{tool:<operation>,args:{...}}]",
+                ["operationDiscovery"] = "server_control domain=catalog action=search query=<intent> detail=full; inspect operations[].call",
                 ["editMarks"] = editMarks,
                 ["stateRead"] = "world_editor command=read path=/active/index.md includeState=true",
                 ["symbolsRead"] = "world_editor command=symbols queries=[...]",

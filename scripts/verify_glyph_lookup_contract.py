@@ -181,13 +181,17 @@ def verify_glyph_lookup_contract(
     skill = (root / ".agents" / "skills" / "oni-gameplay" / "SKILL.md").read_text(encoding="utf-8")
     world_ref = (root / ".agents" / "skills" / "oni-gameplay" / "references" / "world-editor.md").read_text(encoding="utf-8")
     world_ref_zh = (root / ".agents" / "skills" / "oni-gameplay" / "references" / "world-editor.zh.md").read_text(encoding="utf-8")
-    for text, label in ((skill, "skill"), (world_ref, "English world-editor reference"), (world_ref_zh, "Chinese world-editor reference")):
-        require(text, "world_editor command=symbols queries=[", f"{label} mandatory public batch lookup")
-        require(text, "direction=auto", f"{label} auto direction")
-        require(text, "code_to_meaning", f"{label} forward lookup example")
-        require(text, "meaning_to_code", f"{label} reverse lookup example")
+    # The control skill owns lookup/caching rules; references link to that contract.
+    # Requiring full examples in each file would restore redundant prompt context.
+    require(skill, "world_editor command=symbols queries=[", "shared public batch lookup")
+    require(skill, "direction=auto", "shared auto direction")
+    require(skill, "code_to_meaning", "shared forward lookup example")
+    require(skill, "meaning_to_code", "shared reverse lookup example")
     require(skill, "Do not guess", "skill glyph no-guess rule")
-    require(skill, "commentary", "skill glyph lookup commentary rule")
+    require(skill, "`count=0` remains unknown", "unresolved glyph handling")
+    require(skill, "Invalidate on restart/reconnect, schema change, or overlay change", "runtime cache invalidation")
+    for text, label in ((world_ref, "English world-editor reference"), (world_ref_zh, "Chinese world-editor reference")):
+        require(text, "../SKILL.md#authoritative-glyphs", f"{label} shared glyph contract link")
     require(world_ref, "/active/symbols/glyphs.md", "correct English glyph path")
     require(world_ref_zh, "/active/symbols/glyphs.md", "correct Chinese glyph path")
 

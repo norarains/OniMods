@@ -181,7 +181,7 @@ namespace OniMcp.Tools
 
         private static bool IsGeneratedGlyphKind(string kind)
         {
-            return kind == "Building" || kind == "Element" || kind == "Entity";
+            return kind == "Building" || kind == "Element" || kind == "Entity" || kind == "Plant";
         }
 
         private static string NormalizeGlyphDirection(string value)
@@ -257,6 +257,7 @@ namespace OniMcp.Tools
             foreach (var entry in RuntimeRoomGlyphEntries())
                 rows.Add(GlyphRow("Room", entry.Id, entry.Name,
                     GetUniqueChar(entry.Id, entry.Name).ToString(), entry.Name, "rooms"));
+            AddRuntimePlantSymbolRows(rows);
             AddConnectionRows(rows);
             AddOverlayRows(rows, "temperature", TemperatureGlyphs, new[]
             {

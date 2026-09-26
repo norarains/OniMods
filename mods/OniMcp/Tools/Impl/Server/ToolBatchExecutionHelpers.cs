@@ -71,8 +71,13 @@ namespace OniMcp.Tools
                 result["summary"] = CompactSummaryObject(text, maxTextChars);
             if (responseMode == "full")
             {
-                result["content"] = ContentToDictionaries(toolResult.Content);
-                result["text"] = text;
+                // Keep one representation. JSON stays structured rather than being
+                // escaped twice inside text and content copies of the same child.
+                result.Remove("text");
+                try { result["result"] = JToken.Parse(text); }
+                catch (JsonException) { result["text"] = text; }
+                if (toolResult.Content != null && toolResult.Content.Any(item => item.Type != "text"))
+                    result["content"] = toolResult.Content.Where(item => item.Type != "text").ToList();
             }
             return result;
         }
@@ -173,7 +178,16 @@ namespace OniMcp.Tools
             if (string.Equals(name, "game_control", StringComparison.OrdinalIgnoreCase))
                 return (domain == "launch" && (action == "status" || action == "restart_status"))
                     || (domain == "save" && (action == "list" || action == "status"))
+                    || (domain == "speed" && action == "time")
                     || (domain == "state" && (action == "status" || action == "time"));
+
+            if (string.Equals(name, "world_editor", StringComparison.OrdinalIgnoreCase))
+            {
+                string command = arguments?["command"]?.ToString()?.Trim().ToLowerInvariant();
+                // zoom/read can synchronize a camera unless explicitly disabled.
+                return command == "symbols" || command == "pwd" || command == "ls"
+                    || (command == "read" && !ToolUtil.GetBool(arguments, "syncView", true));
+            }
 
             if (string.Equals(name, "building_control", StringComparison.OrdinalIgnoreCase))
                 return domain == "planning" && (

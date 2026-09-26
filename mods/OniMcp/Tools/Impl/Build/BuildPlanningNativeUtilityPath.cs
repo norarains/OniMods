@@ -62,8 +62,9 @@ namespace OniMcp.Tools
             }
 
             var materialResult = SelectElements(def, args["material"]?.ToString(), worldId);
-            materialResult.RequiredKg = RequiredMaterialKg(def) * path.Count;
-            if (!materialResult.Valid)
+            materialResult.RequiredKg = RequiredMaterialKg(def) * Math.Max(0, path.Count - CountUtilityPathCells(def, path, worldId));
+            if (!materialResult.Valid || (materialResult.Elements.Count == 1 && materialResult.Selected != null
+                && materialResult.RequiredKg > materialResult.Selected.AvailableKg))
             {
                 result["reason"] = "material selection failed";
                 result["materialSelection"] = materialResult.ToDictionary();

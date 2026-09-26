@@ -182,7 +182,10 @@ namespace OniMcp.Tools
                     ["consumerNeededWatts"] = Round(ConsumerNeededWatts, 1),
                     ["consumerUsedWatts"] = Round(ConsumerUsedWatts, 1),
                     ["netRatedWatts"] = Round(GeneratorWatts - ConsumerBaseWatts, 1),
-                    ["netActiveWatts"] = Round(GeneratorWatts - ConsumerNeededWatts, 1)
+                    ["netCapacityWatts"] = Round(GeneratorWatts - ConsumerNeededWatts, 1),
+                    ["generationMeasured"] = false,
+                    ["activeGenerationWatts"] = null,
+                    ["netActiveWatts"] = null
                 };
             }
         }

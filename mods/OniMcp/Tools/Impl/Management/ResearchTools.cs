@@ -19,7 +19,10 @@ namespace OniMcp.Tools
                 Risk = "none",
                 Hidden = true,
                 Description = "兼容入口：请优先使用 colony_control domain=management kind=research action=status。查看当前研究目标、队列和进度",
-                Parameters = new Dictionary<string, McpToolParameter>(),
+                Parameters = new Dictionary<string, McpToolParameter>
+                {
+                    ["includeDetails"] = new McpToolParameter { Type = "boolean", Description = "Include active technology unlocks and prerequisites; default false.", Required = false }
+                },
                 Handler = args =>
                 {
                     if (Research.Instance == null || Db.Get()?.Techs == null)
@@ -30,9 +33,9 @@ namespace OniMcp.Tools
                     var queue = Research.Instance.GetResearchQueue();
                     var result = new Dictionary<string, object>
                     {
-                        ["active"] = active != null ? TechToDictionary(active.tech, includeDetails: true) : null,
-                        ["target"] = target != null ? TechToDictionary(target.tech, includeDetails: false) : null,
-                        ["queue"] = queue.Select(item => TechToDictionary(item.tech, includeDetails: false)).ToList()
+                        ["active"] = active != null ? TechToDictionary(active.tech, includeDetails: ToolUtil.GetBool(args, "includeDetails", false)) : null,
+                        ["target"] = target != null ? (object)target.tech.Id : null,
+                        ["queue"] = queue.Select(item => item.tech.Id).ToList()
                     };
 
                     return CallToolResult.Text(JsonConvert.SerializeObject(result, McpJsonUtil.Settings));
@@ -103,6 +106,7 @@ namespace OniMcp.Tools
                 {
                     ["id"] = new McpToolParameter { Type = "string", Description = "科技 ID，例如 FarmingTech、SanitationSciences、ImprovedOxygen", Required = false },
                     ["query"] = new McpToolParameter { Type = "string", Description = "搜索词，可匹配科技名称、ID、解锁项", Required = false },
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Validate the technology without changing research.", Required = false },
                     ["clearQueue"] = new McpToolParameter { Type = "boolean", Description = "是否清空旧队列，默认 true", Required = false }
                 },
                 Handler = args =>
@@ -118,7 +122,7 @@ namespace OniMcp.Tools
                     if (!string.IsNullOrWhiteSpace(id))
                         tech = Db.Get().Techs.TryGet(id.Trim());
 
-                    if (tech == null && !string.IsNullOrWhiteSpace(query))
+                    if (string.IsNullOrWhiteSpace(id) && !string.IsNullOrWhiteSpace(query))
                     {
                         var matches = FindMatches(query).Where(candidate => !IsComplete(candidate)).ToList();
                         var exact = matches.FirstOrDefault(candidate => IsExactMatch(candidate, query));
@@ -143,6 +147,14 @@ namespace OniMcp.Tools
                     if (IsComplete(tech))
                         return CallToolResult.Error($"Research already complete: {tech.Id}");
 
+                    if (ToolUtil.GetBool(args, "dryRun", false))
+                        return CallToolResult.Text(JsonConvert.SerializeObject(new Dictionary<string, object>
+                        {
+                            ["valid"] = true, ["dryRun"] = true, ["committed"] = false,
+                            ["selected"] = TechToDictionary(tech, includeDetails: false),
+                            ["clearQueue"] = clearQueue
+                        }, McpJsonUtil.Settings));
+
                     Research.Instance.SetActiveResearch(tech, clearQueue);
 
                     var active = Research.Instance.GetActiveResearch();
@@ -151,7 +163,7 @@ namespace OniMcp.Tools
                     {
                         ["selected"] = TechToDictionary(tech, includeDetails: true),
                         ["active"] = active != null ? TechToDictionary(active.tech, includeDetails: false) : null,
-                        ["queue"] = queue.Select(item => TechToDictionary(item.tech, includeDetails: false)).ToList()
+                        ["queue"] = queue.Select(item => item.tech.Id).ToList()
                     };
 
                     return CallToolResult.Text(JsonConvert.SerializeObject(response, McpJsonUtil.Settings));
@@ -186,7 +198,7 @@ namespace OniMcp.Tools
                     var activeBefore = Research.Instance.GetActiveResearch();
                     var targetBefore = Research.Instance.GetTargetResearch();
                     var queue = Research.Instance.GetResearchQueue();
-                    var queueBefore = queue.Select(item => TechToDictionary(item.tech, includeDetails: false)).ToList();
+                    var queueBefore = queue.Select(item => item.tech.Id).ToList();
 
                     queue.Clear();
 
@@ -308,7 +320,7 @@ namespace OniMcp.Tools
             var result = new Dictionary<string, object>
             {
                 ["id"] = tech.Id,
-                ["name"] = tech.Name,
+                ["name"] = ToolUtil.CleanName(tech.Name),
                 ["tier"] = tech.tier,
                 ["category"] = tech.category,
                 ["complete"] = instance?.IsComplete() ?? false,
@@ -317,21 +329,22 @@ namespace OniMcp.Tools
             };
 
             if (instance != null)
-                result["progress"] = Math.Round(instance.GetTotalPercentageComplete() * 100.0, 1);
+                result["progress"] = instance.IsComplete() ? 100.0
+                    : Math.Round(instance.GetTotalPercentageComplete() * 100.0, 1);
 
             if (includeDetails)
             {
-                result["description"] = tech.desc;
+                result["description"] = ToolUtil.CleanName(tech.desc);
                 result["requires"] = tech.requiredTech.Select(required => new Dictionary<string, object>
                 {
                     ["id"] = required.Id,
-                    ["name"] = required.Name,
+                    ["name"] = ToolUtil.CleanName(required.Name),
                     ["complete"] = IsComplete(required)
                 }).ToList();
                 result["unlocks"] = tech.unlockedItems.Select(item => new Dictionary<string, object>
                 {
                     ["id"] = item.Id,
-                    ["name"] = item.Name
+                    ["name"] = ToolUtil.CleanName(item.Name)
                 }).ToList();
             }
 

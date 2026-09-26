@@ -8,7 +8,7 @@ Read this reference before using `world_editor` for map edits, off-screen framin
 
 - [Mental model](#mental-model)
 - [Virtual paths](#virtual-paths)
-- [Mandatory glyph lookup](#mandatory-glyph-lookup)
+- [Authoritative glyphs](#authoritative-glyphs)
 - [Universal patch protocol](#universal-patch-protocol)
 - [Exact map rectangle protocol](#exact-map-rectangle-protocol)
 - [Map token edits](#map-token-edits)
@@ -54,26 +54,13 @@ Only `/active/` is mutable. Other save slots are historical or unloaded views.
 
 Normal world-editor construction always uses `instantBuild=false`, creating ordinary blueprints with normal material rules even if global debug instant build is enabled. Scoped instant build requires `instantBuild=true allowSandbox=true confirm=true`. Sandbox writes additionally require `world_editor command=sandbox allowSandbox=true confirm=true` and the matching granular permission (`allowTerrainMutation`, `allowEntitySpawn`, `allowDestroy`, or `allowForce`). Batch children cannot widen the parent policy.
 
-## Mandatory glyph lookup
+## Authoritative glyphs
 
-Before interpreting map codes, converting names to codes, or reading connection/overlay glyphs, state in commentary that the gameplay skill requires authoritative lookup. Query every unknown glyph/name together:
+Follow the [shared glyph policy](../SKILL.md#authoritative-glyphs): use the current versioned runtime legend, cache mappings for the runtime/overlay, and batch only unknown or ambiguous symbols. Cell records provide prefab/InstanceID when a plant label needs exact targeting. No redundant lookup or announcement is required.
 
-```text
-world_editor command=symbols queries=["砖","?","┼","氧气"] direction=auto matchMode=auto
-```
+Default `zoom` returns only `views=default`; opt into oxygen, temperature, or other overlays when needed. Use `syncView=false` for reads that should not move the camera. Building indexes default to the active world, hide POI props, and page 30 rows; use `query`, `category`, `includePoi=true`, `offset`, and `limit` to narrow or expand them.
 
-Do not infer meanings from Chinese characters, a stale legend, or memory. Preserve `count=0` as unknown. Pass `view=temperature|oxygen|light|decor|disease|radiation|crop|...` for contextual rows. Results may be reused only within the same runtime and turn.
-
-Forward, reverse, and batch examples:
-
-```text
-world_editor command=symbols queries=["砖","零"] direction=code_to_meaning view=temperature
-world_editor command=symbols queries=["砖","┼"] direction=code_to_meaning view=logic
-world_editor command=symbols queries=["砖块","研究站","氧气"] direction=meaning_to_code
-world_editor command=symbols queries=["■","液","不","易","可","难"] direction=auto view=oxygen perQueryLimit=20
-```
-
-`world_editor command=symbols` remains a compatible read-only alias and accepts the same lookup fields, but `world_editor command=symbols` is the mandatory gameplay entrypoint.
+Compact edit responses may store equal material reports once at `shared.<list>.materialSelection`; anchor-specific failures remain in the list. `responseMode=full` preserves all diagnostic copies. Research management dry-run validates its target; other management previews explicitly say `validationLevel=syntax_only` and need the relevant target read before execution.
 
 ## Universal patch protocol
 

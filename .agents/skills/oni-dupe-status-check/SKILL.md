@@ -19,7 +19,7 @@ Read [capability discovery](../oni-gameplay/references/capabilities.md) before u
 先使用聚合状态工具：
 
 ```
-dupes_control domain=info action=status_check radius=8 includeReachableSamples=true
+dupes_control domain=info action=status_check radius=4 includeReachableSamples=false
 ```
 
 检查单个复制人：
@@ -103,3 +103,5 @@ read_control domain=world action=area_snapshot x1=<scanRect[0]> y1=<scanRect[1]>
 ```
 
 说明复制人姓名、坐标、风险和一个下一步安全读取/动作。如果无人被标记，直接说明并避免额外工具调用。
+
+Ordinary idleness alone does not require a rescue-style map scan. Expand radius/samples only for a specific navigation uncertainty.

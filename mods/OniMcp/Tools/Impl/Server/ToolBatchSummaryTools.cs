@@ -117,7 +117,8 @@ namespace OniMcp.Tools
                 "ok", "valid", "dryRun", "committed", "planned", "wouldMark", "marked", "changed",
                 "queued", "triggeredObjects", "returned", "matched", "executed", "succeeded", "failed",
                 "skipped", "status", "reasonCode", "next", "tokenHint", "count", "total", "areaId", "worldId", "rect", "size", "cells", "prefabId",
-                "x", "y", "error", "message", "previewToken"
+                "x", "y", "error", "message", "previewToken", "cycle", "paused", "isPaused",
+                "speed", "alertLevel", "profile", "summary", "delta", "baseline", "deltaHandle", "unchanged"
             })
             {
                 if (source[key] != null && IsCompactScalarOrSmallArray(source[key]))
@@ -132,6 +133,10 @@ namespace OniMcp.Tools
                     summary[property.Name + "Count"] = arr.Count;
                 else if (property.Value is JObject obj && IsSummaryObjectName(property.Name))
                     summary[property.Name] = CompactNestedObject(obj);
+                else if (property.Name == "watch" && property.Value is JObject watch)
+                    summary["watch"] = watch.DeepClone();
+                else if ((property.Name == "snapshot" || property.Name == "changed") && property.Value is JObject)
+                    summary[property.Name] = JToken.FromObject(CompactSummaryObject(property.Value.ToString(Formatting.None), maxChars));
             }
 
             if (!summary.HasValues)
@@ -152,6 +157,9 @@ namespace OniMcp.Tools
         private static bool IsSummaryObjectName(string name)
         {
             return string.Equals(name, "summary", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(name, "time", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(name, "metrics", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(name, "changes", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(name, "counts", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(name, "skipped", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(name, "skipReasons", StringComparison.OrdinalIgnoreCase);

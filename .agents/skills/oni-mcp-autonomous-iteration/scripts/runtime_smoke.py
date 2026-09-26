@@ -313,6 +313,8 @@ def child_payload(batch_payload, name):
     for child in batch_payload.get("results", []):
         if child.get("canonicalName") != name:
             continue
+        if "result" in child:
+            return child["result"]
         text = child.get("text", "")
         try:
             return json.loads(text)

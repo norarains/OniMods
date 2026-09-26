@@ -91,6 +91,7 @@ namespace OniMcp.Tools
                     var validAnchors = new List<CellCoord>();
                     var actionableAnchors = new List<CellCoord>();
                     var autoDigAnchors = new List<CellCoord>();
+                    var materialBudget = new BuildMaterialBudget();
                     foreach (var anchor in anchors)
                     {
                         int worldId = ToolUtil.ResolveWorldId(args);
@@ -102,6 +103,20 @@ namespace OniMcp.Tools
                             continue;
                         }
                         var preview = TryPlanOne(prefabId, anchor.x, anchor.y, preflightArgs, preflightSupport);
+                        if (!IsFreeBuildContext() && !GetBool(preview, "alreadyPresent")
+                            && (GetBool(preview, "valid") || IsAutoDiggableFailure(preview)))
+                        {
+                            var material = GetObject(preview, "materialSelection") as Dictionary<string, object>;
+                            if (material != null && material.TryGetValue("requiredKg", out object required) && required != null)
+                            {
+                                var elements = material["elements"] as List<string>;
+                                if (elements != null && elements.Count == 1 && !materialBudget.TryReserve(elements[0],
+                                    Convert.ToDouble(required), Convert.ToDouble(material["selectedAvailableKg"]), out double shortage))
+                                    preview = ErrorResult(prefabId, anchor.x, anchor.y,
+                                        "Insufficient material for this batch (shortage " + Math.Round(shortage, 3) + " kg)",
+                                        new Dictionary<string, object> { ["reasonCode"] = "insufficient_batch_material", ["materialSelection"] = material });
+                            }
+                        }
                         bool valid = preview.ContainsKey("valid") && (bool)preview["valid"];
                         if (valid)
                         {

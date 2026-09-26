@@ -54,26 +54,9 @@ world_editor command=pwd|cd|ls|read|zoom|grep|symbols|search|edit|blueprint|batc
 
 普通 world-editor 建造固定使用 `instantBuild=false`，即使全局 Debug 瞬间建造已开启，也只创建正常蓝图并遵守材料规则。单次瞬间建造必须显式传 `instantBuild=true allowSandbox=true confirm=true`。沙盒写入还必须使用 `world_editor command=sandbox allowSandbox=true confirm=true`，并按动作增加 `allowTerrainMutation`、`allowEntitySpawn`、`allowDestroy` 或 `allowForce`。batch 子步骤不能扩大父级权限。
 
-## 强制字码查询
+## 权威字码与缓存
 
-解释地图字码、根据建筑/元素/实体名称生成字码，或读取连接/overlay 字码前，必须先在 commentary 中说明 gameplay skill 要求权威查询，并把当前所有未知字码/名称一次批量提交：
-
-```text
-world_editor command=symbols queries=["砖","?","┼","氧气"] direction=auto matchMode=auto
-```
-
-禁止根据中文字符、旧 legend 或记忆猜测。`count=0` 必须保持“未知”。上下文相关字码需传 `view=temperature|oxygen|light|decor|disease|radiation|crop|...`。仅可复用同一运行时、同一轮中已经查询过的结果。
-
-正查、反查与批量示例：
-
-```text
-world_editor command=symbols queries=["砖","零"] direction=code_to_meaning view=temperature
-world_editor command=symbols queries=["砖","┼"] direction=code_to_meaning view=logic
-world_editor command=symbols queries=["砖块","研究站","氧气"] direction=meaning_to_code
-world_editor command=symbols queries=["■","液","不","易","可","难"] direction=auto view=oxygen perQueryLimit=20
-```
-
-兼容入口 `world_editor command=symbols` 支持相同查询字段，但 gameplay 必须优先使用 `world_editor command=symbols`。
+遵循 [共享字码规则](../SKILL.md#authoritative-glyphs)：当前地图带版本的运行时 legend 可直接使用。同一服务器运行时、同一 overlay 的结果可跨轮复用；重启、重连或 overlay 变化时失效。仅对未知或歧义 token 批量调用 `world_editor command=symbols queries=[...] view=<overlay>`。`count=0` 仍为未知，精确格子的 prefab/InstanceID 可用于目标定位。
 
 ## 通用补丁协议
 

@@ -78,7 +78,7 @@ namespace OniMcp.Tools
                 if (relative == "buildings/index.oni")
                     return ReadTools.ControlRead().Handler(Child(args, "buildings", "list"));
                 if (relative == "buildings/index.md")
-                    return CallToolResult.Text(ReadBuildingIndexMarkdown());
+                    return CallToolResult.Text(ReadBuildingIndexMarkdown(args));
                 if (IsBuildingDetailMarkdown(relative))
                     return CallToolResult.Text(ReadBuildingDetailMarkdown(relative));
                 if (relative == "buildings/catalog.oni")

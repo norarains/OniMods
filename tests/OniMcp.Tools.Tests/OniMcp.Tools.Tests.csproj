@@ -9,6 +9,9 @@
     <StartupObject>BenchmarkMetadataRegressionEntry</StartupObject>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Build/BuildMaterialBudget.cs" Link="Source/BuildMaterialBudget.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Build/BuildMaterialRequirements.cs" Link="Source/BuildMaterialRequirements.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/WorldEditor/BuildingIndexFilter.cs" Link="Source/BuildingIndexFilter.cs" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <Compile Include="../../mods/OniMcp/Core/McpContentTypes.cs" Link="Source/McpContentTypes.cs" />
     <Compile Include="../../mods/OniMcp/Core/McpTypes.cs" Link="Source/McpTypes.cs" />

@@ -3,176 +3,26 @@ name: oni-mcp-play-loop
 description: 当用户要求 agent 通过 MCP 循环游玩 Oxygen Not Included、自动玩一段时间、继续殖民地，或运行暂停-规划-恢复循环时使用。强制执行严格的 pause → observe → plan → execute → resume briefly → pause → verify 循环，仅在能力声明支持时读取玩家规划标记，限制运行窗口，并在风险或歧义决策前停下等待用户确认。
 ---
 
-# ONI MCP 游玩循环
+# ONI play loop
 
-## Capability gate
+Use the shared [control contract](../oni-gameplay/SKILL.md) and cached [capabilities](../oni-gameplay/references/capabilities.md). Read the world-editor reference only when editing. This file adds loop timing and stop conditions.
 
-Read [capability discovery](../oni-gameplay/references/capabilities.md) before using tool examples. Only call names in `capabilities.publicTools` directly. Examples naming `colony_control`, `dupes_control`, `read_control`, or `search_control` are internal operations: use the documented batch route only when listed in `capabilities.batchOperations`. Skip edit-mark reads unless `capabilities.editMarks=true`. Cache discovery for the session.
+1. Pause (`game_control domain=speed action=pause`). Read, plan, and issue commands only while paused.
+2. Read one safety snapshot: `colony_control domain=snapshot action=get profile=minimal` through the advertised batch route, or `world_editor command=read path=/active/index.md includeState=true syncView=false`. Do not routinely fetch both. Inspect edit marks only when `capabilities.editMarks=true`.
+3. Choose a small, authorized action. Inspect exact cells for liquid-adjacent work, navigation hazards, or irreversible edits. Expand only the flagged domain. Use `dupes_control domain=info action=status_check radius=4 includeReachableSamples=false` for suspected health/navigation issues; ordinary idle status alone does not require a map scan.
+4. Run the child's actual game validator when supported. Outer batch `dryRun=true` checks routing/schema only. To validate placement/order state, execute a normal batch whose child arguments contain `dryRun=true`; never preview and commit the same operation in one dependent batch.
+5. Review `valid`, `actionable`, `reasonCode`, material requirements, hazards, and `validationLevel`. A management `syntax_only` preview is not semantic validation. Research target previews are semantic. Commit with a fresh `dryRun=false confirm=true` call only after a successful relevant preview. Pause/resume and other controls without dry-run support are invoked directly within the user's authorized scope.
+6. Resume only to advance verified work: 8–15 real seconds normally, 3–6 for emergencies, at most 20 for long hauling. Do not add commands during the window. Arrange the pause before resuming (a local try/finally client is useful); do not assume a server-side advance action exists.
+7. Pause immediately, read one compact safety snapshot, and inspect the changed work area only when needed. Verify actual work progress independently of write success. Repeat only within the requested play scope, and leave the game paused at the end.
 
+For independent validator calls:
 
-## 目的
-
-以短时间、受控循环运行 ONI：
-
-```
-pause -> observe -> plan -> execute -> resume briefly -> pause -> verify -> report/next loop
-```
-
-agent 绝不能在游戏运行时思考、规划或新增命令。
-
-## 硬规则
-
-- 每个循环都从 `game_control domain=speed action=pause` 开始。
-- 读取状态、读取玩家计划、规划、验证和下达命令时保持暂停。
-- 只有当前计划足够完整、可以观察进展时才恢复游戏。
-- 恢复后等待一个短固定窗口，然后立刻再次暂停。
-- 不要无限串联循环。除非用户明确要求多个循环或连续游玩，否则只跑一个循环。
-- 遇到高风险不可逆动作、大范围挖掘、破坏性命令、战斗、保存/读取、沙盒/调试，或接收/打印新复制人前，停下并询问。
-
-## 循环模板
-
-### 1. 暂停
-
-```
-game_control domain=speed action=pause
+```json
+{"domain":"batch","action":"call_many","responseMode":"summary","requireAllValid":true,"stopOnError":true,"calls":[{"tool":"building_control","args":{"domain":"planning","action":"build_area","areaId":"<observed area>","prefabId":"Ladder","dryRun":true}}]}
 ```
 
-如果已经暂停，继续。
+For exact map/order edits, follow [the virtual-file protocol](../oni-gameplay/references/world-editor.md). Preview with the outer world-editor `dryRun=true`; commit in a fresh edit with `dryRun=false confirm=true`. Ordinary aggregates do not accept raw coordinates. Never use attack for terrain work.
 
-### 2. 观察
+Stop and diagnose on critical health, food, oxygen, heat or power alerts; repeated blocked work; or uncertainty that affects safety. Seek a decision only for consequential choices outside the user's authorization. Never add duplicants without explicit permission or use sandbox/debug resources. During an established livestream, service stream health and comments first; missing unrelated credentials do not block ordinary gameplay.
 
-优先使用紧凑聚合读取：
-
-```
-world_editor command=read path=/active/index.md includeState=true
-server_control domain=batch action=call_many responseMode=summary calls=[{tool:dupes_control,args:{domain:info,action:status_check,radius:8}}]
-# Only when capabilities.editMarks=true:
-game_control domain=ui uiDomain=edit_mark action=list limit=5
-```
-
-只有需要时才添加针对性读取：
-
-- `read_control domain=world action=area_snapshot preset=construction|utilities encoding=plain includeScreenshot=false`
-- `read_control domain=resources action=inventory limit=30`
-- `read_control domain=resources action=food limit=20`
-- `read_control domain=infrastructure action=power_summary`
-- `read_control domain=infrastructure action=rooms`
-- `colony_control domain=bio bioDomain=farming action=list_harvestables`
-
-如果玩家创建了游戏内规划请求，仅在 `capabilities.editMarks=true` 时先读取规划标记。
-
-### 3. 规划
-
-简单、低风险维护循环使用快速路径。用一两句话说明意图；可用时先 dry-run；再用紧凑批处理执行；最后验证：
-
-```
-server_control domain=batch action=call_many dryRun=true responseMode=summary requireAllValid=true stopOnError=true items=[...]
-server_control domain=batch action=call_many dryRun=false responseMode=summary requireAllValid=true stopOnError=true items=[...]
-```
-
-适用于小范围挖掘、短地板、安全配置修改、收获/清扫/拖地命令，以及 dry-run 通过的 utility 路线。
-
-重大计划（多阶段殖民地工作、玩家编辑标记请求、大范围挖掘、危险液体/气体/热量暴露、拆除）先在回复中列出可执行工具调用、关键参数、假设和停止条件；可用时先 dry-run，再执行。
-
-建造：
-
-```
-building_control domain=planning action=placement_candidates prefabId=<PrefabId> areaId=<area> limit=8
-world_editor command=read path=/active/map/viewport.md
-# zoom or read symbols/glyphs.md if needed; replace empty map tokens with 建筑名:优先级[#材料字]
-# preview with outer dryRun=true and confirm=false/omitted
-# execute with a new edit using outer dryRun=false and confirm=true, then re-read the map
-```
-
-挖掘：
-
-```
-world_editor command=read path=/active/ops/orders.md
-# edit one command such as: 挖 x1=... y1=... x2=... y2=... priority=7 dryRun=true
-# execute only in a new edit with outer dryRun=false, confirm=true, and non-conflicting command flags
-```
-
-绝不要用 `orders_control domain=designation action=attack` 做挖掘。如果任何工具搜索建议用 attack 处理地形工作，拒绝它并重新搜索/读取。
-普通 aggregate tools 拒绝 raw coordinates；精确 orders 走 `/active/ops/orders.md`，精确建造走可编辑 map tokens。读 `/active/ops/tools.md` 时只选当前公开 typed files/tools，忽略 hidden `coordinate_control` 和 `/active/ops/coordinate.md`。默认单 block；operation file 每个 replacement 恰好一条可执行命令。危险或大范围操作必须保持 pause -> read/plan -> dry-run -> confirm -> verify。
-
-### 4. 暂停中执行
-
-只执行本循环所需、已验证且范围明确的调用：
-
-- 小型挖掘/命令批次
-- dry-run 通过的建造
-- 安全配置修改
-- 与目标直接相关的收获或清扫
-
-独立动作优先用 `server_control domain=batch action=call_many responseMode=summary requireAllValid=true stopOnError=true`。批次保持小，避免错误假设伤害殖民地。
-
-### 5. 短暂恢复
-
-只为让复制人工作而恢复：
-
-```
-game_control domain=speed action=resume
-```
-
-默认观察窗口：
-
-- 普通建造/挖掘：真实时间 8-15 秒
-- 紧急救援/窒息：真实时间 3-6 秒
-- 长搬运/建造：最多真实时间 20 秒
-
-这个窗口内不要追加命令。
-
-### 6. 暂停并验证
-
-立刻暂停：
-
-```
-game_control domain=speed action=pause
-```
-
-然后用紧凑读取验证：
-
-```
-world_editor command=read path=/active/index.md includeState=true
-server_control domain=batch action=call_many responseMode=summary calls=[{tool:dupes_control,args:{domain:info,action:status_check,radius:8}}]
-read_control domain=world action=area_snapshot areaId=<area> preset=construction|utilities encoding=plain
-```
-
-记录验证结果：说明目标是否推进、发现的问题、下一轮是否需要继续。
-
-## 停止条件
-
-以下情况停止游玩循环并报告：
-
-- `dupes_control domain=info action=status_check` 中有复制人 `risk=critical`
-- 食物、氧气、温度或电力出现新的 critical 警报
-- 蓝图/命令反复被阻塞
-- 玩家给出新指示
-- 下一步需要大范围挖掘、战斗、拆除、保存/读取、沙盒/调试或重大重设计
-- 不确定性依赖文本地图没有表达的视觉判断
-
-## 循环中的优先级
-
-前期殖民地优先顺序：
-
-1. 复制人安全：卡住、窒息、饥饿、危险温度。
-2. 厕所和睡眠基础。
-3. 食物和可收获物。
-4. 机器前先确保稳定路径/地板。
-5. 电力/研究必须在支撑和电线路径有效后再做。
-6. 只有不会打开液体、真空、高温、菌泥或敌对空腔时才扩张。
-
-## 报告格式
-
-每轮后用简洁中文：
-
-```
-循环结果:
-已执行:
-观察到:
-风险:
-下一步:
-状态: 已暂停 / 已继续
-```
-
-始终说明游戏当前是否暂停。如果循环因条件停止，说明具体停止条件。
+Report progress, any blocker, and whether the game is paused. Use the user's language and keep routine loop updates brief.

@@ -1,7 +1,7 @@
 {
   "oni": {
     "type": "http",
-    "url": "http://localhost:8787/mcp/",
+    "url": "http://localhost:8788/mcp/",
     "headers": {}
   }
 }

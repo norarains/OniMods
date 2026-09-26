@@ -148,6 +148,7 @@ if (symbol == '←' || symbol == '→' || symbol == '↑' || symbol == '↓') re
             var sb = new StringBuilder();
             sb.AppendFormat("# {0}\n", title);
             AppendMapMetadata(sb, xMin, xMax, yMin, yMax, activeMode);
+            sb.AppendLine("- Legend: authoritative runtime mapping (schema=1); reuse until server restart or overlay changes.");
             AppendVisualSpatialSummary(sb, xMin, xMax, yMin, yMax, activeMode);
 
             var gridLines = new List<string>();

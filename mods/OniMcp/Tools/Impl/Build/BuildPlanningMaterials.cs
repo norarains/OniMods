@@ -124,21 +124,9 @@ namespace OniMcp.Tools
             if (def == null)
                 return 0f;
 
-            try
-            {
-                var buildingsType = typeof(BuildingDef).Assembly.GetType("TUNING+BUILDINGS") ?? Type.GetType("TUNING+BUILDINGS");
-                var massField = buildingsType?.GetField("CONSTRUCTION_MASS_KG", BindingFlags.Public | BindingFlags.Static);
-                var masses = massField?.GetValue(null) as float[];
-                int tier = Mathf.RoundToInt(ToolUtil.SafeFloat(def.MassTier));
-                if (masses != null && tier >= 0 && tier < masses.Length)
-                    return Math.Max(0f, masses[tier]);
-            }
-            catch
-            {
-                // Keep material diagnostics best-effort across ONI builds.
-            }
-
-            return 0f;
+            // BuildingTemplates.CreateBuildingDef stores construction_mass in Mass.
+            // MassTier is unrelated metadata, not an index into tuning constants.
+            return BuildMaterialRequirements.SingleMaterialKg(def.Mass, def.MaterialCategory?.Length ?? 0);
         }
 
         private static IEnumerable<Tag> CandidateMaterialTags(BuildingDef def, int worldId)
@@ -432,7 +420,7 @@ namespace OniMcp.Tools
             public Dictionary<string, object> ToDictionary()
             {
                 float selectedAvailableKg = Selected != null ? ToolUtil.SafeFloat(Selected.AvailableKg) : 0f;
-                bool hasRequiredKg = RequiredKg > 0f;
+                bool hasRequiredKg = RequiredKg > 0f && Elements.Count == 1;
                 object satisfied = hasRequiredKg ? (object)(IsFreeBuildContext() || selectedAvailableKg >= RequiredKg) : null;
                 float shortageKg = hasRequiredKg ? Math.Max(0f, RequiredKg - selectedAvailableKg) : 0f;
 
@@ -452,7 +440,9 @@ namespace OniMcp.Tools
                     ["candidateMaterials"] = Candidates.Take(20).Select(item => item.ToDictionary()).ToList(),
                     ["fallbackMaterial"] = Available.Count > 0 ? Available[0].Tag.Name : null,
                     ["next"] = Valid
-                        ? "Material is usable."
+                        ? hasRequiredKg && shortageKg > 0f && !IsFreeBuildContext()
+                            ? "Material type is valid, but the selected inventory is insufficient."
+                            : hasRequiredKg ? "Material type and quantity are available." : "Material type is valid; required mass is unknown."
                         : Available.Count > 0
                             ? "Retry with material=auto or material=" + Available[0].Tag.Name + " if exact material is not required."
                             : "No usable material is currently available; inspect inventory/material candidates before retrying.",

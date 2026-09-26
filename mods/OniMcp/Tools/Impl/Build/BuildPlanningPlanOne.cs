@@ -283,6 +283,13 @@ int cell = Grid.XYToCell(x, y);
             materialResult.RequiredKg = RequiredMaterialKg(def);
             if (!materialResult.Valid)
                 return ErrorResult(prefabId, x, y, materialResult.Error, materialResult.ToDictionary());
+            if (!IsFreeBuildContext() && materialResult.Elements.Count == 1 && materialResult.Selected != null
+                && materialResult.RequiredKg > materialResult.Selected.AvailableKg)
+                return ErrorResult(prefabId, x, y, "Insufficient selected material mass", new Dictionary<string, object>
+                {
+                    ["reasonCode"] = "insufficient_material",
+                    ["materialSelection"] = materialResult.ToDictionary()
+                });
 
             var facadeResult = ResolveFacade(def, args["facade"]?.ToString() ?? args["facadeId"]?.ToString());
             if (!facadeResult.Valid)
