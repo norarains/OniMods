@@ -1,5 +1,7 @@
 # ONI MCP Tool Reference
 
+See [capability discovery](capabilities.md): internal aggregate examples require the advertised batch route; edit-mark reads are conditional.
+
 Read this reference when selecting tools, composing multi-tool workflows, choosing parameters, or mapping prompts and resources to aggregate calls.
 
 ## Contents

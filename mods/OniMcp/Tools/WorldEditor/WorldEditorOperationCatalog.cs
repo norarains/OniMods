@@ -22,7 +22,7 @@ namespace OniMcp.Tools
             sb.AppendLine();
             AppendNaturalOperationCheatsheet(sb);
             sb.AppendLine("## Files");
-            foreach (var item in OperationFileTools.Keys.OrderBy(value => value, StringComparer.Ordinal))
+            foreach (var item in OperationFileTools.Keys.Where(value => value != "ops/coordinate.md").OrderBy(value => value, StringComparer.Ordinal))
                 sb.AppendLine("- `/active/" + item + "`: " + OperationFileDescription(item));
             sb.AppendLine();
             sb.AppendLine("## Tools");

@@ -5,6 +5,11 @@ description: 当用户要求检查 ONI 复制人状态、怀疑复制人卡住/�
 
 # ONI MCP 复制人状态检查
 
+## Capability gate
+
+Read [capability discovery](../oni-gameplay/references/capabilities.md) before using tool examples. Only call names in `capabilities.publicTools` directly. Examples naming `colony_control`, `dupes_control`, `read_control`, or `search_control` are internal operations: use the documented batch route only when listed in `capabilities.batchOperations`. Skip edit-mark reads unless `capabilities.editMarks=true`. Cache discovery for the session.
+
+
 ## 目的
 
 快速识别可能被困、不可达、疲劳、窒息、饥饿，或无法正常执行工作的复制人。这个技能默认以只读为主。

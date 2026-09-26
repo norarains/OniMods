@@ -43,7 +43,7 @@ namespace OniMcp.Tools
                         zoomY2,
                         views.Select(view => view.Name),
                         syncNote,
-                        ShouldCompactMap(args)));
+                        ShouldCompactMap(args), includeHelp: WorldEditorResponsePolicy.IncludeHelp(args)));
                 }
                 if (TryParseCellSnapshotPath(relative, out int cellX, out int cellY))
                     return CallToolResult.Text(ReadCellSnapshotMarkdown(args, cellX, cellY));
@@ -219,7 +219,7 @@ namespace OniMcp.Tools
 
             string map = GetMapMd("[视图: " + viewName + "] Patch Rect Map (X: "
                 + pxMin + "~" + pxMax + ", Y: " + pyMin + "~" + pyMax + ")",
-                pxMin, pxMax, pyMin, pyMax, mode, ShouldCompactMap(args));
+                pxMin, pxMax, pyMin, pyMax, mode, ShouldCompactMap(args), WorldEditorResponsePolicy.IncludeHelp(args));
             result = CallToolResult.Text(map);
             return true;
         }

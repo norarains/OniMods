@@ -5,6 +5,11 @@ description: 当用户询问 ONI 游戏机制、建筑/资源/元素/动植物�
 
 # ONI MCP 游戏顾问
 
+## Capability gate
+
+Read [capability discovery](../oni-gameplay/references/capabilities.md) before using tool examples. Only call names in `capabilities.publicTools` directly. Examples naming `colony_control`, `dupes_control`, `read_control`, or `search_control` are internal operations: use the documented batch route only when listed in `capabilities.batchOperations`. Skip edit-mark reads unless `capabilities.editMarks=true`. Cache discovery for the session.
+
+
 ## 目的
 
 作为只读顾问回答 ONI 游戏问题，而不是自动驾驶。把可验证的游戏事实、当前存档观察和策略推断明确分开。

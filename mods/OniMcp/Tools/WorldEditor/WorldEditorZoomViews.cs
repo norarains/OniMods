@@ -28,7 +28,7 @@ namespace OniMcp.Tools
             string syncNote = SyncZoomCameraAndView(args, xMin, yMin, xMax, yMax, views);
             bool syncEachView = ToolUtil.GetBool(args, "syncView", true);
             string text = ReadZoomMarkdown(xMin, yMin, xMax, yMax, views.Select(view => view.Name), syncNote,
-                ShouldCompactMap(args), syncEachView, ToolUtil.GetBool(args, "allowSound", false));
+                ShouldCompactMap(args), syncEachView, ToolUtil.GetBool(args, "allowSound", false), WorldEditorResponsePolicy.IncludeHelp(args));
             return CallToolResult.Text(text);
         }
 
@@ -56,7 +56,7 @@ namespace OniMcp.Tools
         }
 
         private static string ReadZoomMarkdown(int xMin, int yMin, int xMax, int yMax, IEnumerable<string> views,
-            string syncNote = null, bool compact = true, bool syncEachView = false, bool allowSound = false)
+            string syncNote = null, bool compact = true, bool syncEachView = false, bool allowSound = false, bool includeHelp = false)
         {
             NormalizeZoomBounds(ref xMin, ref yMin, ref xMax, ref yMax);
             var resolved = ResolveZoomViews(views).ToList();
@@ -78,7 +78,7 @@ namespace OniMcp.Tools
             {
                 if (syncEachView)
                     ApplyZoomOverlayMode(view.Mode, allowSound);
-                sb.AppendLine(GetMapMd("局部放大 - " + view.Name, xMin, xMax, yMin, yMax, view.Mode, compact));
+                sb.AppendLine(GetMapMd("局部放大 - " + view.Name, xMin, xMax, yMin, yMax, view.Mode, compact, includeHelp));
                 if (syncEachView)
                     sb.AppendLine("- 游戏覆盖层同步: 已切换到 " + view.Name + "；该视图已在游戏中展示。");
                 sb.AppendLine();

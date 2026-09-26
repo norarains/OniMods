@@ -9,7 +9,6 @@ namespace OniMcp.Tools
 {
     public static partial class WorldEditorTools
     {
-        private const int ActiveIndexExpandedStateLimit = 9000;
 
         static string ReadActiveIndexMarkdown(JObject args)
         {
@@ -35,9 +34,14 @@ namespace OniMcp.Tools
             sb.AppendLine("- Duplicants: " + dupes);
             sb.AppendLine();
 
-            AppendProgressiveOptions(sb);
-            AppendNextCalls(sb);
-            AppendEditableFiles(sb);
+            if (WorldEditorResponsePolicy.IncludeHelp(args))
+            {
+                AppendProgressiveOptions(sb);
+                AppendNextCalls(sb);
+                AppendEditableFiles(sb);
+            }
+            else
+                sb.AppendLine("- More: includeState=true for metrics; includeHelp=true for usage; server_control catalog manifest for capabilities.");
 
             if (ShouldIncludeExpandedState(args))
                 AppendExpandedCurrentState(sb, args);
@@ -141,24 +145,18 @@ namespace OniMcp.Tools
             {
                 sb.AppendLine("State read failed:");
                 sb.AppendLine("```text");
-                sb.AppendLine(TrimActiveIndexText(text, ActiveIndexExpandedStateLimit));
+                sb.AppendLine(text);
                 sb.AppendLine("```");
                 return;
             }
 
             sb.AppendLine("```json");
-            sb.AppendLine(TrimActiveIndexText(text, ActiveIndexExpandedStateLimit));
+            sb.AppendLine(text);
             sb.AppendLine("```");
             sb.AppendLine();
         }
 
-        private static string TrimActiveIndexText(string text, int max)
-        {
-            if (string.IsNullOrEmpty(text) || text.Length <= max)
-                return text ?? string.Empty;
 
-            return text.Substring(0, max) + "\n... truncated; call read_control domain=state action=current for full output";
-        }
 
         private static string ActiveSaveDisplayName()
         {

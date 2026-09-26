@@ -283,6 +283,12 @@ namespace OniMcp.Tools
 
             rows.Add(GlyphRow("Special", "empty", "空/无视图", ".", "当前格为空，或当前视图无覆盖内容"));
             rows.Add(GlyphRow("Special", "unknown", "未知", "?", "运行时对象或格子状态未知；必须查询，不得猜测"));
+            rows.Add(GlyphRow("Special", "map_dupe", "复制人", "人", "复制人实体；人@名称标记该复制人的位置"));
+            rows.Add(GlyphRow("Special", "map_critter", "小动物", "物", "小动物实体；物@名称标记该生物的位置，不是掉落物品"));
+            foreach (char symbol in "挖擦收消毒扫拆杀捕")
+                if (TrySemanticOrderAction(symbol.ToString(), out string action, out _))
+                    rows.Add(GlyphRow("Special", "order_" + action, action, symbol.ToString(),
+                        "命令 " + action + "；通过 /active/ops/orders.md 执行，:1..9 指定优先级"));
             foreach (var entry in RuntimeRoomGlyphEntries())
                 rows.Add(GlyphRow("Room", entry.Id, entry.Name,
                     GetUniqueChar(entry.Id, entry.Name).ToString(), entry.Name, "rooms"));

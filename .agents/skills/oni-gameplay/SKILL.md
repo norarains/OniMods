@@ -5,6 +5,11 @@ description: Control Oxygen Not Included through Oni MCP with a strict observe-p
 
 # ONI MCP Control
 
+## Capability gate
+
+Read [capability discovery](../oni-gameplay/references/capabilities.md) before using tool examples. Only call names in `capabilities.publicTools` directly. Examples naming `colony_control`, `dupes_control`, `read_control`, or `search_control` are internal operations: use the documented batch route only when listed in `capabilities.batchOperations`. Skip edit-mark reads unless `capabilities.editMarks=true`. Cache discovery for the session.
+
+
 ## Reference routing
 
 Keep this file loaded for every control task. Load only the reference needed for the current operation:
@@ -39,7 +44,7 @@ For autonomous play, keep the game paused while reading, planning, or issuing co
 
 ## Public tool policy
 
-Use the compact aggregate surface:
+Discover the current surface first. The following list describes operations, including internal batch-only aggregates:
 
 - `colony_control`: colony snapshots, diagnostics, management, research, schedules.
 - `dupes_control`: duplicant details, priorities, skills, equipment, commands.
@@ -95,7 +100,7 @@ Do not call the same read with identical arguments twice in a row. State what is
 Before interpreting a map glyph, generating a glyph from a building/element/entity name, or reading connection/overlay glyphs, announce in `commentary` that this skill requires an authoritative glyph lookup. Then call:
 
 ```text
-search_control domain=glyphs queries=["<all unknown glyphs or names>"] direction=auto
+world_editor command=symbols queries=["<all unknown glyphs or names>"] direction=auto
 ```
 
 - Batch every unknown glyph/name from the current map in one call; do not issue one lookup per cell.
@@ -106,9 +111,9 @@ search_control domain=glyphs queries=["<all unknown glyphs or names>"] direction
 Examples:
 
 ```text
-search_control domain=glyphs queries=["砖","?","┼"] direction=code_to_meaning matchMode=auto view=logic
-search_control domain=glyphs queries=["砖块","氧气","研究站"] direction=meaning_to_code matchMode=auto
-search_control domain=glyphs queries=["零","■","晒","美","微","低","枯"] direction=auto perQueryLimit=20
+world_editor command=symbols queries=["砖","?","┼"] direction=code_to_meaning matchMode=auto view=logic
+world_editor command=symbols queries=["砖块","氧气","研究站"] direction=meaning_to_code matchMode=auto
+world_editor command=symbols queries=["零","■","晒","美","微","低","枯"] direction=auto perQueryLimit=20
 ```
 
 ## Spatial and camera discipline

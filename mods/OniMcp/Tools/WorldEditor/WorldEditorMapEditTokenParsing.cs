@@ -132,17 +132,11 @@ namespace OniMcp.Tools
 
         private static int? ParsePriority(string token)
         {
-            token = NormalizeMapCompareToken(token);
-            int colon = (token ?? string.Empty).IndexOf(':');
-            if (colon < 0)
-                return null;
-            int end = token.IndexOf('#', colon + 1);
-            if (end < 0)
-                end = token.Length;
-            int parsed;
-            return int.TryParse(token.Substring(colon + 1, end - colon - 1), out parsed)
-                ? Math.Max(1, Math.Min(parsed, 9))
-                : (int?)null;
+            // Natural orders place :priority after @(x,y); map tokens can put it before.
+            // Do not discard the suffix while normalizing coordinate annotations.
+            var match = Regex.Match(token ?? string.Empty, @":([1-9])(?=$|[#@\s])",
+                RegexOptions.CultureInvariant, RegexMatchTimeout);
+            return match.Success ? (int?)int.Parse(match.Groups[1].Value) : null;
         }
 
         private static bool TryResolveElementFromSymbol(char symbol, out string elementId)

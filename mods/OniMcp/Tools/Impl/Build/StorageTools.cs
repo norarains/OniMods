@@ -23,20 +23,19 @@ namespace OniMcp.Tools
                 Description = "兼容入口：请优先使用 building_control domain=storage action=list。列出储物箱/储液库/储气库等储存建筑，包含容量、已存质量和过滤器摘要",
                 Parameters = new Dictionary<string, McpToolParameter>
                 {
+                    ["id"] = new McpToolParameter { Type = "integer", Description = "Filter by storage instance ID", Required = false },
+                    ["query"] = new McpToolParameter { Type = "string", Description = "Filter by building name or prefab ID", Required = false },
                     ["resource"] = new McpToolParameter { Type = "string", Description = "按储存过滤标签或建筑名筛选", Required = false },
                     ["worldId"] = new McpToolParameter { Type = "integer", Description = "按世界 ID 过滤", Required = false },
                     ["limit"] = new McpToolParameter { Type = "integer", Description = "最多返回多少个储存建筑，默认 100，最大 500", Required = false }
                 },
                 Handler = args =>
                 {
-                    string filter = args["resource"]?.ToString()?.ToLowerInvariant();
-                    int? worldId = ToolUtil.GetInt(args, "worldId");
                     int limit = ToolUtil.ClampLimit(args, 100, 500);
-
-                    var storages = GetStorageBuildings()
-                        .Where(item => !worldId.HasValue || item.WorldId == worldId.Value)
-                        .Where(item => string.IsNullOrEmpty(filter) || item.Matches(filter))
-                        .Take(limit)
+                    var storages = StorageListFilter.Apply(GetStorageBuildings(), args,
+                            item => item.Id, item => item.WorldId,
+                            (item, query) => item.MatchesIdentity(query),
+                            (item, resource) => item.Matches(resource), limit)
                         .Select(item => item.ToDictionary(includeItems: false))
                         .ToList();
 
@@ -137,6 +136,8 @@ namespace OniMcp.Tools
                 Parameters = new Dictionary<string, McpToolParameter>
                 {
                     ["action"] = new McpToolParameter { Type = "string", Description = "list、detail 或 set_filter", Required = true, EnumValues = new List<string> { "list", "detail", "set_filter" } },
+                    ["id"] = new McpToolParameter { Type = "integer", Description = "Filter by storage instance ID", Required = false },
+                    ["query"] = new McpToolParameter { Type = "string", Description = "Filter by building name or prefab ID", Required = false },
                     ["resource"] = new McpToolParameter { Type = "string", Description = "action=list 时按储存过滤标签或建筑名筛选", Required = false },
                     ["worldId"] = new McpToolParameter { Type = "integer", Description = "目标世界 ID；detail/set_filter 的 query-only 默认当前激活世界", Required = false },
                     ["limit"] = new McpToolParameter { Type = "integer", Description = "action=list 时最多返回数量，默认 100，最大 500", Required = false },
@@ -177,6 +178,8 @@ namespace OniMcp.Tools
                 {
                     ["domain"] = new McpToolParameter { Type = "string", Description = "storage、tile_selection、filter 或 receptacle", Required = true, EnumValues = new List<string> { "storage", "tile_selection", "filter", "receptacle" } },
                     ["action"] = new McpToolParameter { Type = "string", Description = "子工具操作；storage=list/detail/set_filter，tile_selection=list/set/batch，filter=list/set，receptacle=list/request/cancel_request/remove_occupant/cancel_remove/batch", Required = false },
+                    ["id"] = new McpToolParameter { Type = "integer", Description = "Filter by storage instance ID", Required = false },
+                    ["query"] = new McpToolParameter { Type = "string", Description = "Filter by building name or prefab ID", Required = false },
                     ["resource"] = new McpToolParameter { Type = "string", Description = "domain=storage action=list 时按储存过滤标签或建筑名筛选", Required = false },
                     ["query"] = new McpToolParameter { Type = "string", Description = "domain=tile_selection/filter/receptacle action=list 时按名称、prefabId 或 tag 筛选", Required = false },
                     ["includeOptions"] = new McpToolParameter { Type = "boolean", Description = "列表查询时是否返回可选项", Required = false },

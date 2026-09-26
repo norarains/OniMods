@@ -15,7 +15,8 @@ namespace OniMcp.Tools
 
         private static CallToolResult HandleWorldEditorScoped(JObject rawArgs)
         {
-            return RunWithWorldEditorInstantBuildScope(rawArgs, () => HandleWorldEditorCommand(rawArgs ?? new JObject()));
+            return WorldEditorResponsePolicy.Format(
+                RunWithWorldEditorInstantBuildScope(rawArgs, () => HandleWorldEditorCommand(rawArgs ?? new JObject())), rawArgs);
         }
 
         private static CallToolResult RunWithWorldEditorInstantBuildScope(JObject rawArgs, Func<CallToolResult> action)

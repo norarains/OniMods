@@ -23,5 +23,11 @@
     <Compile Include="../../mods/OniMcp/Tools/WorldEditor/WorldEditorQueryTools.cs" Link="Source/WorldEditorQueryTools.cs" />
     <Compile Include="../../mods/OniMcp/Tools/WorldEditor/WorldEditorMapEditTokenParsing.cs" Link="Source/WorldEditorMapEditTokenParsing.cs" />
     <Compile Include="../../mods/OniMcp/Tools/WorldEditor/WorldEditorCellObjectPolicy.cs" Link="Source/WorldEditorCellObjectPolicy.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/WorldEditor/WorldEditorResponsePolicy.cs" Link="Source/WorldEditorResponsePolicy.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/WorldEditor/WorldEditorMapValidation.cs" Link="Source/WorldEditorMapValidation.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/WorldEditor/WorldEditorExecutionPolicy.cs" Link="Source/WorldEditorExecutionPolicy.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Build/RegisteredBuildingOccupancy.cs" Link="Source/RegisteredBuildingOccupancy.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Build/StorageListFilter.cs" Link="Source/StorageListFilter.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Audit/ToolCatalogCapabilities.cs" Link="Source/ToolCatalogCapabilities.cs" />
   </ItemGroup>
 </Project>

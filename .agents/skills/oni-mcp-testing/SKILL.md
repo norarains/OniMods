@@ -5,6 +5,11 @@ description: 当用户要求测试、验证或审计 ONI MCP 服务器功能、�
 
 # ONI MCP 功能测试
 
+## Capability gate
+
+Read [capability discovery](../oni-gameplay/references/capabilities.md) before using tool examples. Only call names in `capabilities.publicTools` directly. Examples naming `colony_control`, `dupes_control`, `read_control`, or `search_control` are internal operations: use the documented batch route only when listed in `capabilities.batchOperations`. Skip edit-mark reads unless `capabilities.editMarks=true`. Cache discovery for the session.
+
+
 ## 何时使用
 
 - 用户说「测试 MCP」、「看看 MCP 好不好用」、「验证连接」
@@ -33,7 +38,7 @@ colony_control domain=snapshot action=get      → 殖民地完整快照（替�
 
 检查项：
 - [ ] `server_control domain=diagnostics action=status` 返回的 `loaded` 为 true
-- [ ] `toolCount` 为核心公开工具数量，正常应为 8
+- [ ] `toolCount` 应与当前 `capabilities.publicTools` 一致；默认公开工具数量为 7
 - [ ] `game_control domain=speed action=time` 返回有效周期和时间
 - [ ] `colony_control domain=snapshot action=get` 返回复制人、食物、建筑、研究、告警
 

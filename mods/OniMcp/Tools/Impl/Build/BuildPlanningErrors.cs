@@ -91,6 +91,12 @@ namespace OniMcp.Tools
 
         private static Dictionary<string, object> AnchorDictionary(int x, int y, int worldId)
         {
+            if (worldId < 0 && x >= 0 && x < Grid.WidthInCells && y >= 0 && y < Grid.HeightInCells)
+            {
+                int cell = Grid.XYToCell(x, y);
+                if (Grid.IsValidCell(cell) && Grid.IsWorldValidCell(cell))
+                    worldId = Grid.WorldIdx[cell];
+            }
             return new Dictionary<string, object>
             {
                 ["x"] = x,

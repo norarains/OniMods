@@ -44,6 +44,14 @@ namespace OniMcp.Tools
         }
 
         public static CallToolResult CallTool(string name, JObject arguments) => Tools[name].Handler(arguments);
+        internal static readonly Dictionary<string, McpTool> Internal = new Dictionary<string, McpTool>();
+        internal static bool TryGetOperation(string name, out McpTool tool) => TryGetTool(name, out tool) || Internal.TryGetValue(name, out tool);
+        internal static CallToolResult CallToolFromWorldEditor(string name, JObject args, bool allowCoordinates)
+        {
+            if (allowCoordinates) throw new InvalidOperationException("batch must not enable coordinates");
+            return TryGetOperation(name, out var tool) ? tool.Handler(args) : CallToolResult.Error("missing");
+        }
+        public static List<McpTool> GetVisibleTools() => GetTools();
         public static List<McpTool> GetTools() => Tools.Values.OrderBy(tool => tool.Name, StringComparer.Ordinal).ToList();
         public static List<McpToolInfo> GetToolInfos(bool includeAll = false) => GetTools()
             .Select(tool => new McpToolInfo { Name = tool.Name })
@@ -88,6 +96,7 @@ namespace OniMcp.Tools
         private static readonly Dictionary<string, char> UniqueCharMap = new Dictionary<string, char>();
         private sealed class MapEditCell
         {
+            public string ToToken { get; set; }
             public int X { get; set; }
             public int Y { get; set; }
         }

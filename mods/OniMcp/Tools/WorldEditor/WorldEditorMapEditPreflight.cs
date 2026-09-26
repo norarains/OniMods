@@ -109,18 +109,7 @@ namespace OniMcp.Tools
         {
             if (!TryCompileMapEdit(args, search, replacement, out List<MapEditCell> changes, out string error))
                 return CallToolResult.Error(error);
-            return JsonResult(new JObject
-            {
-                ["ok"] = true,
-                ["phase"] = "preflight",
-                ["sourcePath"] = args["sourcePath"]?.ToString(),
-                ["changedCells"] = changes.Count,
-                ["kinds"] = new JArray(changes.GroupBy(ChangeKind).Select(group => new JObject
-                {
-                    ["kind"] = group.Key,
-                    ["cells"] = group.Count()
-                }))
-            });
+            return ValidateMapChangesInGame(args, changes);
         }
     }
 }

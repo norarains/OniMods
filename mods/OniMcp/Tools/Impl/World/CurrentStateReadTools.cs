@@ -40,23 +40,28 @@ namespace OniMcp.Tools
                 ["snapshot"] = TryParseJson(text) ?? text,
                 ["infrastructure"] = ReadInfrastructureIfRequested(args),
                 ["reachability"] = ReadReachabilityIfRequested(args),
-                ["logErrors"] = ReadLogErrorsIfRequested(args),
-                ["editableFiles"] = EditableFiles(),
-                ["viewFiles"] = ViewFiles(),
-                ["managementQuickEdits"] = ManagementQuickEdits(),
-                ["liveViewport"] = LiveViewport(),
-                ["lookAroundPlan"] = LookAroundPlan(),
-                ["firstCallWorkflow"] = FirstCallWorkflow(),
-                ["progressiveDetail"] = ProgressiveDetail(),
-                ["infrastructureWorkflow"] = BuildInfrastructureWorkflow(),
-                ["stabilityWorkflow"] = BuildStabilityWorkflow(),
-                ["tokenBudget"] = TokenBudget(),
-                ["tokenHint"] = "First call agents. Default avoids broad map scans; pass includeInfrastructure/includeLogs only when needed.",
-                ["recommendedSecondCall"] = StarterRoomTemplateCall(),
-                ["starterPreflight"] = StarterPreflight(),
-                ["starterDecisionTree"] = StarterDecisionTree(),
-                ["nextCalls"] = NextCalls()
+                ["logErrors"] = ReadLogErrorsIfRequested(args)
+
             };
+
+            if (WorldEditorResponsePolicy.IncludeHelp(args))
+            {
+                response["editableFiles"] = EditableFiles();
+                response["viewFiles"] = ViewFiles();
+                response["managementQuickEdits"] = ManagementQuickEdits();
+                response["liveViewport"] = LiveViewport();
+                response["lookAroundPlan"] = LookAroundPlan();
+                response["firstCallWorkflow"] = FirstCallWorkflow();
+                response["progressiveDetail"] = ProgressiveDetail();
+                response["infrastructureWorkflow"] = BuildInfrastructureWorkflow();
+                response["stabilityWorkflow"] = BuildStabilityWorkflow();
+                response["tokenBudget"] = TokenBudget();
+                response["tokenHint"] = "First call agents. Default avoids broad map scans; pass includeInfrastructure/includeLogs only when needed.";
+                response["recommendedSecondCall"] = StarterRoomTemplateCall();
+                response["starterPreflight"] = StarterPreflight();
+                response["starterDecisionTree"] = StarterDecisionTree();
+                response["nextCalls"] = NextCalls();
+            }
 
             return CallToolResult.Text(JsonConvert.SerializeObject(response, McpJsonUtil.Settings));
         }

@@ -43,13 +43,13 @@ namespace OniMcp.Tools
                 return ErrorResult(index, name, call, $"{ToolName} cannot call itself");
 
             McpTool tool;
-            if (OniToolRegistry.TryGetTool(name, out tool)
+            if (TryGetBatchOperation(name, out tool)
                 && RequiresBatchConfirm(tool, arguments))
             {
                 return ErrorResult(index, name, call, $"dangerous tool '{tool.Name}' requires arguments.confirm=true");
             }
 
-            var toolResult = OniToolRegistry.CallTool(name, arguments);
+            var toolResult = OniToolRegistry.CallToolFromWorldEditor(name, arguments, false);
             string text = ExtractText(toolResult);
             var result = new Dictionary<string, object>
             {
@@ -80,7 +80,7 @@ namespace OniMcp.Tools
         private static bool IsBatchCall(string name, JObject arguments)
         {
             McpTool tool;
-            if (OniToolRegistry.TryGetTool(name, out tool)
+            if (TryGetBatchOperation(name, out tool)
                 && string.Equals(tool.Name, ToolName, StringComparison.OrdinalIgnoreCase))
             {
                 return true;
@@ -123,7 +123,7 @@ namespace OniMcp.Tools
                 MergeDefaults(arguments, defaults);
 
                 McpTool tool;
-                string canonicalName = OniToolRegistry.TryGetTool(name, out tool) ? tool.Name : name;
+                string canonicalName = TryGetBatchOperation(name, out tool) ? tool.Name : name;
                 if (!IsWriteOrExecute(tool))
                     continue;
 

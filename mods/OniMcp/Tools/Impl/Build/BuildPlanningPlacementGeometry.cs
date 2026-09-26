@@ -25,8 +25,8 @@ namespace OniMcp.Tools
                 ["footprintCells"] = width * height,
                 ["singleCellDragSafe"] = width == 1 && height == 1,
                 ["dragGuidance"] = width == 1 && height == 1
-                    ? "Use building_control domain=planning action=build_area with anchors for repeated tiles, ladders, or buildings; points are only for wire, conduit, or rail utility routes."
-                    : "Use building_control domain=planning action=build_area with one lower-left anchor per multi-cell footprint."
+                    ? "Use world_editor map SEARCH/REPLACE tokens with :priority for repeated tiles, ladders, or buildings; raw anchors are not public aggregate parameters."
+                    : "Use world_editor map SEARCH/REPLACE tokens covering the full footprint, or one lower-left cell. Preview with dryRun=true."
             };
         }
 

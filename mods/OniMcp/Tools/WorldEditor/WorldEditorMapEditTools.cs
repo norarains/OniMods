@@ -216,7 +216,7 @@ namespace OniMcp.Tools
                 // Multi-cell footprints map N cells -> 1 lower-left anchor; using anchor count
                 // made remainingCells look incomplete and flagged partial success incorrectly.
                 int groupCells = group.Count();
-                if (!failed)
+                if (!failed && !ToolUtil.GetBool(parentArgs, "dryRun", false))
                     applied += groupCells;
                 results.Add(new JObject
                 {

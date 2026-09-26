@@ -41,20 +41,25 @@ namespace OniMcp.Tools
             AppendCellObjectSnapshot(sb, x, y, cell);
             AppendCellInfrastructureSnapshot(sb, cell);
             AppendCellPortSnapshot(sb, cell);
-            AppendCellItemSnapshot(sb, cell, args);
+            if (WorldEditorResponsePolicy.IncludeHelp(args))
+                AppendCellItemSnapshot(sb, cell, args);
             AppendCellPickupDetailSnapshot(sb, cell, args);
-            AppendCellPickupSummary(sb, cell);
+            if (WorldEditorResponsePolicy.IncludeHelp(args))
+                AppendCellPickupSummary(sb, cell);
             AppendCellDecisionHints(sb, x, y, cell);
-            AppendCellQuickOps(sb, x, y, cell);
-            AppendCellNextReads(sb, x, y, cell);
-            sb.AppendLine();
-            sb.AppendLine("## Links");
-            sb.AppendLine("- `/active/map/viewport.md`");
-            sb.AppendLine("- `/active/infrastructure/power.md`");
-            sb.AppendLine("- `/active/infrastructure/liquid_conduits.md`");
-            sb.AppendLine("- `/active/infrastructure/gas_conduits.md`");
-            sb.AppendLine("- `/active/infrastructure/logic.md`");
-            sb.AppendLine("- `/active/infrastructure/solid_conveyor.md`");
+            if (WorldEditorResponsePolicy.IncludeHelp(args))
+            {
+                AppendCellQuickOps(sb, x, y, cell);
+                AppendCellNextReads(sb, x, y, cell);
+                sb.AppendLine();
+                sb.AppendLine("## Links");
+                sb.AppendLine("- `/active/map/viewport.md`");
+                sb.AppendLine("- `/active/infrastructure/power.md`");
+                sb.AppendLine("- `/active/infrastructure/liquid_conduits.md`");
+                sb.AppendLine("- `/active/infrastructure/gas_conduits.md`");
+                sb.AppendLine("- `/active/infrastructure/logic.md`");
+                sb.AppendLine("- `/active/infrastructure/solid_conveyor.md`");
+            }
             return sb.ToString();
         }
 
@@ -320,14 +325,11 @@ namespace OniMcp.Tools
             if (def == null)
                 return string.Empty;
 
-            int anchorCell = building.GetBottomLeftCell();
-            if (!Grid.IsValidCell(anchorCell))
-                anchorCell = Grid.PosToCell(go);
-            string anchor = Grid.IsValidCell(anchorCell)
-                ? "(" + Grid.CellColumn(anchorCell) + "," + Grid.CellRow(anchorCell) + ")"
-                : "invalid";
-            return ", footprint=" + Math.Max(1, def.WidthInCells) + "x" + Math.Max(1, def.HeightInCells)
-                + ", bottomLeft=" + anchor
+            if (!RegisteredBuildingOccupancy.TryGetBounds(go, Grid.PosToCell(go), def, out int[] bounds))
+                return ", footprint=unregistered, rule=" + def.BuildLocationRule;
+            return ", footprint=" + (bounds[2] - bounds[0] + 1) + "x" + (bounds[3] - bounds[1] + 1)
+                + ", bottomLeft=(" + bounds[0] + "," + bounds[1] + ")"
+                + ", topRight=(" + bounds[2] + "," + bounds[3] + ")"
                 + ", rule=" + def.BuildLocationRule;
         }
 

@@ -257,7 +257,7 @@ namespace OniMcp.Tools
 
                 if (!allowValidatedCoordinates && !IsCoordinateTool(tool.Name) && ContainsCoordinateArguments(arguments))
                 {
-                    var coordinateResult = ToolCallMiddleware.Inject(CallToolResult.Error("Coordinate arguments are only supported by coordinate_control; use semantic query/target/areaId inputs for this tool."), middlewareNotifications);
+                    var coordinateResult = ToolCallMiddleware.Inject(CallToolResult.Error("Use semantic query/target/areaId inputs for this tool; exact cells require a world_editor map patch or supported semantic operation file."), middlewareNotifications);
                     return usedLegacyAlias
                         ? ToolMetadata.AddLegacyAliasDeprecationWarning(coordinateResult, name, tool.Name)
                         : coordinateResult;

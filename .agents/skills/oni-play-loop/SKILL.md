@@ -1,9 +1,14 @@
 ---
 name: oni-mcp-play-loop
-description: 当用户要求 agent 通过 MCP 循环游玩 Oxygen Not Included、自动玩一段时间、继续殖民地，或运行暂停-规划-恢复循环时使用。强制执行严格的 pause -> observe -> plan -> execute -> resume briefly -> pause -> verify 循环，读取 game_control domain=ui uiDomain=edit_mark action=list，限制运行窗口，并在风险或歧义决策前停下等待用户确认。
+description: 当用户要求 agent 通过 MCP 循环游玩 Oxygen Not Included、自动玩一段时间、继续殖民地，或运行暂停-规划-恢复循环时使用。强制执行严格的 pause → observe → plan → execute → resume briefly → pause → verify 循环，仅在能力声明支持时读取玩家规划标记，限制运行窗口，并在风险或歧义决策前停下等待用户确认。
 ---
 
 # ONI MCP 游玩循环
+
+## Capability gate
+
+Read [capability discovery](../oni-gameplay/references/capabilities.md) before using tool examples. Only call names in `capabilities.publicTools` directly. Examples naming `colony_control`, `dupes_control`, `read_control`, or `search_control` are internal operations: use the documented batch route only when listed in `capabilities.batchOperations`. Skip edit-mark reads unless `capabilities.editMarks=true`. Cache discovery for the session.
+
 
 ## 目的
 
@@ -39,8 +44,9 @@ game_control domain=speed action=pause
 优先使用紧凑聚合读取：
 
 ```
-colony_control domain=snapshot action=get profile=brief includeAtmosphere=false
-dupes_control domain=info action=status_check radius=8
+world_editor command=read path=/active/index.md includeState=true
+server_control domain=batch action=call_many responseMode=summary calls=[{tool:dupes_control,args:{domain:info,action:status_check,radius:8}}]
+# Only when capabilities.editMarks=true:
 game_control domain=ui uiDomain=edit_mark action=list limit=5
 ```
 
@@ -53,7 +59,7 @@ game_control domain=ui uiDomain=edit_mark action=list limit=5
 - `read_control domain=infrastructure action=rooms`
 - `colony_control domain=bio bioDomain=farming action=list_harvestables`
 
-如果玩家创建了游戏内规划请求，在发明空间计划前先用 `game_control domain=ui uiDomain=edit_mark action=list`。
+如果玩家创建了游戏内规划请求，仅在 `capabilities.editMarks=true` 时先读取规划标记。
 
 ### 3. 规划
 
@@ -127,8 +133,8 @@ game_control domain=speed action=pause
 然后用紧凑读取验证：
 
 ```
-colony_control domain=snapshot action=get profile=brief includeAtmosphere=false
-dupes_control domain=info action=status_check radius=8
+world_editor command=read path=/active/index.md includeState=true
+server_control domain=batch action=call_many responseMode=summary calls=[{tool:dupes_control,args:{domain:info,action:status_check,radius:8}}]
 read_control domain=world action=area_snapshot areaId=<area> preset=construction|utilities encoding=plain
 ```
 

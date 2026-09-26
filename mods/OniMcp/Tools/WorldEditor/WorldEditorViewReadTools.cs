@@ -45,7 +45,7 @@ namespace OniMcp.Tools
             bool compact = ShouldCompactMap(args);
             string map = GetMapMd("[视图: " + view.Name + "] Camera Viewport Map (X: "
                 + xMin + "~" + xMax + ", Y: " + yMin + "~" + yMax + ")",
-                xMin, xMax, yMin, yMax, view.Mode, compact);
+                xMin, xMax, yMin, yMax, view.Mode, compact, WorldEditorResponsePolicy.IncludeHelp(args));
             if (string.IsNullOrWhiteSpace(syncNote))
                 return map;
             return "- 直播视角: " + syncNote + "\n\n" + map;

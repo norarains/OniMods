@@ -104,7 +104,10 @@ namespace OniMcp.Tools
                     string responseMode = NormalizeResponseMode(args["responseMode"]?.ToString());
                     bool includeArguments = ToolUtil.GetBool(args, "includeArguments", false);
                     int maxTextChars = Math.Max(80, Math.Min(ToolUtil.GetInt(args, "maxTextChars") ?? 500, 4000));
-                    var defaults = args["defaults"] as JObject ?? args["defaultArguments"] as JObject ?? new JObject();
+                    var defaults = (JObject)(args["defaults"] as JObject ?? args["defaultArguments"] as JObject ?? new JObject()).DeepClone();
+                    string task = (args["task"] ?? args["taskDescription"])?.ToString();
+                    if (defaults["task"] == null && !string.IsNullOrWhiteSpace(task))
+                        defaults["task"] = task;
                     var preflightWarnings = DuplicateCallWarnings(calls, defaults);
                     var preflight = PreflightCalls(calls, defaults, includeArguments, preflightWarnings);
                     bool preflightValid = preflight.All(item => !(item.ContainsKey("isError") && (bool)item["isError"]));
@@ -229,7 +232,7 @@ namespace OniMcp.Tools
                 return ErrorResult(index, name, call, $"{ToolName} cannot call itself");
 
             McpTool tool;
-            if (!OniToolRegistry.TryGetTool(name, out tool))
+            if (!TryGetBatchOperation(name, out tool))
                 return ErrorResult(index, name, call, $"Tool not found: {name}");
 
             if (RequiresBatchConfirm(tool, arguments))

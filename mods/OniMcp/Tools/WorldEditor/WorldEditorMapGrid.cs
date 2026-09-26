@@ -60,7 +60,7 @@ namespace OniMcp.Tools
             int xMax = Mathf.Clamp(Mathf.RoundToInt(pos.x + size * aspect), 0, Grid.WidthInCells - 1);
             int yMin = Mathf.Clamp(Mathf.RoundToInt(pos.y - size), 0, Grid.HeightInCells - 1);
             int yMax = Mathf.Clamp(Mathf.RoundToInt(pos.y + size), 0, Grid.HeightInCells - 1);
-            string map = GetMapMd("[视图: " + GetOverlayViewName(mode) + "] " + path, xMin, xMax, yMin, yMax, mode, ShouldCompactMap(args));
+            string map = GetMapMd("[视图: " + GetOverlayViewName(mode) + "] " + path, xMin, xMax, yMin, yMax, mode, ShouldCompactMap(args), WorldEditorResponsePolicy.IncludeHelp(args));
             return map + "\n## View Sync\n- 直播视角: " + syncNote + "\n";
         }
 
@@ -143,7 +143,7 @@ if (symbol == '←' || symbol == '→' || symbol == '↑' || symbol == '↓') re
             return GetMapMd(title, xMin, xMax, yMin, yMax, mode);
         }
 
-        private static string GetMapMd(string title, int xMin, int xMax, int yMin, int yMax, HashedString activeMode, bool compact = true)
+        private static string GetMapMd(string title, int xMin, int xMax, int yMin, int yMax, HashedString activeMode, bool compact = true, bool includeHelp = false)
         {
             var sb = new StringBuilder();
             sb.AppendFormat("# {0}\n", title);
@@ -215,7 +215,8 @@ if (symbol == '←' || symbol == '→' || symbol == '↑' || symbol == '↓') re
                     sb.AppendLine(detail);
             }
             AppendBuildingParameterReferences(sb, xMin, xMax, yMin, yMax);
-            AppendMapFileIndex(sb);
+            if (includeHelp)
+                AppendMapFileIndex(sb);
             return sb.ToString();
         }
 

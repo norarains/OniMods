@@ -32,6 +32,7 @@ internal static class Program
             },
             Handler = args => { calls++; return CallToolResult.Text("ok"); }
         };
+        ErgonomicsRegression.Run();
         TestBatchFailures();
         TestProgramValidation();
         TestProgramExecution();

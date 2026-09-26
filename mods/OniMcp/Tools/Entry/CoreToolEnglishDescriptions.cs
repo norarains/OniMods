@@ -12,7 +12,7 @@ namespace OniMcp.Tools
             switch (tool.Name)
             {
                 case "building_control":
-                    tool.Description = "Unified building entrypoint. Use action plus query, target, search, id, plan, or areaId for locating targets. Coordinate input is not accepted here; use coordinate_control only as a last-resort auxiliary gateway.";
+                    tool.Description = "Unified building entrypoint. Use action plus query, target, search, id, plan, or areaId for locating targets. Coordinate input is not accepted here; use world_editor map SEARCH/REPLACE patches for exact cells.";
                     Describe(tool, BuildingDescriptions());
                     break;
                 case "colony_control":
@@ -36,11 +36,11 @@ namespace OniMcp.Tools
                     Describe(tool, NavigationDescriptions());
                     break;
                 case "orders_control":
-                    tool.Description = "Unified orders entrypoint. Use action plus query, target, search, id, or areaId for locating targets. Coordinate input is not accepted here; route exact coordinate operations through coordinate_control.";
+                    tool.Description = "Unified orders entrypoint. Use action plus query, target, search, id, or areaId for locating targets. Coordinate input is not accepted here; use natural commands in /active/ops/orders.md through world_editor for exact cells.";
                     Describe(tool, OrdersDescriptions());
                     break;
                 case "read_control":
-                    tool.Description = "Unified read/query entrypoint for world data, reusable areas, buildings, resources, infrastructure, and knowledge. Use query, areaId, ids, and semantic filters; coordinate input is isolated in coordinate_control.";
+                    tool.Description = "Unified read/query entrypoint for world data, reusable areas, buildings, resources, infrastructure, and knowledge. Use query, areaId, ids, and semantic filters; read exact cells through world_editor virtual map files.";
                     Describe(tool, ReadDescriptions());
                     break;
                 case "search_control":
@@ -81,12 +81,12 @@ namespace OniMcp.Tools
                 ["query"] = "Search or filter text.",
                 ["target"] = "Search target alias.",
                 ["search"] = "Search text alias.",
-                ["x"] = "Coordinate X. Only exposed on coordinate_control.",
-                ["y"] = "Coordinate Y. Only exposed on coordinate_control.",
-                ["x1"] = "Rectangle start X. Only exposed on coordinate_control.",
-                ["y1"] = "Rectangle start Y. Only exposed on coordinate_control.",
-                ["x2"] = "Rectangle end X. Only exposed on coordinate_control.",
-                ["y2"] = "Rectangle end Y. Only exposed on coordinate_control.",
+                ["x"] = "Coordinate X. Available inside validated world_editor semantic commands, not direct aggregate calls.",
+                ["y"] = "Coordinate Y. Available inside validated world_editor semantic commands, not direct aggregate calls.",
+                ["x1"] = "Rectangle start X. Available inside validated world_editor semantic commands, not direct aggregate calls.",
+                ["y1"] = "Rectangle start Y. Available inside validated world_editor semantic commands, not direct aggregate calls.",
+                ["x2"] = "Rectangle end X. Available inside validated world_editor semantic commands, not direct aggregate calls.",
+                ["y2"] = "Rectangle end Y. Available inside validated world_editor semantic commands, not direct aggregate calls.",
                 ["areaId"] = "Reusable area handle.",
                 ["worldId"] = "Target world id.",
                 ["limit"] = "Maximum number of items to return or process.",

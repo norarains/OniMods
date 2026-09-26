@@ -5,6 +5,11 @@ description: 当用户要求快速总结 ONI 附近环境/资源、开局区域�
 
 # ONI MCP 环境摘要
 
+## Capability gate
+
+Read [capability discovery](../oni-gameplay/references/capabilities.md) before using tool examples. Only call names in `capabilities.publicTools` directly. Examples naming `colony_control`, `dupes_control`, `read_control`, or `search_control` are internal operations: use the documented batch route only when listed in `capabilities.batchOperations`. Skip edit-mark reads unless `capabilities.editMarks=true`. Cache discovery for the session.
+
+
 ## 目的
 
 快速总结当前视角、选区、打印舱附近，或用户提供坐标周围的情况。这个技能只读：不要挖掘、建造、清扫、收获或修改设置。
@@ -24,6 +29,7 @@ read_control domain=world action=area_snapshot preset=utilities encoding=plain i
 如果存在玩家编辑标记请求，或用户说“框选区域/标记区域/玩家规划”，先读取：
 
 ```
+# Only when capabilities.editMarks=true:
 game_control domain=ui uiDomain=edit_mark action=list limit=5
 read_control domain=world action=area_snapshot areaId=<request.areaId> preset=utilities encoding=plain
 ```

@@ -206,40 +206,32 @@ namespace OniMcp.Tools
 
             int objectX = Grid.CellColumn(objectCell);
             int objectY = Grid.CellRow(objectCell);
-            int width = Math.Max(1, def?.WidthInCells ?? 1);
-            int height = Math.Max(1, def?.HeightInCells ?? 1);
-            var building = go.GetComponent<Building>();
-            int anchorCell = building != null ? building.GetBottomLeftCell() : objectCell;
-            int anchorX = Grid.IsValidCell(anchorCell) ? Grid.CellColumn(anchorCell) : objectX - width / 2;
-            int anchorY = Grid.IsValidCell(anchorCell) ? Grid.CellRow(anchorCell) : objectY - height / 2;
+            int[] occupiedBounds = null;
             var kpid = go.GetComponent<KPrefabID>();
             string id = def?.PrefabID ?? kpid?.PrefabTag.Name ?? go.name;
 
-            for (int dy = 0; dy < height; dy++)
+            // Use the same native occupancy as map/cell reads. Reconstructing a
+            // rectangle from pivot + width creates phantom cells beside even-width
+            // buildings such as the Printing Pod, and misses rotated footprints.
+            foreach (int cell in footprintCells)
             {
-                for (int dx = 0; dx < width; dx++)
+                if (!Grid.IsValidCell(cell) || def == null
+                    || !RegisteredBuildingOccupancy.Contains(go, cell, def))
+                    continue;
+                if (occupiedBounds == null)
+                    RegisteredBuildingOccupancy.TryGetBounds(go, objectCell, def, out occupiedBounds);
+                int anchorX = occupiedBounds != null ? occupiedBounds[0] : objectX;
+                int anchorY = occupiedBounds != null ? occupiedBounds[1] : objectY;
+                yield return new Dictionary<string, object>
                 {
-                    int x = anchorX + dx;
-                    int y = anchorY + dy;
-                    int cell = Grid.XYToCell(x, y);
-                    if (!Grid.IsValidCell(cell) || !footprintCells.Contains(cell))
-                        continue;
-                    yield return new Dictionary<string, object>
-                    {
-                        ["kind"] = kind,
-                        ["id"] = id,
-                        ["name"] = ToolUtil.CleanName(go.GetProperName()),
-                        ["x"] = x,
-                        ["y"] = y,
-                        ["cell"] = cell,
-                        ["objectX"] = objectX,
-                        ["objectY"] = objectY,
-                        ["anchorX"] = anchorX,
-                        ["anchorY"] = anchorY,
-                        ["reasonCode"] = "occupied_by_" + kind,
-                        ["reason"] = "requested footprint overlaps an existing " + kind + " footprint"
-                    };
-                }
+                    ["kind"] = kind, ["id"] = id,
+                    ["name"] = ToolUtil.CleanName(go.GetProperName()),
+                    ["x"] = Grid.CellColumn(cell), ["y"] = Grid.CellRow(cell),
+                    ["cell"] = cell, ["objectX"] = objectX, ["objectY"] = objectY,
+                    ["anchorX"] = anchorX, ["anchorY"] = anchorY,
+                    ["reasonCode"] = "occupied_by_" + kind,
+                    ["reason"] = "requested footprint overlaps registered " + kind + " cells"
+                };
             }
         }
 

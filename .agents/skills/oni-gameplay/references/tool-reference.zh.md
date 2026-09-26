@@ -1,5 +1,7 @@
 # ONI MCP 工具参考
 
+See [capability discovery](capabilities.md): internal aggregate examples require the advertised batch route; edit-mark reads are conditional.
+
 在选择工具、编排多工具流程、配置参数、提示词与资源映射到聚合调用时，优先查阅此参考。
 
 ## 目录

@@ -65,6 +65,7 @@ namespace OniMcp.Tools
 
                     var result = new Dictionary<string, object>
                     {
+                        ["capabilities"] = ToolCatalogCapabilities.Read(),
                         ["toolCount"] = OniToolRegistry.GetVisibleTools().Count,
                         ["returned"] = matchedTools.Count,
                         ["groupSummary"] = matchedTools

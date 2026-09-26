@@ -5,6 +5,11 @@ description: 当开始新的 Oxygen Not Included 殖民地，或用户要求开�
 
 # ONI MCP 开局设置
 
+## Capability gate
+
+Read [capability discovery](../oni-gameplay/references/capabilities.md) before using tool examples. Only call names in `capabilities.publicTools` directly. Examples naming `colony_control`, `dupes_control`, `read_control`, or `search_control` are internal operations: use the documented batch route only when listed in `capabilities.batchOperations`. Skip edit-mark reads unless `capabilities.editMarks=true`. Cache discovery for the session.
+
+
 ## 触发
 
 新游戏或早期周期设置使用本技能：

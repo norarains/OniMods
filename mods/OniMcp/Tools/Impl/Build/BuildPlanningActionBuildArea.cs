@@ -142,7 +142,7 @@ namespace OniMcp.Tools
                             ? "Dry run passed. Re-run with confirm=true to place blueprints."
                             : hardFailedPreviews.Count == 0
                                 ? "Only auto-diggable obstructions remain. Re-run with confirm=true to queue required dig/uproot and place blueprints."
-                                : "Fix hard failures first; inspect errors[0].reasonCode/details before retrying.",
+                                : "Fix hard failures first; inspect errors[0].reasonCode and its obstruction/support/material fields before retrying.",
                         ["tokenHint"] = "Use valid/actionable/anchorResolution/planResolution/errors[0].reasonCode first; read previews only when choosing an alternate anchor.",
                         ["errors"] = failedPreviews.Take(50).ToList(),
                         ["previews"] = previews
