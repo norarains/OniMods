@@ -278,16 +278,19 @@ namespace OniMcp.Tools
                 reasons.Add("target_unreachable");
             if (needs.Stamina >= 0f && needs.Stamina < 15f)
                 reasons.Add("low_stamina");
-            if (needs.Calories > 0f && needs.Calories < 1000f)
+            if (!needs.HasData)
+                reasons.Add("needs_data_unavailable");
+            if (needs.LowCalories)
                 reasons.Add("low_calories");
-            if (needs.Breath < 35f)
+            if (needs.LowBreath)
                 reasons.Add("low_breath");
             if (environment.TryGetValue("temperatureC", out var tempObj) && tempObj is double tempC && (tempC < -20d || tempC > 60d))
                 reasons.Add("dangerous_temperature");
             if (environment.TryGetValue("state", out var stateObj) && stateObj?.ToString() == "liquid")
                 reasons.Add("standing_in_liquid");
-            var idle = current == null ? IdleDiagnostics(dupe, reachable, needs, canReceiveMove) : null;
-            if (idle != null && idle.ContainsKey("reasonCode"))
+            var idle = current == null || current["type"]?.ToString() == "IdleChore"
+                ? IdleDiagnostics(dupe, reachable, needs, canReceiveMove) : null;
+            if (idle != null && DuplicantIdlePolicy.NeedsAttention(idle["reasonCode"]?.ToString()))
                 reasons.Add("idle_" + idle["reasonCode"]);
 
             string risk = "ok";
@@ -427,7 +430,7 @@ namespace OniMcp.Tools
         private static Dictionary<string, object> CompactAmounts(MinionIdentity dupe)
         {
             var result = new Dictionary<string, object>();
-            var amounts = dupe.GetComponent<Amounts>();
+            var amounts = dupe.GetAmounts();
             if (amounts == null)
                 return result;
 

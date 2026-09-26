@@ -79,20 +79,18 @@ namespace OniMcp.Tools
             string name = ExtractBuildTokenName(token);
             if (!string.IsNullOrWhiteSpace(name) && name.Length > 1)
             {
-                foreach (var def in Assets.BuildingDefs)
-                {
-                    if (def == null || string.IsNullOrEmpty(def.PrefabID))
-                        continue;
-                    string id = MapTokenPart(def.PrefabID);
-                    string proper = MapTokenPart(def.Name);
-                    if (string.Equals(id, name, StringComparison.OrdinalIgnoreCase)
-                        || string.Equals(proper, name, StringComparison.OrdinalIgnoreCase)
-                        || id.IndexOf(name, StringComparison.OrdinalIgnoreCase) >= 0)
-                    {
-                        prefabId = def.PrefabID;
-                        return true;
-                    }
-                }
+                var defs = Assets.BuildingDefs.Where(def => def != null && !string.IsNullOrEmpty(def.PrefabID)).ToList();
+                // Resolve all exact IDs before considering names or partial matches.
+                // Asset registration order must not turn Ladder into LadderBed.
+                var matches = defs.Where(def => string.Equals(MapTokenPart(def.PrefabID), name, StringComparison.OrdinalIgnoreCase)).ToList();
+                if (matches.Count == 0)
+                    matches = defs.Where(def => string.Equals(MapTokenPart(def.Name), name, StringComparison.OrdinalIgnoreCase)).ToList();
+                if (matches.Count == 0)
+                    matches = defs.Where(def => MapTokenPart(def.PrefabID).IndexOf(name, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+                if (matches.Count != 1)
+                    return false;
+                prefabId = matches[0].PrefabID;
+                return true;
             }
             return TryResolveBuildPrefabFromSymbol(symbol, out prefabId);
         }

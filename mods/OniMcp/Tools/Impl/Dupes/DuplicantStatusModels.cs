@@ -51,7 +51,7 @@ namespace OniMcp.Tools
         private static Dictionary<string, object> GetNeedsSummary(MinionIdentity dupe)
         {
             var amounts = new Dictionary<string, object>();
-            var amountInstance = dupe.GetComponent<Amounts>();
+            var amountInstance = dupe.GetAmounts();
             if (amountInstance != null)
             {
                 foreach (var amount in amountInstance.ModifierList)
@@ -79,32 +79,5 @@ namespace OniMcp.Tools
             public readonly List<Dictionary<string, object>> Samples = new List<Dictionary<string, object>>();
         }
 
-        private sealed class KeyNeeds
-        {
-            public float Stamina = -1f;
-            public float Calories = -1f;
-            public float Stress = -1f;
-            public float Bladder = -1f;
-            public float Breath = 100f;
-            public float BodyTemperature = -1f;
-
-            public Dictionary<string, object> ToDictionary()
-            {
-                return new Dictionary<string, object>
-                {
-                    ["stamina"] = RoundOrNull(Stamina),
-                    ["calories"] = RoundOrNull(Calories),
-                    ["stress"] = RoundOrNull(Stress),
-                    ["bladder"] = RoundOrNull(Bladder),
-                    ["breath"] = RoundOrNull(Breath),
-                    ["bodyTemperature"] = RoundOrNull(BodyTemperature)
-                };
-            }
-
-            private static object RoundOrNull(float value)
-            {
-                return value < 0f ? null : (object)Math.Round(value, 2);
-            }
-        }
 }
 }

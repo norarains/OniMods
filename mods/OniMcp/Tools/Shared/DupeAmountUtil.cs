@@ -10,7 +10,7 @@ namespace OniMcp.Tools
             value = 0f;
             try
             {
-                var amounts = dupe?.GetComponent<Amounts>();
+                var amounts = dupe?.GetAmounts();
                 var stressAmount = Db.Get()?.Amounts?.Stress;
                 var stress = stressAmount == null ? null : amounts?.Get(stressAmount);
                 if (stress == null)
@@ -33,7 +33,7 @@ namespace OniMcp.Tools
 
         public static float AmountValueByName(MinionIdentity dupe, string query, float fallback = 0f)
         {
-            var amounts = dupe?.GetComponent<Amounts>();
+            var amounts = dupe?.GetAmounts();
             if (amounts == null)
                 return fallback;
 

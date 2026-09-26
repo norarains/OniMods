@@ -9,7 +9,6 @@ namespace OniMcp.Tools
 {
         private static Dictionary<string, object> IdleDiagnostics(MinionIdentity dupe, ReachabilitySummary reachable, KeyNeeds needs, bool canReceiveMove)
         {
-            string reason = "no_current_chore";
             var schedulable = dupe.GetComponent<Schedulable>();
             string scheduleBlock = null;
             try
@@ -18,16 +17,8 @@ namespace OniMcp.Tools
             }
             catch { }
 
-            if (!canReceiveMove)
-                reason = "cannot_receive_move_command";
-            else if (reachable.ReachableCells == 0)
-                reason = "no_reachable_nearby_cells";
-            else if (needs.Stamina >= 0f && needs.Stamina < 15f)
-                reason = "low_stamina";
-            else if (needs.Calories > 0f && needs.Calories < 1000f)
-                reason = "low_calories";
-            else if (!string.IsNullOrWhiteSpace(scheduleBlock) && !string.Equals(scheduleBlock, "Work", StringComparison.OrdinalIgnoreCase))
-                reason = "schedule_block_" + scheduleBlock;
+            string reason = DuplicantIdlePolicy.Reason(canReceiveMove, reachable.ReachableCells,
+                needs.Stamina, needs.LowCalories, scheduleBlock);
 
             return new Dictionary<string, object>
             {
@@ -35,9 +26,7 @@ namespace OniMcp.Tools
                 ["reasonCode"] = reason,
                 ["scheduleBlock"] = scheduleBlock,
                 ["reachableCells"] = reachable.ReachableCells,
-                ["next"] = reason == "no_current_chore"
-                    ? "Check personal priorities and available errands; use dupes_control domain=priority action=list or inspect nearby build/dig/supply errands."
-                    : "Inspect the returned reasonCode before issuing rescue or priority changes."
+                ["next"] = DuplicantIdlePolicy.Next(reason)
             };
         }
 
@@ -134,34 +123,6 @@ namespace OniMcp.Tools
                 ["foundation"] = Grid.Foundation[cell],
                 ["diseaseCount"] = Grid.DiseaseCount[cell]
             };
-        }
-
-        private static KeyNeeds KeyNeedValues(MinionIdentity dupe)
-        {
-            var result = new KeyNeeds();
-            var amounts = dupe.GetComponent<Amounts>();
-            if (amounts == null)
-                return result;
-
-            if (DupeAmountUtil.TryGetStressValue(dupe, out var stress))
-                result.Stress = stress;
-
-            foreach (var amount in amounts.ModifierList)
-            {
-                if (amount == null || amount.amount == null)
-                    continue;
-                string id = amount.amount.Id ?? "";
-                string name = amount.amount.Name ?? "";
-                float value = ToolUtil.SafeFloat(amount.value);
-                if (Contains(id, "Stamina") || Contains(name, "Stamina")) result.Stamina = value;
-                else if (Contains(id, "Calories") || Contains(name, "Calories")) result.Calories = value;
-                else if (result.Stress < 0f && (Contains(id, "Stress") || Contains(name, "Stress"))) result.Stress = value;
-                else if (Contains(id, "Bladder") || Contains(name, "Bladder")) result.Bladder = value;
-                else if (Contains(id, "Breath") || Contains(name, "Breath")) result.Breath = value;
-                else if (Contains(id, "Temperature") || Contains(name, "Temperature")) result.BodyTemperature = value;
-            }
-
-            return result;
         }
 
         private static string SafeString(Func<string> getter, string fallback)

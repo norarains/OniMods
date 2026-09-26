@@ -67,6 +67,7 @@ namespace OniMcp.Tools
         }
 
         public static int? GetInt(JObject args, string name) => args[name]?.Value<int?>();
+        public static float SafeFloat(float value) => float.IsNaN(value) || float.IsInfinity(value) ? 0f : value;
     }
 
     public static class ServerTools
@@ -91,7 +92,7 @@ namespace OniMcp.Tools
         private static CallToolResult Read(JObject args) => CallToolResult.Text(ReadText);
         private static CallToolResult SearchGlyphs(JObject args) => throw new NotSupportedException();
         private static List<JObject> BuildSymbolRows() => throw new NotSupportedException();
-        private static char GetUniqueChar(string id, string name) => throw new NotSupportedException();
+        private static char GetUniqueChar(string id, string name) => id == "Ladder" ? '梯' : '?';
         private static string MapTokenPart(string token) => token;
         private static readonly Dictionary<string, char> UniqueCharMap = new Dictionary<string, char>();
         private sealed class MapEditCell

@@ -47,6 +47,8 @@ namespace OniMcp.Tools
 
         private static void CompactRepeatedDiagnostics(JObject output)
         {
+            if (output["materialSelection"] != null && JToken.DeepEquals(output["materialSelection"], output["materials"]))
+                output.Remove("materials");
             // Planning failures expose the same evidence at several compatibility paths.
             // Remove a copy only when an equal sibling retains that evidence.
             foreach (string name in new[] { "details", "diagnostics" })

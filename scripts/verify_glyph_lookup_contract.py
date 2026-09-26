@@ -24,25 +24,29 @@ def verify_glyph_lookup_contract(
 ) -> None:
     tools = root / "mods" / "OniMcp" / "Tools"
     lookup_path = tools / "WorldEditor" / "WorldEditorGlyphLookup.cs"
+    glyph_query_path = tools / "WorldEditor" / "WorldEditorGlyphQuery.cs"
     symbols_path = tools / "WorldEditor" / "WorldEditorSymbols.cs"
     lifecycle_path = root / "mods" / "OniMcp" / "Patches" / "AutoDisinfectPolicy.cs"
     world_editor_path = tools / "WorldEditor" / "WorldEditorTools.cs"
     query_path = tools / "WorldEditor" / "WorldEditorQueryTools.cs"
     search_path = tools / "Entry" / "SearchControlTools.cs"
-    for path in (lookup_path, symbols_path, lifecycle_path, world_editor_path, query_path, search_path):
+    for path in (lookup_path, glyph_query_path, symbols_path, lifecycle_path, world_editor_path, query_path, search_path):
         if not path.is_file():
             fail(f"required glyph source file not found: {path.relative_to(root)}")
 
     if sources is None:
         selected = {
             path: path.read_text(encoding="utf-8")
-            for path in (lookup_path, symbols_path, lifecycle_path, world_editor_path, query_path, search_path)
+            for path in (lookup_path, glyph_query_path, symbols_path, lifecycle_path, world_editor_path, query_path, search_path)
         }
     else:
         selected = dict(sources)
         if lifecycle_path not in selected:
             selected[lifecycle_path] = lifecycle_path.read_text(encoding="utf-8")
+        if glyph_query_path not in selected:
+            selected[glyph_query_path] = glyph_query_path.read_text(encoding="utf-8")
     lookup = selected[lookup_path]
+    glyph_query = selected[glyph_query_path]
     symbols = selected[symbols_path]
     lifecycle = selected[lifecycle_path]
     world_editor = selected[world_editor_path]
@@ -63,6 +67,9 @@ def verify_glyph_lookup_contract(
     require(search, 'if (domain == "glyphs")\n                        return searchResult;', "glyph search bypasses coordinate action wrapper")
     require(lookup, "authoritative_glyph_mapping", "glyph-specific result contract")
     require(lookup, "Do not guess", "glyph no-guess next action")
+    require(glyph_query, '? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase', "case-sensitive codes and case-insensitive names")
+    require(glyph_query, 'value.Equals(input, comparison)', "exact glyph case policy")
+    require(glyph_query, 'value.IndexOf(input ?? string.Empty, comparison)', "substring glyph case policy")
 
     require(lookup, "GeneratedGlyphEntries", "generated building/element/entity glyph rows")
     require(lookup, "raw.Count == 0", "explicit empty glyph batch rejection")
@@ -175,7 +182,7 @@ def verify_glyph_lookup_contract(
     world_ref = (root / ".agents" / "skills" / "oni-gameplay" / "references" / "world-editor.md").read_text(encoding="utf-8")
     world_ref_zh = (root / ".agents" / "skills" / "oni-gameplay" / "references" / "world-editor.zh.md").read_text(encoding="utf-8")
     for text, label in ((skill, "skill"), (world_ref, "English world-editor reference"), (world_ref_zh, "Chinese world-editor reference")):
-        require(text, "search_control domain=glyphs queries=[", f"{label} mandatory batch lookup")
+        require(text, "world_editor command=symbols queries=[", f"{label} mandatory public batch lookup")
         require(text, "direction=auto", f"{label} auto direction")
         require(text, "code_to_meaning", f"{label} forward lookup example")
         require(text, "meaning_to_code", f"{label} reverse lookup example")

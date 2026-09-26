@@ -110,9 +110,9 @@ namespace OniMcp.Tools
         private static int ResultAppliedCount(CallToolResult result)
         {
             JObject obj = ParseWorldEditorResult(result);
-            if (obj == null)
+            if (obj == null || ToolUtil.GetBool(obj, "dryRun", false) || ToolUtil.GetBool(obj, "preview", false))
                 return 0;
-            foreach (string key in new[] { "planned", "succeeded", "marked", "executedCells", "applied" })
+            foreach (string key in new[] { "planned", "succeeded", "marked", "executedCells", "applied", "changed" })
             {
                 int value = ResultFieldInt(obj, key);
                 if (value > 0)
