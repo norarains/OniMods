@@ -87,7 +87,7 @@ int cell = Grid.XYToCell(x, y);
             var placement = BuildPlacementDetails(def, x, y, worldId, orientation);
             var replacementTarget = NativeTileReplacement(def, placement);
             var replacement = TileReplacementInfo(replacementTarget);
-            var workAccess = CurrentWorkAccess(placement);
+            var workAccess = CurrentWorkAccess(def, placement);
             var footprintResult = ValidateFootprint(placement);
             var existingBuild = ExistingMatchingBuildAtPlacement(def, placement);
             if (existingBuild != null)
@@ -166,7 +166,7 @@ int cell = Grid.XYToCell(x, y);
                     ["powerAutoConnect"] = powerAutoConnect,
                     ["autoDig"] = autoDig,
                     ["replacement"] = replacement, ["workAccess"] = workAccess,
-                    ["actionable"] = GetBool(workAccess, "allCellsHaveCurrentAccess")
+                    ["actionable"] = GetBool(workAccess, "hasCurrentConstructionAccess")
                 }, powerAutoConnect, false);
             }
 
@@ -257,7 +257,7 @@ int cell = Grid.XYToCell(x, y);
                 ["powerAutoConnect"] = placedPowerAutoConnect,
                 ["autoDig"] = autoDig,
                 ["replacement"] = replacement, ["workAccess"] = workAccess,
-                ["actionable"] = GetBool(workAccess, "allCellsHaveCurrentAccess"),
+                ["actionable"] = GetBool(workAccess, "hasCurrentConstructionAccess"),
                 ["instantCompletion"] = instantCompletion,
                 ["id"] = go.GetComponent<KPrefabID>()?.InstanceID ?? -1
             }, placedPowerAutoConnect, true);

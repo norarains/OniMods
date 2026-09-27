@@ -60,6 +60,10 @@ HUD 缺料通知的每个原生目标都已被具体 finding 覆盖时，仅具�
 
 HUD 通知和 UI 状态读取仍需要游戏的 UI 实例，但不会接管输入；这不是无窗口服务器。暂停、速度、存档/读档属于共享游戏状态：手动改订单/配置、读档、切星球或接管时间前应交接。`continue` 观察到手动暂停返回 `external_pause` 时，agent 必须保持暂停，等用户明确交回控制，不自动再次继续。
 
+建造预检的 `workAccess.hasCurrentConstructionAccess` 使用原生 Constructable 的工作位置、阻挡路径和当前导航。任意一个有效工作位置可达即可，不要求每个建筑占地格都紧邻可站立位置。`reachableFootprintCells` 仍是单格邻接诊断，不能替代建造差事的可达性。该检查不保证未来梯子、挖掘、技能或材料供应。
+
+`building_control domain=filter action=set kind=single|tree|flat dryRun=true` 只校验：`selected` 是当前选择，`proposed` 是拟选择，`committed=false`。即使同时传入 `confirm=true` 也不会更改过滤器。`action=list id=…` 只返回该对象。
+
 ## 定位与执行原则
 
 Authoritative model:

@@ -50,16 +50,32 @@ namespace OniMcp.Tools
             => ExecuteMenuAction(go, new ActionSpec { ActionKey = "toggle_move_pickupable" }, args, dryRun);
     }
 }
-internal static class Tag { internal const int Invalid = 0; }
-internal static class GameTags { internal const int Stored = 1; }
+internal readonly struct Tag : IEquatable<Tag>
+{
+    internal static readonly Tag Invalid = default(Tag);
+    internal readonly string Name;
+    internal Tag(string name) { Name = name; }
+    public bool Equals(Tag other) => Name == other.Name;
+    public override bool Equals(object other) => other is Tag tag && Equals(tag);
+    public override int GetHashCode() => Name?.GetHashCode() ?? 0;
+    public static bool operator ==(Tag a, Tag b) => a.Equals(b);
+    public static bool operator !=(Tag a, Tag b) => !a.Equals(b);
+    public static implicit operator Tag(int value) => value == 0 ? Invalid : new Tag("#" + value);
+}
+internal static class GameTags
+{
+    internal static readonly Tag Stored = 1;
+    internal static readonly Tag Void = new Tag("Void");
+}
 internal sealed class KPrefabID
 {
-    internal readonly HashSet<int> Tags = new HashSet<int>();
-    internal bool HasTag(int tag) => Tags.Contains(tag);
+    internal readonly HashSet<Tag> Tags = new HashSet<Tag>();
+    internal bool HasTag(Tag tag) => Tags.Contains(tag);
 }
 internal sealed class Movable
 {
-    internal int tagRequiredForMove, Calls, LastCell;
+    internal Tag tagRequiredForMove;
+    internal int Calls, LastCell;
     internal bool CanMove = true, IsMarkedForMove;
     internal GameObject StorageProxy;
     internal bool CanMoveTo(int cell) => CanMove;

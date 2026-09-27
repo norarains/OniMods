@@ -9,6 +9,8 @@
     <StartupObject>BenchmarkMetadataRegressionEntry</StartupObject>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Build/FilterMutationTools.cs" Link="Source/FilterMutationTools.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Build/ConstructionWorkCells.cs" Link="Source/ConstructionWorkCells.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Orders/UserMenuMoveAction.cs" Link="Source/UserMenuMoveAction.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Build/BuildPlanningUtilityConnect.cs" Link="Source/BuildPlanningUtilityConnect.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Build/PlanInspectionCalls.cs" Link="PlanInspectionCalls.cs" />
