@@ -145,7 +145,7 @@ namespace OniMcp.Tools
                             ["dryRun"] = dryRun,
                             ["committed"] = false,
                         ["valid"] = failedPreviews.Count == 0,
-                        ["actionable"] = hardFailedPreviews.Count == 0,
+                        ["actionable"] = hardFailedPreviews.Count == 0 && previews.All(preview => !preview.ContainsKey("actionable") || GetBool(preview, "actionable")),
                         ["anchorResolution"] = anchorResolution,
                         ["planResolution"] = planResolution.ToDictionary(),
                         ["anchorCount"] = anchors.Count,

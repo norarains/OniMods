@@ -29,7 +29,10 @@ namespace OniMcp.Tools
             result["nextRecipe"] = RecipeSummary(fabricator.NextOrder);
             result["queue"] = QueueSummary(fabricator);
             if (includeRecipes)
-                result["recipes"] = fabricator.GetRecipes().Select(recipe => RecipeInfo(fabricator, recipe, includeFabricator: false)).ToList();
+                result["recipes"] = fabricator.GetRecipes().Select(recipe => new Dictionary<string, object> {
+                    ["recipeId"] = recipe.id, ["name"] = SafeRecipeName(recipe, false),
+                    ["queueCount"] = FormatQueueCount(fabricator.GetRecipeQueueCount(recipe)),
+                    ["techUnlocked"] = recipe.IsRequiredTechUnlocked() }).ToList();
             return result;
         }
 

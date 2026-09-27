@@ -110,6 +110,7 @@ namespace OniMcp.Tools
                 Parameters = LookupParams(new Dictionary<string, McpToolParameter>
                 {
                     ["actionKey"] = new McpToolParameter { Type = "string", Description = "要执行的 actionKey，例如 toggle_compost、toggle_dump、allow_auto_repair", Required = true },
+                    ["priority"] = new McpToolParameter { Type = "integer", Description = "Work priority 1–9; batch item overrides defaults, which override outer priority", Required = false },
                     ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Validate without invoking native buttons", Required = false },
                     ["confirm"] = new McpToolParameter { Type = "boolean", Description = "必须为 true，确认触发对象 UserMenu 操作", Required = false }
                 }),
@@ -164,6 +165,7 @@ namespace OniMcp.Tools
                     ["items"] = new McpToolParameter { Type = "array", Description = "数组；每项支持 id 或 x/y/worldId，并提供 actionKey 或短字段 a", Required = true },
                     ["defaults"] = new McpToolParameter { Type = "object", Description = "合并到每项的默认参数；支持 actionKey/a、worldId/w，子项参数优先", Required = false },
                     ["defaultArguments"] = new McpToolParameter { Type = "object", Description = "defaults 的别名", Required = false },
+                    ["priority"] = new McpToolParameter { Type = "integer", Description = "Work priority 1–9; batch item overrides defaults, which override outer priority", Required = false },
                     ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Validate without invoking native buttons", Required = false },
                     ["confirm"] = new McpToolParameter { Type = "boolean", Description = "Required for commits", Required = false }
                 },
@@ -176,7 +178,7 @@ namespace OniMcp.Tools
                     if (items == null || items.Count == 0)
                         return CallToolResult.Error("items array is required");
 
-                    var defaults = args["defaults"] as JObject ?? args["defaultArguments"] as JObject;
+                    var defaults = MenuBatchDefaults.From(args);
                     // Validate the entire batch before invoking any native button.
                     foreach (var token in items)
                     {
@@ -262,6 +264,7 @@ namespace OniMcp.Tools
                     ["items"] = new McpToolParameter { Type = "array", Description = "action=batch 时数组；每项支持 id 或 x/y/worldId，并提供 actionKey 或短字段 a", Required = false },
                     ["defaults"] = new McpToolParameter { Type = "object", Description = "action=batch 时合并到每项的默认参数", Required = false },
                     ["defaultArguments"] = new McpToolParameter { Type = "object", Description = "defaults 的别名", Required = false },
+                    ["priority"] = new McpToolParameter { Type = "integer", Description = "Work priority 1–9; batch item overrides defaults, which override outer priority", Required = false },
                     ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Validate without invoking native buttons", Required = false },
                     ["confirm"] = new McpToolParameter { Type = "boolean", Description = "action=press/batch 时必须为 true", Required = false }
                 },

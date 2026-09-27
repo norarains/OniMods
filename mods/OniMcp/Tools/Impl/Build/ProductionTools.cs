@@ -21,13 +21,13 @@ namespace OniMcp.Tools
                 Aliases = new List<string> { "fabricators_list", "crafting_stations_list" },
                 Tags = new List<string> { "production", "fabricator", "recipe", "queue", "craft", "refinery", "kitchen" },
                 Description = "兼容入口：请优先使用 building_control domain=production action=list_fabricators。列出制作站/精炼/厨房等 ComplexFabricator 的配方队列、当前订单、下一订单和运行状态",
-                Parameters = RectParams(new Dictionary<string, McpToolParameter>
+                Parameters = LookupParams(RectParams(new Dictionary<string, McpToolParameter>
                 {
                     ["query"] = new McpToolParameter { Type = "string", Description = "按建筑名、prefabId、当前/下一配方或已排队配方筛选", Required = false },
                     ["queuedOnly"] = new McpToolParameter { Type = "boolean", Description = "是否只返回有排队或正在工作订单的制作站，默认 false", Required = false },
                     ["includeRecipes"] = new McpToolParameter { Type = "boolean", Description = "是否附带每个制作站的配方摘要，默认 false", Required = false },
                     ["limit"] = new McpToolParameter { Type = "integer", Description = "最多返回数量，默认 100，最大 500", Required = false }
-                }),
+                })),
                 Handler = args =>
                 {
                     if (Game.Instance == null)
@@ -41,7 +41,7 @@ namespace OniMcp.Tools
                     bool includeRecipes = ToolUtil.GetBool(args, "includeRecipes", false);
                     int limit = Math.Max(1, Math.Min(ToolUtil.GetInt(args, "limit") ?? 100, 500));
 
-                    var results = Components.ComplexFabricators.Items
+                    var results = FindFabricators(args)
                         .Where(fabricator => MatchesFabricator(fabricator, rect, worldId, query))
                         .Where(fabricator => !queuedOnly || fabricator.HasAnyOrder || QueuedRecipeCount(fabricator) != 0)
                         .OrderBy(fabricator => TargetName(fabricator.gameObject))

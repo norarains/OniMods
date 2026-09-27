@@ -56,7 +56,6 @@ namespace OniMcp.Tools
                 nextFoodRead = wallSeconds + 2;
             }
             sample.FoodKcal = foodKcal;
-            HudObservation.Read(sample);
             foreach (var item in builds)
                 if (item != null && (worldId < 0 || item.GetMyWorldId() == worldId))
                 {
@@ -77,9 +76,7 @@ namespace OniMcp.Tools
             sample.ResearchId = research?.tech?.Id;
             sample.ResearchProgress = research == null ? 0 : research.GetTotalPercentageComplete() * 100.0;
             ReadInfrastructure(sample, wallSeconds, refreshFood || sample.ResearchId != infrastructureResearchId);
-            if (timingGame != Game.Instance) { timingGame = Game.Instance; supplyTiming.Clear(); }
-            if (!supplyTiming.ContainsKey(worldId)) supplyTiming[worldId] = new SupplyStatusTiming();
-            supplyTiming[worldId].Apply(sample.BuildingSupplies, sample.GameSeconds);
+            HudObservation.Read(sample);
             sample.WorkProgress = workProgress;
             return sample;
         }
@@ -115,6 +112,9 @@ namespace OniMcp.Tools
                 Health = health == null ? -1 : health.hitPoints / Math.Max(1f, health.maxHitPoints) * 100.0,
                 Calories = calories, Stress = DupeAmountUtil.StressValue(dupe, -1),
                 BodyTemperature = DupeAmountUtil.AmountValueByName(dupe, "Temperature", -1),
+                Morale = Db.Get().Attributes.QualityOfLife.Lookup(dupe)?.GetTotalValue() ?? -1,
+                MoraleExpectation = Db.Get().Attributes.QualityOfLifeExpectation.Lookup(dupe)?.GetTotalValue() ?? -1,
+                StressDetails = DupeStressObservation.Read(dupe),
                 Chore = choreType,
                 Working = worktime && !idle && !personal,
                 UnexpectedIdle = worktime && idle && (stamina < 0 || stamina >= 15) && (calories < 0 || calories >= 1000000)
@@ -141,6 +141,10 @@ namespace OniMcp.Tools
                 foreach (var building in builds)
                     if (building != null && (worldId < 0 || building.GetMyWorldId() == worldId))
                         BuildingSupplyObservation.Read(building.gameObject, true, buildingSupplies);
+                // Only fresh native reads can confirm persistence; cached samples are not evidence.
+                if (timingGame != Game.Instance) { timingGame = Game.Instance; supplyTiming.Clear(); }
+                if (!supplyTiming.ContainsKey(worldId)) supplyTiming[worldId] = new SupplyStatusTiming();
+                supplyTiming[worldId].Apply(buildingSupplies, sample.GameSeconds);
                 nextInfrastructureRead = wallSeconds + 2;
             }
             sample.InfrastructureKnown = true;

@@ -53,6 +53,14 @@ namespace OniMcp.Tools
                 if (dupe.Health >= 0 && dupe.Health <= 25) dupeFinding("health", "critical", "Health at or below 25%.");
                 if (dupe.Calories >= 0 && dupe.Calories < 100000) dupeFinding("starving", "critical", "Duplicant calories below 100 kcal.");
                 if (dupe.Stress > 40) dupeFinding("stress", dupe.Stress >= 80 ? "critical" : "warning", "Elevated stress.");
+                if (dupe.Morale >= 0 && dupe.MoraleExpectation > dupe.Morale)
+                {
+                    dupeFinding("morale_deficit", "warning", "Morale is below learned-skill expectations.");
+                    var finding = result[result.Count - 1];
+                    finding.StopEligible = false;
+                    finding.Details = new Dictionary<string, object> {
+                        ["morale"] = dupe.Morale, ["expectation"] = dupe.MoraleExpectation };
+                }
                 if (dupe.BodyTemperature >= 318.15 || (dupe.BodyTemperature >= 0 && dupe.BodyTemperature < 305.15))
                     dupeFinding("body_temperature", "critical", "Unsafe body temperature.");
                 if (dupe.SkillPoints > 0)
@@ -139,6 +147,12 @@ namespace OniMcp.Tools
                     ["foodAndWork"] = sample.WorldId < 0 ? "all_worlds_aggregate" : "selected_world", ["foodMaxAgeSeconds"] = 2, ["infrastructureMaxAgeSeconds"] = 2,
                     ["notChecked"] = new[] { "local_atmosphere", "navigation", "resource_fetchability", "full_utility_networks" }
                 },
+                ["dupeConcerns"] = sample.Dupes.Where(dupe => dupe.Stress > 0
+                    || (dupe.Morale >= 0 && dupe.MoraleExpectation > dupe.Morale)
+                    || (dupe.StressDetails != null && Convert.ToDouble(dupe.StressDetails["changePerCycle"]) > 0))
+                    .Select(dupe => new Dictionary<string, object> {
+                        ["id"] = dupe.Id, ["worldId"] = dupe.WorldId, ["stress"] = Math.Round(dupe.Stress, 1),
+                        ["morale"] = dupe.Morale, ["expectation"] = dupe.MoraleExpectation, ["stressChange"] = dupe.StressDetails }).ToList(),
                 ["researchStations"] = sample.ResearchStations.Select(station => station.ToDictionary()).ToList(),
                 ["metrics"] = new Dictionary<string, object>
                 {

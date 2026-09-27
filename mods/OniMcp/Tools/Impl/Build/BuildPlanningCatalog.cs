@@ -56,7 +56,7 @@ namespace OniMcp.Tools
             if (filteredDefaults.Count == 0 && defaultElements.Count > 0)
                 filteredDefaults = defaultElements;
 
-            string recommendedMaterial = availableMaterials.Count > 0
+            string defaultMaterial = availableMaterials.Count > 0
                 ? availableMaterials[0].Tag.Name
                 : null;
 
@@ -73,7 +73,7 @@ namespace OniMcp.Tools
                 ["resolvedMaterialCategories"] = MaterialCategoryTags(def).Select(tag => tag.Name).ToList(),
                 ["defaultMaterials"] = filteredDefaults.Select(tag => tag.Name).ToList(),
                 ["availableMaterials"] = availableMaterials.Take(20).Select(item => item.ToDictionary()).ToList(),
-                ["recommendedMaterial"] = recommendedMaterial,
+                ["defaultMaterial"] = defaultMaterial,
                 ["autoMaterial"] = AutoMaterialValue(def, worldId),
                 ["autoMaterialReason"] = AutoMaterialReason(def, worldId),
                 ["facades"] = BuildingFacades(def),

@@ -93,6 +93,8 @@ namespace OniMcp.Tools
         internal bool AdvancedResearchSkill;
         internal bool Valid, Working, UnexpectedIdle;
         internal double Breath = -1, Health = -1, Calories = -1, Stress = -1, BodyTemperature = -1;
+        internal double Morale = -1, MoraleExpectation = -1;
+        internal Dictionary<string, object> StressDetails = null;
         internal string Chore;
     }
 

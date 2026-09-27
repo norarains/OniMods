@@ -68,7 +68,7 @@ namespace OniMcp.Tools
                     result.Add(obstruction);
             }
 
-            return result;
+            return RemoveReplacedTileObstructions(result, placementDef, placement);
         }
 
         private static BuildingDef ResolveBuildingDefForPlacement(PlacementDetails placement)

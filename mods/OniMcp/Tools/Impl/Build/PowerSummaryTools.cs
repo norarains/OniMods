@@ -142,7 +142,7 @@ namespace OniMcp.Tools
                         else if (!consumer.IsPowered && diagnostics.Count < limit && !IsUnconnectedCircuit(consumer.CircuitID))
                             diagnostics.Add(PowerIssueInfo(consumer.gameObject, "consumer_unpowered", "Consumer is connected but currently unpowered."));
                         if (IsUnconnectedCircuit(consumer.CircuitID) && diagnostics.Count < limit)
-                            diagnostics.Add(PowerIssueInfo(consumer.gameObject, "consumer_unconnected", "Consumer is on circuit -1; check its power input port cell for a built wire/blueprint and verify the wire is connected to a powered circuit."));
+                            diagnostics.Add(PowerIssueInfo(consumer.gameObject, "consumer_unconnected", "Consumer has no native power circuit (circuitId=-1)."));
                     }
 
                     var result = new Dictionary<string, object>

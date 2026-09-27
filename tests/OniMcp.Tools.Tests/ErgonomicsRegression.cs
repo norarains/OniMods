@@ -171,6 +171,11 @@ internal static class ErgonomicsRegression
         Check(RegisteredBuildingOccupancy.Contains(pod, 500, def), "registered rotated footprint honored");
         Check(!RegisteredBuildingOccupancy.Contains(pod, 285, new BuildingDef { ObjectLayer = 0 }), "layers not conflated");
         Check(!RegisteredBuildingOccupancy.Contains(new UnityEngine.GameObject(), 285, def), "instance identity required");
+        var replacement = new UnityEngine.GameObject();
+        Grid.Objects[510, 0] = replacement;
+        var replacementDef = new BuildingDef { ObjectLayer = 1, ReplacementLayer = global::ObjectLayer.LiquidConduit };
+        Check(RegisteredBuildingOccupancy.Contains(replacement, 510, replacementDef), "replacement-layer blueprint registration is observed");
+        Check(!RegisteredBuildingOccupancy.Contains(pod, 510, replacementDef), "replacement layer still requires exact object identity");
         var rotated = new UnityEngine.GameObject();
         for (int y = 2; y <= 4; y++) Grid.Objects[Grid.XYToCell(20, y), 1] = rotated;
         Check(RegisteredBuildingOccupancy.TryGetBounds(rotated, Grid.XYToCell(20, 3), new BuildingDef { ObjectLayer = 1, WidthInCells = 3, HeightInCells = 1 }, out int[] rotatedBounds)
@@ -246,7 +251,7 @@ namespace UnityEngine
         public T GetComponent<T>() where T : class => Components.Values.OfType<T>().FirstOrDefault();
     }
 }
-internal sealed class BuildingDef { internal int ObjectLayer { get; set; } internal int WidthInCells { get; set; } internal int HeightInCells { get; set; } internal UnityEngine.GameObject BuildingComplete { get; set; } }
+internal sealed class BuildingDef { internal ObjectLayer ReplacementLayer { get; set; } = global::ObjectLayer.NumLayers; internal int ObjectLayer { get; set; } internal int WidthInCells { get; set; } internal int HeightInCells { get; set; } internal UnityEngine.GameObject BuildingComplete { get; set; } }
 internal static class Grid
 {
     internal const int WidthInCells = 1024, HeightInCells = 8;

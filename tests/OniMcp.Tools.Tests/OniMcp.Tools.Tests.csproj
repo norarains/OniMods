@@ -9,6 +9,9 @@
     <StartupObject>BenchmarkMetadataRegressionEntry</StartupObject>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Build/PlanInspectionCalls.cs" Link="PlanInspectionCalls.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Core/ContinueResponse.cs" Link="ContinueResponse.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Orders/MenuBatchDefaults.cs" Link="MenuBatchDefaults.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Build/ReachableWirePath.cs" Link="ReachableWirePath.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Build/ProductionQueuePlan.cs" Link="ProductionQueuePlan.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Build/BatteryThresholdPolicy.cs" Link="BatteryThresholdPolicy.cs" />

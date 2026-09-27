@@ -92,7 +92,7 @@ namespace OniMcp.Tools
             result["validPreview"] = plot.ValidPlant;
             result["acceptsFertilizer"] = plot.AcceptsFertilizer;
             result["acceptsIrrigation"] = plot.AcceptsIrrigation;
-            result["occupant"] = plot.Occupant == null ? null : TargetInfo(plot.Occupant, null);
+            result["occupant"] = NativeConditionDetails.Read(plot.Occupant);
             result["acceptedSeedTags"] = plot.possibleDepositObjectTags.Select(tag => tag.Name).OrderBy(name => name).ToList();
             return result;
         }
@@ -100,6 +100,7 @@ namespace OniMcp.Tools
         private static Dictionary<string, object> HarvestableInfo(HarvestDesignatable harvestable)
         {
             var result = TargetInfo(harvestable.gameObject, null);
+            result["condition"] = NativeConditionDetails.Read(harvestable.gameObject);
             result["canBeHarvested"] = harvestable.CanBeHarvested();
             result["markedForHarvest"] = harvestable.MarkedForHarvest;
             result["harvestWhenReady"] = harvestable.HarvestWhenReady;

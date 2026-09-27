@@ -23,7 +23,15 @@ Legacy `2025-11-25` / `2025-06-18` 客户端继续先调用 `initialize`，随�
 - 常驻 findings 包括复制人生命体征、食物、研究、建筑/建造缺料、打印舱、技能点，以及原生 HUD 的 Bad、BadMinor、Tutorial、DuplicantThreatening 通知和缓存的诊断警告。ONI 的黄色警告也会使用 Tutorial 类型。
 - 氧气生成不足附带原生日报的上一周期产量、消耗量和净值（kg）。这不代表局部空气可呼吸度；常驻监测不扫描房间气体，复制人状态异常时再定向查询。
 - `ignoreEvents` / `unignoreEvents` 接受事件类别或具体 finding ID。忽略只改变是否提前停止，不隐藏当前问题。
-- 仅补货不足的状态标记为 `refill_only`，仍返回但不触发停机；实际空研究站仍会停止，并保留同一个研究 finding ID。新出现的空管道/空手压泵状态需要持续两秒模拟时间才触发停止，确认期间返回 `pending_status_confirmation` 与 `stopEligible=false`，避免加载后的暂态造成零时间循环。
+- 仅补货不足的状态标记为 `refill_only`，仍返回但不触发停机；实际空研究站仍会停止，并保留同一个研究 finding ID。新出现的空管道/空手压泵状态需由相隔至少两秒模拟时间的两次新鲜原生读取确认才触发停止（重复读取同一缓存不能确认），确认期间返回 `pending_status_confirmation` 与 `stopEligible=false`，避免加载后的暂态造成零时间循环。
+
+`continue` 默认 `responseMode=summary`，保留全部当前 findings、生命体征、工作进展及有关复制人的士气/压力变化来源。首个窗口和设置变更返回完整监测范围与忽略列表；后续使用 `coverage.profile=colony_v1`、`coverage.available` 和 `ignoredEventCount`，不重复健康研究站或未变化的已忽略 finding 事件。`responseMode=full` 保留完整元数据及所有事件；瞬态、变化及未忽略事件在 summary 中仍返回。`colony_v1` 范围是所有存活复制人的生命体征、当前世界食物/工作/原生缺料状态和原生 HUD；不验证局部气体、导航、资源可取性或完整管网。结束采样同时发现启用事件时，`stopReason=event` 优先于 `duration_elapsed`；故障原因优先于事件。
+
+HUD 缺料通知的每个原生目标都已被具体 finding 覆盖时，仅具体 finding 负责停止，HUD 仍显示 `coveredBy`；未知或未覆盖目标继续停止。打印舱通知同样使用 `printing_pod_ready`。缓存的 `IdleDiagnostic` 不绕过 `worker_idle` 的十秒模拟时间宽限。功耗变化提示是非停止的信息；电路过载仍停止。诊断返回 `cached=true`、原生更新间隔四秒模拟时间，实际缓存年龄不可得时为 null。农作诊断附带原生目标与当前植物状态；种植/可收获列表也提供状态，不扫描区域空气。
+
+建造预检区分 `valid`（放置条件）和 `workAccess`（当前复制人导航到邻近工作格的证据）。`actionable=false` 表示有尚未显示可达的格子；不能把 `supportValidated` 当作可完工证明。待建梯子不会被假定已经提供通路，技能、配送及未来完工可达性未验证。单格地砖可走原生替换蓝图流程，保留旧地砖直到建成，不先拆除。地图拆除明确只针对建筑层并按原生对象去重。
+
+生产站 `id` 在排序/截断前精确过滤，`includeRecipes` 只返回配方摘要；配方材料细节使用 `list_recipes`。用户菜单批次的优先级按子项 > defaults > 外层 priority 继承。目录中按内部聚合操作的完整名称查询时，仅返回该操作的 schema 与 batch 调用路径。解析计划的 `executionPlan.oneCall` 使用 `world_editor` 对 `/active/buildings/plans.oni` 做无副作用预检；世界图案查询走 batch 内部读取。搜索只返回匹配结果，不再生成不完整的动作、未声明的 targetRef 或被禁用的直接建造调用。
 
 内部聚合操作可通过 `server_control domain=batch action=call_many` 的 `calls` 使用。`responseMode=summary` 保留种植、收获、过滤器和队列等写入后状态，不重复输出同一份 text；完整读取使用 `responseMode=full`。
 
@@ -58,8 +66,8 @@ a virtual folder and exposes map views as files:
 - `world_editor command=read path=/world/map/text.txt`
 - `world_editor command=read path=/world/views/power.png`
 - `world_editor command=search domain=buildings query="wire"`
-- `world_editor command=plan plan="用铜矿连接电池到制氧机"`
-- `world_editor command=connect plan="connect battery to oxygen diffuser"`
+- `world_editor command=read path=/active/buildings/plans.oni`
+- `world_editor command=read path=/active/infrastructure/power.oni`
 
 Search, planning, actions, building, orders, navigation, game actions, dupe
 actions, and coordinate fallback are routed through `world_editor`. The default

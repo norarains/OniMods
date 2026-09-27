@@ -17,7 +17,7 @@ namespace OniMcp.Tools
                 Mode = "read",
                 Risk = "none",
                 Aliases = new List<string> { "find_control", "search_action_control" },
-                Tags = new List<string> { "search", "find", "targeting", "action-hints", "workflow" },
+                Tags = new List<string> { "search", "find", "targeting", "read-only", "workflow" },
                 Description = "Dedicated read-only search entrypoint. Searches tools, world objects, resources, buildings, dupes, or authoritative map glyph mappings.",
                 Parameters = new Dictionary<string, McpToolParameter>
                 {
@@ -31,9 +31,6 @@ namespace OniMcp.Tools
                     ["target"] = new McpToolParameter { Type = "string", Description = "Alias for query when the caller is searching for a target to act on.", Required = false },
                     ["search"] = new McpToolParameter { Type = "string", Description = "Alias for query.", Required = false },
                     ["intent"] = new McpToolParameter { Type = "string", Description = "Optional intended follow-up, such as dig, mop, build, inspect, configure, move, prioritize, or explain.", Required = false },
-                    ["actionTool"] = new McpToolParameter { Type = "string", Description = "Optional preferred follow-up action tool. The response will include a call template for it.", Required = false },
-                    ["actionDomain"] = new McpToolParameter { Type = "string", Description = "Optional preferred follow-up action domain.", Required = false },
-                    ["action"] = new McpToolParameter { Type = "string", Description = "Optional preferred follow-up action name.", Required = false },
                     ["kind"] = new McpToolParameter { Type = "string", Description = "Optional subtype, such as cells, buildings, items, resources, dupes, database, or guide.", Required = false },
                     ["kinds"] = new McpToolParameter { Type = "array", Description = "Optional subtype list for world searches.", Required = false },
                     ["category"] = new McpToolParameter { Type = "string", Description = "Building category filter for domain=buildings.", Required = false },
@@ -71,15 +68,8 @@ namespace OniMcp.Tools
                         ["query"] = Query(args),
                         ["intent"] = args["intent"]?.DeepClone(),
                         ["searchResult"] = parsed,
-                        ["resultContract"] = new JObject
-                        {
-                            ["style"] = "search_action",
-                            ["rule"] = "Pick a search result, then pass id, name, prefabId, areaId, or targetRef into the follow-up action template. Do not pass coordinates to ordinary action tools.",
-                            ["coordinateFallback"] = "Use coordinate_control only when no semantic result id, areaId, name, or targetRef can express the target."
-                        },
-                        ["nextActions"] = BuildNextActions(domain, args)
+                        ["readOnly"] = true
                     };
-                    response["searchActionPatch"] = BuildSearchActionPatch(domain, args, (JArray)response["nextActions"]);
 
                     return CallToolResult.Text(JsonConvert.SerializeObject(response, McpJsonUtil.Settings));
                 }
@@ -148,156 +138,6 @@ namespace OniMcp.Tools
             catch
             {
                 return new JObject { ["text"] = text };
-            }
-        }
-
-        private static JArray BuildNextActions(string domain, JObject args)
-        {
-            var actions = new JArray();
-            string explicitTool = args["actionTool"]?.ToString();
-            string explicitDomain = args["actionDomain"]?.ToString();
-            string explicitAction = args["action"]?.ToString();
-
-            if (!string.IsNullOrWhiteSpace(explicitTool))
-            {
-                actions.Add(new JObject
-                {
-                    ["label"] = "caller_requested_action",
-                    ["tool"] = explicitTool,
-                    ["arguments"] = BuildActionTemplate(explicitDomain, explicitAction)
-                });
-            }
-
-            switch (domain)
-            {
-                case "tools":
-                case "catalog":
-                    actions.Add(new JObject
-                    {
-                        ["label"] = "call_selected_tool",
-                        ["tool"] = "<selected tool name>",
-                        ["arguments"] = new JObject { ["targetRef"] = "<selected result name or id>" }
-                    });
-                    break;
-                case "buildings":
-                case "build":
-                    actions.Add(new JObject
-                    {
-                        ["label"] = "build_selected_definition",
-                        ["tool"] = "building_control",
-                        ["arguments"] = new JObject
-                        {
-                            ["domain"] = "planning",
-                            ["action"] = "build_area",
-                            ["prefabId"] = "<selected prefabId>",
-                            ["targetRef"] = "<selected result id/name/prefabId>",
-                            ["confirm"] = false
-                        }
-                    });
-                    break;
-                case "resources":
-                case "items":
-                    actions.Add(new JObject
-                    {
-                        ["label"] = "act_on_selected_resource",
-                        ["tool"] = "orders_control",
-                        ["arguments"] = new JObject
-                        {
-                            ["domain"] = "area",
-                            ["action"] = args["intent"]?.ToString() ?? "<dig|sweep|mop|priority>",
-                            ["targetRef"] = "<selected result id/name/prefabId>",
-                            ["confirm"] = false
-                        }
-                    });
-                    break;
-                case "world":
-                case "map":
-                case "dupes":
-                case "duplicants":
-                    actions.Add(new JObject
-                    {
-                        ["label"] = "act_on_selected_target",
-                        ["tool"] = SuggestedActionTool(args),
-                        ["arguments"] = BuildActionTemplate(explicitDomain, explicitAction)
-                    });
-                    break;
-                case "knowledge":
-                case "database":
-                case "guide":
-                    actions.Add(new JObject
-                    {
-                        ["label"] = "inspect_selected_knowledge",
-                        ["tool"] = "read_control",
-                        ["arguments"] = new JObject
-                        {
-                            ["domain"] = "knowledge",
-                            ["action"] = "query",
-                            ["id"] = "<selected result id>",
-                            ["query"] = "<selected result name>"
-                        }
-                    });
-                    break;
-            }
-
-            return actions;
-        }
-
-        private static JObject BuildSearchActionPatch(string domain, JObject args, JArray nextActions)
-        {
-            return new JObject
-            {
-                ["search"] = new JObject
-                {
-                    ["domain"] = domain,
-                    ["query"] = Query(args),
-                    ["select"] = "<one result from searchResult>"
-                },
-                ["replaceWithAction"] = nextActions != null && nextActions.Count > 0
-                    ? nextActions[0].DeepClone()
-                    : new JObject
-                    {
-                        ["label"] = "selected_result_action",
-                        ["tool"] = "<action tool>",
-                        ["arguments"] = new JObject { ["targetRef"] = "<selected result id/name/prefabId>" }
-                    },
-                ["contract"] = "Treat this like a search/replace edit: search selects the target, replaceWithAction is the action call to apply to that selected target."
-            };
-        }
-
-        private static JObject BuildActionTemplate(string domain, string action)
-        {
-            var template = new JObject
-            {
-                ["targetRef"] = "<selected result id/name/prefabId>",
-                ["confirm"] = false
-            };
-            if (!string.IsNullOrWhiteSpace(domain))
-                template["domain"] = domain;
-            if (!string.IsNullOrWhiteSpace(action))
-                template["action"] = action;
-            return template;
-        }
-
-        private static string SuggestedActionTool(JObject args)
-        {
-            string intent = (args["intent"]?.ToString() ?? string.Empty).Trim().ToLowerInvariant();
-            switch (intent)
-            {
-                case "build":
-                case "configure":
-                case "store":
-                case "filter":
-                    return "building_control";
-                case "move":
-                case "skill":
-                case "hat":
-                case "priority":
-                    return "dupes_control";
-                case "pause":
-                case "save":
-                    return "game_control";
-                default:
-                    return "orders_control";
             }
         }
 

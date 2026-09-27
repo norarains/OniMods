@@ -32,7 +32,9 @@ namespace OniMcp.Tools
         private double started;
         private BoundedGameWindow window;
         private int activity, removed;
-        private bool progressed;
+        private bool progressed, fullResponse, includeMetadata;
+        private Dictionary<string, string> windowFindings;
+        private readonly HashSet<string> changedInWindow = new HashSet<string>();
         internal static bool Active => instance != null && instance.completion != null;
 
         private static ContinueStopEvents Settings(JObject args)
@@ -98,6 +100,11 @@ namespace OniMcp.Tools
             string owner = McpHttpServer.CurrentSessionId;
             bool reset = policy == null || game != Game.Instance || world != worldId || owner != session
                 || generation != GameContextLifecycle.CaptureGeneration();
+            string responseMode = args["responseMode"]?.ToString() ?? "summary";
+            if (responseMode != "summary" && responseMode != "full")
+                throw new ArgumentException("responseMode must be summary or full.");
+            fullResponse = responseMode == "full";
+            includeMetadata = reset || args["ignoreEvents"] != null || args["unignoreEvents"] != null;
             stopSettings = Settings(args);
             requestedSeconds = seconds;
             game = Game.Instance;
@@ -118,6 +125,8 @@ namespace OniMcp.Tools
             activity = removed = 0;
             progressed = false;
             windowEvents.Clear();
+            windowFindings = new Dictionary<string, string>(lastReported);
+            changedInWindow.Clear();
             started = clock.Elapsed.TotalSeconds;
             events = policy.Observe(latest, stopSettings);
             CaptureEvents();
@@ -168,6 +177,12 @@ namespace OniMcp.Tools
 
         private void CaptureEvents()
         {
+            var observed = policy.Findings.ToDictionary(item => item.Id, item => item.Signature);
+            foreach (var pair in observed)
+                if (!windowFindings.TryGetValue(pair.Key, out string signature) || signature != pair.Value)
+                    changedInWindow.Add(pair.Key);
+            foreach (string resolved in windowFindings.Keys.Except(observed.Keys)) changedInWindow.Add(resolved);
+            windowFindings = observed;
             foreach (var item in events.Items)
             {
                 string key = item["code"] + ":" + (item.TryGetValue("findingId", out var id) ? id
@@ -190,6 +205,8 @@ namespace OniMcp.Tools
             try
             {
                 if (sameGame && (reason == "window_complete" || reason == "event")) Observe(refreshFood: true);
+                // An enabled event in the final paused sample takes precedence over the deadline.
+                reason = ContinueResponse.FinalReason(reason, events.Stops);
                 if (!sameGame) latest.Available = false;
                 pending.TrySetResult(Result(reason, error));
             }
@@ -212,10 +229,11 @@ namespace OniMcp.Tools
                 ["schemaVersion"] = 3,
                 ["stopReason"] = reason == "window_complete" ? "duration_elapsed" : reason,
                 ["isPaused"] = paused, ["requestedSeconds"] = requestedSeconds,
-                ["ignoredEvents"] = JArray.FromObject(stopSettings.Ignored),
+                ["responseMode"] = fullResponse ? "full" : "summary",
+                ["ignoredEventCount"] = stopSettings.Ignored.Length,
                 ["elapsedSeconds"] = Math.Round(clock.Elapsed.TotalSeconds - started, 2),
                 ["gameSecondsAdvanced"] = Math.Round(latest.GameSeconds - start.GameSeconds, 2),
-                ["observation"] = JObject.FromObject(ColonyObservation.Serialize(latest, findings)),
+                ["observation"] = ContinueResponse.Observation(latest, findings, fullResponse, includeMetadata),
                 ["changes"] = new JObject
                 {
                     ["added"] = JArray.FromObject(delta["added"]), ["resolved"] = JArray.FromObject(delta["resolved"]),
@@ -223,8 +241,9 @@ namespace OniMcp.Tools
                     ["foodDeltaKcal"] = Math.Round(latest.FoodKcal - start.FoodKcal),
                     ["ordersRemoved"] = removed, ["activityChanges"] = activity, ["workProgressObserved"] = progressed
                 },
-                ["events"] = JArray.FromObject(windowEvents.Values)
+                ["events"] = ContinueResponse.Events(windowEvents.Values, fullResponse, lastReported, current, changedInWindow)
             };
+            if (fullResponse || includeMetadata) result["ignoredEvents"] = JArray.FromObject(stopSettings.Ignored);
             lastReported = current;
             if (error != null) result["error"] = error;
             return CallToolResult.Text(result.ToString(Formatting.None));

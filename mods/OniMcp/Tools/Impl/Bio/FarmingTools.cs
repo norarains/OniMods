@@ -150,6 +150,7 @@ namespace OniMcp.Tools
                 Description = "兼容入口：请优先使用 colony_control domain=bio bioDomain=farming action=list_harvestables。列出可收获/可设置自动收获的植物和作物状态",
                 Parameters = RectParams(new Dictionary<string, McpToolParameter>
                 {
+                    ["id"] = new McpToolParameter { Type = "integer", Description = "Exact plant InstanceID", Required = false },
                     ["query"] = new McpToolParameter { Type = "string", Description = "按名称或 prefabId 筛选", Required = false },
                     ["readyOnly"] = new McpToolParameter { Type = "boolean", Description = "是否只返回当前可收获对象，默认 false", Required = false },
                     ["limit"] = new McpToolParameter { Type = "integer", Description = "最多返回数量，默认 100，最大 500", Required = false }
@@ -163,8 +164,10 @@ namespace OniMcp.Tools
                     bool readyOnly = ToolUtil.GetBool(args, "readyOnly", false);
                     int limit = Math.Max(1, Math.Min(ToolUtil.GetInt(args, "limit") ?? 100, 500));
 
+                    int? id = ToolUtil.GetInt(args, "id");
                     var harvestables = Components.HarvestDesignatables.Items
                         .Where(item => item != null && item.gameObject != null)
+                        .Where(item => !id.HasValue || item.GetComponent<KPrefabID>()?.InstanceID == id.Value)
                         .Where(item => ToolUtil.GameObjectMatchesWorld(item.gameObject, worldId))
                         .Where(item => rect == null || CellInRect(Grid.PosToCell(item.gameObject), rect, worldId))
                         .Where(item => !readyOnly || item.CanBeHarvested())

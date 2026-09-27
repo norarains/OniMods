@@ -87,7 +87,7 @@ building_control domain=planning action=parse_plan plan="粉砂岩砖@氧气" wo
 building_control domain=planning action=parse_plan plan="用粉砂岩建造砖块，锚点氧气" worldId=0
 building_control domain=planning action=parse_plan plan="Build two sandstone tiles near the base" worldId=0
 read_control domain=world action=search pattern="粉砂岩-泥土-氧气" direction=both matchMode=smart worldId=0 limit=3
-building_control domain=planning action=build_area plan="粉砂岩砖@氧气" worldId=0 dryRun=true limit=3
+world_editor command=edit path=/active/buildings/plans.oni content="<<<<<<< SEARCH\n=======\n粉砂岩砖@氧气\n>>>>>>> REPLACE" worldId=0 dryRun=true confirm=false
 server_control domain=batch action=call_many dryRun=true responseMode=summary calls=[...]
 ```
 
@@ -96,6 +96,7 @@ Expected planning behavior:
 - `粉砂岩砖@氧气` resolves to `prefabId=Tile`, `material=SiltStone`, `query=氧气`.
 - `Build two sandstone tiles near the base` resolves to `prefabId=Tile`, `material=SandStone`, `query=base`.
 - Natural anchor forms such as `锚点氧气`, `靠近电池`, `目标厕所`, and `@氧气` should produce an anchor query.
+- Parsed `executionPlan.oneCall` is a safe world-editor preview (world-pattern searches use the advertised batch route). Do not call `building_control build_area` directly; that route requires virtual-file context. Search results contain facts, not generated action recommendations.
 - A dryRun failure is acceptable when it reports the true game reason, such as unavailable material, unreachable target, obstruction, or missing support.
 
 ## ONI Process Handling

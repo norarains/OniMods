@@ -185,8 +185,11 @@ namespace OniMcp.Tools
                 if (go == null || !ToolUtil.GameObjectMatchesWorld(go, worldId))
                     continue;
                 var kpid = go.GetComponent<KPrefabID>();
-                if (id.HasValue && kpid != null && kpid.InstanceID == id.Value)
-                    return fabricator;
+                if (id.HasValue)
+                {
+                    if (kpid != null && kpid.InstanceID == id.Value) return fabricator;
+                    continue;
+                }
                 if (cell.HasValue && Grid.PosToCell(go) == cell.Value)
                     return fabricator;
             }

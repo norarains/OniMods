@@ -105,8 +105,7 @@ namespace OniMcp.Tools
                         ["material"] = Material,
                         ["query"] = AnchorQuery
                     },
-                ["actionTemplate"] = BuildActionTemplate(intent, PrefabId, Material, AnchorQuery, worldItems),
-                ["executionPlan"] = BuildExecutionPlan(intent, PrefabId, Material, AnchorQuery, buildingItems, materialItems, worldItems),
+                ["executionPlan"] = BuildExecutionPlan(intent, Input, worldItems),
                     ["buildingCandidates"] = BuildingCandidates.Select(item => item.ToDictionary()).ToList(),
                     ["materialCandidates"] = MaterialCandidates.Select(item => item.ToDictionary()).ToList(),
                     ["sequenceItems"] = SequenceItems.Select(item => item.ToDictionary()).ToList()
@@ -133,8 +132,6 @@ namespace OniMcp.Tools
                     ["buildSteps"] = BuildStepSummaries(buildingItems, materialItems)
                 };
 
-                result["next"] = NextHint(intent);
-                result["tokenHint"] = "Read resolved, sequenceSummary.intent, actionTemplate, then sequenceItems only if ambiguous.";
                 return result;
             }
 
@@ -153,34 +150,6 @@ namespace OniMcp.Tools
                 if (materialItems.Count == items.Count)
                     return materialItems.Count > 1 ? "material_sequence" : "material";
                 return "mixed_sequence";
-            }
-
-            private static Dictionary<string, object> BuildActionTemplate(string intent, string prefabId, string material, string anchorQuery, List<PlanSequenceItem> worldItems)
-            {
-                if (intent == "world_pattern" || intent == "world_cell")
-                {
-                    return new Dictionary<string, object>
-                    {
-                        ["tool"] = "read_control",
-                        ["domain"] = "world",
-                        ["action"] = "search",
-                        ["sequence"] = string.Join("-", worldItems.Select(item => item.Token)),
-                        ["pattern"] = string.Join("-", worldItems.Select(item => item.ElementId)),
-                        ["matchMode"] = "smart",
-                        ["direction"] = "both"
-                    };
-                }
-
-                return new Dictionary<string, object>
-                {
-                    ["tool"] = "building_control",
-                    ["domain"] = "planning",
-                    ["action"] = "build_area",
-                    ["prefabId"] = prefabId,
-                    ["material"] = material,
-                    ["query"] = anchorQuery,
-                    ["dryRun"] = true
-                };
             }
 
             private static List<Dictionary<string, object>> BuildStepSummaries(List<PlanSequenceItem> buildingItems, List<PlanSequenceItem> materialItems)
@@ -203,21 +172,6 @@ namespace OniMcp.Tools
                 return steps;
             }
 
-            private static string NextHint(string intent)
-            {
-                switch (intent)
-                {
-                    case "world_pattern":
-                    case "world_cell":
-                        return "Use actionTemplate with read_control to locate matching cells, then use a returned cell as anchor.";
-                    case "build_chain":
-                        return "Use sequenceSummary.buildSteps in order; each step can feed building_control domain=planning action=build_area dryRun=true.";
-                    case "build_request_with_anchor_pattern":
-                        return "Locate the world pattern first if query is empty, then build the parsed prefab/material at the chosen anchor.";
-                    default:
-                        return "Use parsedArgs directly with building_control domain=planning action=build_area dryRun=true, or inspect sequenceItems if ambiguous.";
-                }
-            }
         }
 
         private sealed class PlanSequenceItem
@@ -233,8 +187,6 @@ namespace OniMcp.Tools
             public string ElementId;
             public string CandidateElementId;
             public string MatchSummary;
-            public string PreferredAction;
-            public Dictionary<string, object> ActionArgs = new Dictionary<string, object>();
             public List<PlanBuildingCandidate> BuildingCandidates = new List<PlanBuildingCandidate>();
             public List<PlanMaterialCandidate> MaterialCandidates = new List<PlanMaterialCandidate>();
 
@@ -258,14 +210,12 @@ namespace OniMcp.Tools
                     ["elementId"] = ElementId,
                     ["candidateElementId"] = CandidateElementId,
                     ["matchSummary"] = MatchSummary,
-                    ["preferredAction"] = PreferredAction,
                     ["parsedArgs"] = new Dictionary<string, object>
                     {
                         ["prefabId"] = PrefabId,
                         ["material"] = Material,
                         ["elementId"] = ElementId
                     },
-                    ["actionArgs"] = ActionArgs,
                     ["buildingCandidates"] = BuildingCandidates.Take(3).Select(item => item.ToDictionary()).ToList(),
                     ["materialCandidates"] = MaterialCandidates.Take(3).Select(item => item.ToDictionary()).ToList()
                 };

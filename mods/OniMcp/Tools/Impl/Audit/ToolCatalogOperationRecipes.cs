@@ -7,12 +7,18 @@ namespace OniMcp.Tools
 {
     public static partial class ToolCatalogTools
     {
+        private static readonly string[] DiscoverableBatchOperations = {
+            "colony_control", "dupes_control", "read_control", "search_control"
+        };
+
         private static List<Dictionary<string, object>> SearchBatchOperations(string query, string group,
             string mode, string risk, string detail, int limit)
         {
             var rows = new List<Dictionary<string, object>>();
-            foreach (string name in new[] { "colony_control", "dupes_control", "read_control", "search_control" })
+            bool exactOperation = DiscoverableBatchOperations.Contains(query.Trim());
+            foreach (string name in DiscoverableBatchOperations)
             {
+                if (exactOperation && name != query.Trim()) continue;
                 if (!ToolBatchTools.TryGetBatchOperation(name, out var tool)) continue;
                 if (!string.IsNullOrEmpty(group) && !string.Equals(group, tool.Group, StringComparison.OrdinalIgnoreCase)) continue;
                 if (mode != "any" && !string.IsNullOrEmpty(mode) && mode != tool.Mode) continue;
@@ -45,7 +51,7 @@ namespace OniMcp.Tools
                         ["calls"] = new JArray(new JObject { ["tool"] = name, ["args"] = args })
                     }
                 };
-                if (!args.HasValues) row["next"] = "Fill call.args.calls[0].args using this operation's schema (detail=full).";
+                if (!args.HasValues) row["argumentsRequired"] = true;
                 rows.Add(row);
             }
             if (new[] { "printing", "care", "reward", "telepad", "打印", "补给" }.Any(query.Contains)

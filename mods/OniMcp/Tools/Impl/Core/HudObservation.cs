@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace OniMcp.Tools
 {
@@ -7,6 +8,7 @@ namespace OniMcp.Tools
     {
         internal static void Read(ContinueSample sample)
         {
+            var notifications = new List<ColonyFinding>();
             foreach (var notification in NotificationTools.GetNotifications(includePending: false))
             {
                 string type = notification.Type.ToString();
@@ -26,8 +28,11 @@ namespace OniMcp.Tools
                         finding.Details["netKg"] = Math.Round(entry.Net, 2);
                     }
                 }
-                sample.HudFindings.Add(finding);
+                string covered = CoveredNotification(notification, sample);
+                if (covered != null) { finding.StopEligible = false; finding.Details["coveredBy"] = covered; }
+                notifications.Add(finding);
             }
+            sample.HudFindings.AddRange(HudFindingPolicy.CoalesceNotifications(notifications));
             var utility = ColonyDiagnosticUtility.Instance;
             if (utility == null) return;
             foreach (var world in utility.diagnosticDisplaySettings)
@@ -40,10 +45,42 @@ namespace OniMcp.Tools
                     var result = diagnostic.LatestResult; // Cached by the game, no evaluation here.
                     string opinion = result.opinion.ToString();
                     if (HudFindingPolicy.IsDiagnosticWarning(opinion))
-                        sample.HudFindings.Add(HudFindingPolicy.Diagnostic(world.Key, diagnostic.id,
-                            opinion, ToolUtil.CleanName(result.Message)));
+                    {
+                        bool powerTrend = diagnostic.id == "PowerUseDiagnostic" && opinion == "Concern"
+                            && HudFindingPolicy.MatchesTemplate(result.Message, global::STRINGS.UI.COLONY_DIAGNOSTICS.POWERUSEDIAGNOSTIC.SIGNIFICANT_POWER_CHANGE_DETECTED);
+                        var finding = HudFindingPolicy.Diagnostic(world.Key, diagnostic.id,
+                            opinion, ToolUtil.CleanName(result.Message), powerTrend);
+                        if (diagnostic.id == "IdleDiagnostic") finding.Details["stopEvent"] = "worker_idle";
+                        NativeConditionDetails.DiagnosticTargets(finding, result);
+                        sample.HudFindings.Add(finding);
+                    }
                 }
             }
+        }
+
+        private static string CoveredNotification(Notification notification, ContinueSample sample)
+        {
+            if (notification.Type.ToString() == "DuplicantThreatening") return null;
+            var statusItems = Db.Get().BuildingStatusItems;
+            if (sample.PrintingReady && notification.titleText == statusItems.NewDuplicantsAvailable.notificationText)
+                return "printing_pod_ready:-1";
+            var go = notification.Notifier != null ? notification.Notifier.gameObject : null;
+            if (go == null) return null;
+            int id = go.GetComponent<KPrefabID>()?.InstanceID ?? go.GetInstanceID();
+            var supply = sample.BuildingSupplies.FirstOrDefault(item => item.Id == id && item.WorldId == go.GetMyWorldId());
+            if (supply == null) return null;
+            var statuses = go.GetComponent<KSelectable>()?.GetStatusItemGroup();
+            if (statuses == null) return null;
+            foreach (var entry in statuses)
+                if (entry.item != null && supply.Statuses.Contains(entry.item.Id)
+                    && notification.titleText == entry.item.notificationText)
+                {
+                    bool research = sample.ResearchStations.Any(item => item.Id == id && item.Required);
+                    string code = research ? "research_material_missing"
+                        : supply.Construction ? "construction_material_missing" : "building_material_missing";
+                    return code + ":" + supply.WorldId + ":" + id;
+                }
+            return null;
         }
     }
 }

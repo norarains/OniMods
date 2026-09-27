@@ -40,8 +40,10 @@ namespace OniMcp.Tools
                     string detail = (args["detail"]?.ToString() ?? "compact").ToLowerInvariant();
                     int limit = ToolUtil.ClampLimit(args, 20, 100);
                     string exactLookup = ExactVisibleToolLookup(query);
+                    bool exactOperation = DiscoverableBatchOperations.Contains(query.Trim());
 
                     var matches = OniToolRegistry.GetVisibleTools()
+                        .Where(tool => !exactOperation)
                         .Where(tool => string.IsNullOrEmpty(group) || tool.Group.ToLowerInvariant() == group)
                         .Where(tool => mode == "any" || string.IsNullOrEmpty(mode) || tool.Mode.ToLowerInvariant() == mode)
                         .Where(tool => risk == "any" || string.IsNullOrEmpty(risk) || tool.Risk.ToLowerInvariant() == risk)
@@ -55,15 +57,19 @@ namespace OniMcp.Tools
                         .Select(item => NormalizeDetail(detail) == "full" ? ToolToManifest(item.Tool) : NormalizeDetail(detail) == "brief" ? ToolToBriefManifest(item.Tool, item.Score) : ToolToCompactManifest(item.Tool, item.Score))
                         .ToList();
 
+                    var operations = string.IsNullOrEmpty(exactLookup)
+                        ? SearchBatchOperations(query, group, mode, risk, detail, limit)
+                        : new List<Dictionary<string, object>>();
                     var result = new Dictionary<string, object>
                     {
                         ["query"] = query,
                         ["expandedQuery"] = expandedQuery,
                         ["detail"] = NormalizeDetail(detail),
-                        ["returned"] = matches.Count,
+                        ["returned"] = matches.Count + operations.Count,
+                        ["toolsReturned"] = matches.Count, ["operationsReturned"] = operations.Count,
                         ["note"] = SearchNote(NormalizeDetail(detail)),
                         ["tools"] = matches,
-                        ["operations"] = SearchBatchOperations(query, group, mode, risk, detail, limit)
+                        ["operations"] = operations
                     };
                     return CallToolResult.Text(JsonConvert.SerializeObject(result, McpJsonUtil.Settings));
                 }

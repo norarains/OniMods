@@ -115,7 +115,8 @@ namespace OniMcp.Tools
                             orderArgs["mode"] = "mark";
                     }
 
-                    var result = OrdersControlEntryTools.ControlOrders().Handler(orderArgs);
+                    var result = action == "deconstruct" ? OrdersTools.DeconstructMapArea(orderArgs)
+                        : OrdersControlEntryTools.ControlOrders().Handler(orderArgs);
                     bool failed = WorldEditorResultFailed(result, parentArgs);
                     anyError = anyError || failed;
                     applied += ResultAppliedCount(result);

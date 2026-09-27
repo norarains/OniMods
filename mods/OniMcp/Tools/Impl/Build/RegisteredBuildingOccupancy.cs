@@ -45,7 +45,9 @@ namespace OniMcp.Tools
         {
             if (instance == null || def == null || !Grid.IsValidCell(cell))
                 return false;
-            return Grid.Objects[cell, (int)def.ObjectLayer] == instance;
+            return Grid.Objects[cell, (int)def.ObjectLayer] == instance
+                || (def.ReplacementLayer != ObjectLayer.NumLayers
+                    && Grid.Objects[cell, (int)def.ReplacementLayer] == instance);
         }
     }
 }

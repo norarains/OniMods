@@ -25,11 +25,12 @@ namespace OniMcp.Tools
                 {
                     ["call"] = "game_control domain=speed action=continue seconds=15",
                     ["maxRealSeconds"] = 20, ["returnsPaused"] = true,
-                    ["schemaVersion"] = 3,
+                    ["schemaVersion"] = 3, ["defaultResponseMode"] = "summary",
+                    ["fullResponseMode"] = "full", ["coverageProfile"] = "colony_v1",
                     ["defaultStopEvents"] = new JArray(ContinueStopEvents.Defaults),
                     ["settingsCall"] = "game_control domain=speed action=stop_events",
                     ["directOnly"] = true,
-                    ["policy"] = "Advances until duration_elapsed or an enabled event; returns facts, no recommendation. ignoreEvents/unignoreEvents persist per session, including across finding resolution and save loads. Ignored events remain visible. No implicit acknowledgement or review horizon."
+                    ["policy"] = "Advances until duration_elapsed or an enabled event; returns facts, no recommendation. ignoreEvents/unignoreEvents persist per session, including across finding resolution and save loads. Ignored findings remain visible; summary omits unchanged ignored finding events. Enabled events in the final sample take precedence over a simultaneous deadline. No implicit acknowledgement or review horizon."
                 },
                 ["stateRead"] = "world_editor command=read path=/active/index.md includeState=true",
                 ["symbolsRead"] = "world_editor command=symbols queries=[...]",

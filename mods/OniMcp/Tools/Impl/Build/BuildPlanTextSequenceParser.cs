@@ -44,8 +44,6 @@ namespace OniMcp.Tools
                     ElementId = elementId,
                     CandidateElementId = candidate.ElementId,
                     MatchSummary = BuildSequenceMatchSummary(kind, candidate.BestBuilding, candidate.BestMaterial, candidate.ElementId),
-                    PreferredAction = PreferredSequenceAction(kind),
-                    ActionArgs = BuildSequenceActionArgs(kind, prefabId, material, elementId, candidate.RawToken),
                     BuildingCandidates = candidate.Buildings,
                     MaterialCandidates = candidate.Materials
                 };
@@ -174,60 +172,6 @@ namespace OniMcp.Tools
                     return string.IsNullOrWhiteSpace(elementId) ? "world:unresolved" : "world:" + elementId;
                 default:
                     return "unknown";
-            }
-        }
-
-        private static string PreferredSequenceAction(string kind)
-        {
-            switch (kind)
-            {
-                case "building":
-                    return "build";
-                case "material":
-                    return "use_as_material_or_search_item";
-                case "world":
-                    return "search_world_cell";
-                default:
-                    return "inspect_candidates";
-            }
-        }
-
-        private static Dictionary<string, object> BuildSequenceActionArgs(string kind, string prefabId, string material, string elementId, string token)
-        {
-            switch (kind)
-            {
-                case "building":
-                    return new Dictionary<string, object>
-                    {
-                        ["tool"] = "building_control",
-                        ["domain"] = "planning",
-                        ["action"] = "build_area",
-                        ["prefabId"] = prefabId,
-                        ["material"] = material,
-                        ["dryRun"] = true
-                    };
-                case "material":
-                    return new Dictionary<string, object>
-                    {
-                        ["tool"] = "read_control",
-                        ["domain"] = "resources",
-                        ["action"] = "search_items",
-                        ["query"] = material ?? token
-                    };
-                case "world":
-                    return new Dictionary<string, object>
-                    {
-                        ["tool"] = "read_control",
-                        ["domain"] = "world",
-                        ["action"] = "search",
-                        ["pattern"] = elementId ?? token,
-                        ["matchMode"] = "smart"
-                    };
-                default:
-                    return new Dictionary<string, object>
-                    {
-                        ["token"] = token
-                    };
             }
         }
 

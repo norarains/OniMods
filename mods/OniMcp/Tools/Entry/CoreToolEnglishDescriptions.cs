@@ -28,7 +28,7 @@ namespace OniMcp.Tools
                     Describe(tool, DupesDescriptions());
                     break;
                 case "game_control":
-                    tool.Description = "Unified game entrypoint. Autonomous play: plan a useful batch while paused, then domain=speed action=continue seconds=15. It advances the requested real-time window or stops for a configured event, then returns paused with stopReason, observation.findings, net changes and events. Findings include yellow HUD notifications, native diagnostic warnings, and supply shortages; ignored findings stay visible. The caller decides whether to continue or act; a healthy round needs only another continue. Explicit ignoreEvents/unignoreEvents persist for this session and never hide findings; speed/stop_events reads or updates settings. Direct calls only; no batch/program/task wrapper. Also supports manual speed, game state, saves, launch, DLC, sandbox, and UI.";
+                    tool.Description = "Unified game entrypoint. Autonomous play: plan a useful batch while paused, then domain=speed action=continue seconds=15. It advances the requested real-time window or stops for a configured event, then returns paused with stopReason, observation.findings, net changes and events. responseMode=summary (default) keeps all current findings/vitals/progress; full adds repeated metadata. Findings include yellow HUD notifications, native diagnostic warnings, crop status, morale deficits and supply shortages; ignored findings stay visible. The caller decides whether to continue or act; a healthy round needs only another continue. Explicit ignoreEvents/unignoreEvents persist for this session and never hide findings; speed/stop_events reads or updates settings. Direct calls only; no batch/program/task wrapper. Also supports manual speed, game state, saves, launch, DLC, sandbox, and UI.";
                     Describe(tool, GameDescriptions());
                     break;
                 case "navigation_control":
@@ -44,7 +44,7 @@ namespace OniMcp.Tools
                     Describe(tool, ReadDescriptions());
                     break;
                 case "search_control":
-                    tool.Description = "Dedicated search entrypoint. Searches tools, world objects, resources, buildings, dupes, or knowledge and returns action-ready nextActions so selected results can flow directly into action tools without coordinates.";
+                    tool.Description = "Read-only search entrypoint for tools, world objects, resources, buildings, dupes and glyphs. Returns matching facts; the caller chooses any follow-up action.";
                     Describe(tool, SearchDescriptions());
                     break;
                 case "server_control":
@@ -166,14 +166,11 @@ namespace OniMcp.Tools
         private static Dictionary<string, string> SearchDescriptions()
         {
             var d = CommonDescriptions();
-            d["domain"] = "Search domain: tools, world, resources, buildings, dupes, or knowledge.";
+            d["domain"] = "Search domain: tools, world, resources, buildings, dupes, or glyphs.";
             d["query"] = "Search text.";
             d["target"] = "Alias for query when searching for an action target.";
             d["search"] = "Alias for query.";
-            d["intent"] = "Optional intended follow-up action, used to shape nextActions.";
-            d["actionTool"] = "Optional preferred follow-up tool for the returned action template.";
-            d["actionDomain"] = "Optional preferred follow-up domain for the returned action template.";
-            d["action"] = "Optional preferred follow-up action for the returned action template.";
+            d["intent"] = "Optional caller-provided intent, echoed as context.";
             d["kind"] = "Optional search subtype.";
             d["kinds"] = "Optional search subtype list.";
             d["category"] = "Building category filter.";
