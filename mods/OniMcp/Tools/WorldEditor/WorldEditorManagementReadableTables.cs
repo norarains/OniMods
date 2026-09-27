@@ -54,7 +54,16 @@ namespace OniMcp.Tools
 
         private static CallToolResult ReadSkillsManagementMarkdown(JObject args, string path)
         {
-            var state = DuplicantTools.ControlDupes().Handler(new JObject { ["domain"] = "skill", ["action"] = "list" });
+            var request = (JObject)args.DeepClone();
+            request["domain"] = "skill"; request["action"] = "list";
+            if (request["id"] == null && request["name"] == null && request["query"] != null
+                && ToolUtil.FindDupe(new JObject { ["name"] = request["query"] }) != null)
+            {
+                request["name"] = request["query"];
+                request.Remove("query");
+            }
+            var state = DuplicantTools.ControlDupes().Handler(request);
+            if (state.IsError) return state;
             if (WantsManagementJson(args))
                 return StateJsonResult(state);
             var root = ParseManagementState(state);
@@ -62,14 +71,17 @@ namespace OniMcp.Tools
             if (!string.IsNullOrEmpty(Str(root, "dupe")))
                 sb.AppendLine("- dupe: `" + Esc(Str(root, "dupe")) + "`");
             sb.AppendLine();
+            if (root?["morale"] is JObject morale) sb.AppendLine("- morale: " + morale.ToString(Formatting.None));
             sb.AppendLine("## Skills");
-            sb.AppendLine("| Group | Tier | ID | Name | Morale | Requires |");
-            sb.AppendLine("| --- | ---: | --- | --- | ---: | --- |");
+            sb.AppendLine("| Group | Tier | ID | Name | Morale | Requires | Learned | Can learn | Conditions |");
+            sb.AppendLine("| --- | ---: | --- | --- | ---: | --- | --- | --- | --- |");
             foreach (var skill in Arr(root, "skills").OfType<JObject>().OrderBy(s => Str(s, "skillGroup")).ThenBy(s => Int(s, "tier", 0)).ThenBy(s => Str(s, "id")))
             {
                 sb.AppendLine("| " + Esc(Str(skill, "skillGroup")) + " | " + Int(skill, "tier", 0)
                     + " | `" + Esc(Str(skill, "id")) + "` | " + Esc(Str(skill, "name"))
-                    + " | " + Int(skill, "moraleExpectation", 0) + " | " + Esc(JoinStrings(skill["priorSkills"])) + " |");
+                    + " | " + Int(skill, "moraleExpectation", 0) + " | " + Esc(JoinStrings(skill["priorSkills"]))
+                    + " | " + Esc(Str(skill, "mastered")) + " | " + Esc(Str(skill, "canMaster"))
+                    + " | " + Esc(JoinStrings(skill["conditions"])) + " |");
             }
             AppendEditCommands(sb, new[]
             {
@@ -81,7 +93,11 @@ namespace OniMcp.Tools
 
         private static CallToolResult ReadPrioritiesManagementMarkdown(JObject args, string path)
         {
-            var state = DuplicantTools.ControlDupes().Handler(new JObject { ["domain"] = "priority", ["action"] = "list" });
+            var request = (JObject)args.DeepClone();
+            request["domain"] = "priority"; request["action"] = "list";
+            if (request["name"] == null && request["query"] != null) request["name"] = request["query"];
+            var state = DuplicantTools.ControlDupes().Handler(request);
+            if (state.IsError) return state;
             if (WantsManagementJson(args))
                 return StateJsonResult(state);
             var root = ParseManagementState(state);
@@ -113,8 +129,8 @@ namespace OniMcp.Tools
             }
             AppendEditCommands(sb, new[]
             {
-                "priority name=\"Dig\" choreGroup=\"Dig\" priority=9",
-                "priority name=\"Ran\" choreGroup=\"Research\" priority=7",
+                "priority name=\"Dig\" choreGroup=\"Dig\" priority=5",
+                "priority name=\"Ran\" choreGroup=\"Research\" priority=5",
                 "priority_settings advanced=true confirm=true"
             });
             return CallToolResult.Text(sb.ToString());
@@ -193,6 +209,7 @@ namespace OniMcp.Tools
             sb.AppendLine("## Current");
             sb.AppendLine("- active: " + (root?["active"]?.Type == JTokenType.Null ? "none" : root?["active"]?.ToString(Newtonsoft.Json.Formatting.None) ?? "unknown"));
             sb.AppendLine("- queue: " + (root?["queue"]?.ToString(Newtonsoft.Json.Formatting.None) ?? "unknown"));
+            sb.AppendLine("- queuedTargets (FIFO): " + (root?["queuedTargets"]?.ToString(Formatting.None) ?? "unavailable"));
             sb.AppendLine("- available technologies: `server_control domain=batch action=call_many responseMode=full calls=[{tool:colony_control,args:{domain:management,kind:research,action:list,includeComplete:false,limit:10}}]`");
             sb.AppendLine();
             var rows = FindObjectArray(root, "research", "techs", "technologies", "items", "tree");
@@ -241,7 +258,7 @@ namespace OniMcp.Tools
             sb.AppendLine("| File | Panel | Edit commands | Example |");
             sb.AppendLine("| --- | --- | --- | --- |");
             sb.AppendLine("| `/active/management/schedule.md` | Schedule | `set_block`, `assign_dupe`, `create_schedule` | `set_block schedule=\"AI轮班-1\" hour=7 group=Worktime` |");
-            sb.AppendLine("| `/active/management/priorities.md` | Priorities | `priority`, `priority_settings` | `priority name=\"Dig\" choreGroup=\"Dig\" priority=9` |");
+            sb.AppendLine("| `/active/management/priorities.md` | Priorities | `priority`, `priority_settings` | `priority name=\"Dig\" choreGroup=\"Dig\" priority=5` |");
             sb.AppendLine("| `/active/management/dupes.md` | Duplicants | `rename` | `rename name=\"Dig\" newName=\"矿工\"` |");
             sb.AppendLine("| `/active/management/food.md` | Food | `food`, `food_policy` | `food allDupes=true food=\"MushBar\" allow=false` |");
             sb.AppendLine("| `/active/management/skills.md` | Skills | `learn_skill` | `learn_skill name=\"Dig\" skillId=\"Mining1\" confirm=true` |");
@@ -337,6 +354,11 @@ namespace OniMcp.Tools
             var cols = new List<string>();
             foreach (var row in rows)
             {
+                foreach (var entry in (row["priorities"] as JArray ?? new JArray()).OfType<JObject>())
+                {
+                    string key = Str(entry, "choreGroupId");
+                    if (!string.IsNullOrEmpty(key) && !cols.Contains(key)) cols.Add(key);
+                }
                 foreach (var prop in row.Properties())
                 {
                     if (skip.Contains(prop.Name))
@@ -358,6 +380,9 @@ namespace OniMcp.Tools
 
         private static string PriorityValue(JObject row, string col)
         {
+            var entry = (row["priorities"] as JArray ?? new JArray()).OfType<JObject>()
+                .FirstOrDefault(item => Str(item, "choreGroupId") == col);
+            if (entry != null) return entry["disabled"]?.Value<bool>() == true ? "disabled" : Str(entry, "priority");
             if (row[col] != null)
                 return Scalar(row[col]);
             foreach (var obj in row.Properties().Select(p => p.Value).OfType<JObject>())
@@ -420,7 +445,7 @@ namespace OniMcp.Tools
 
         private static string Str(JToken obj, string name)
         {
-            return Scalar(obj?[name]);
+            return obj is JObject item ? Scalar(item[name]) : "";
         }
 
         private static int Int(JToken obj, string name, int fallback)

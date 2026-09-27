@@ -119,7 +119,7 @@ namespace OniMcp.Tools
                     var geysers = Components.Geysers.GetItems(worldId)
                         .Where(geyser => geyser != null)
                         .Select(geyser => GeyserInfo(geyser, tuner))
-                        .Where(info => (bool)info["studied"] || (includeUnstudied && (bool)info["visible"] && (bool)info["uncovered"]))
+                        .Where(info => (bool)info["studied"] || (includeUnstudied && (bool)info["visible"]))
                         .Where(info => MatchesQuery(info, query))
                         .OrderByDescending(info => (bool)info["studied"])
                         .ThenBy(info => info["name"].ToString())

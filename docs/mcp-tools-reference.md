@@ -2,6 +2,23 @@
 
 本文档描述 `OniMcp` 当前推荐的工具面。运行时清单永远以 `server_control domain=catalog action=manifest` 和 `oni://tools/manifest` 为准。
 
+## 殖民地模块化设计
+
+默认对整个殖民地使用模块化架构：每个系统明确职责、边界、接口、依赖、输入输出、容量和运行条件，将意外影响与故障限制在边界内。模块应便于独立检查、维护、替换与扩展；改造分阶段保留必要服务，完成后分别验证模块和整体的持续运行。模块大小由职责决定，不等于每台机器单独围墙。该原则适用于全部系统，任何子系统示例都不能限制其范围。
+
+规划整批材料与前置工作，使用实际端口和线路容量；`autoConnectPower` 默认 false。旧服务在替代设施验证前保持可用。挖掘检查落沙与液体风险。小人工作偏好 0–5，建筑/订单优先级 1–9。
+
+## 精确读取与订单契约
+
+- `dryRun=true` 的取消、攻击、清空管道、剪断管线不会修改订单，即使同时传 `confirm=true`。`cut_conduits` 创建普通拆除订单，`id` 可精确选择对象；`auto` 只选气体/液体/运输轨道，`all` 才包含电线与逻辑线。
+- 基础设施 `.oni` 计划保留 `prefabId` 的同层线材/管材变体和显式材料。回折路径按唯一格计算材料与施工，按完整路径保存分支连接。原生允许的单格线材/管材升级使用替换蓝图，旧线路保留到建成。`connectionsPersisted` 只证明连接数据已保存；`networkConnected` 才说明整条已建线路通过运行网络检查。
+- `footprintMode=anchors` 将地图中每个修改的建筑 token 作为独立左下角锚点，可表达相邻多格建筑；默认仍解析完整单体 footprint。建造预检返回 `nativeAutoDigTargets`，包括原生隐式挖掘；`autoDigObstructions=false` 会在放置前拒绝这些副作用。MCP 创建的蓝图完工后保留当时的优先级。
+- 研究 `clearQueue=false` 将目标追加到存档中的 FIFO `queuedTargets`。`queue` 是当前 FIFO 目标及其原生前置研究顺序；前置科技仍由游戏决定。玩家在研究界面重新选择/取消时覆盖 MCP 队列；清空队列同时停止当前研究。
+- 建筑列表和通用侧屏列表支持精确 `id`；建筑列表支持 `worldId`、`includePlanned`，并返回原生状态、朝向和剩余工作。`utility_ports` 包含过滤器次级出口、逻辑门和桥端口；蓝图端口来源标明 `blueprint_definition`，不能当作已连接证据。面罩/服装通过 `server_control` 的 batch 调用内部 `dupes_control`，参数为 `domain=side_screen action=equipment id=…`，读取实际装备；`building_control domain=side_surface surface=facility kind=suit_locker action=list id=…` 读取柜内装备和氧气，不能用普通储存质量判断装备状态。技能表支持 `id/name` 选择小人，`query` 筛选技能，显示已学、可学、条件与士气。
+- `continue` 保留全部当前 findings，增加体力、拆除工作、缺少挖掘技能和已储存/散落食物。休息不累计工作停滞时间；挖掘清除地形才作为完成证据。食物存放状态不证明可取性。食物读取的 `includeDetails=true` 或精确 `id` 提供新鲜度、温度、原生冷藏和气氛分类。
+- 殖民地 report summary 默认每条曲线最近五点并省略外观信息；`detail=full`、`maxStatPoints` 可展开。电力图中的发电额定值明确标为额定，不能等同实际产出。
+
+
 ## 快速开始
 
 - MCP 地址: `http://localhost:8788/mcp/`

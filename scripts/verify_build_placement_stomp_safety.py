@@ -94,7 +94,7 @@ def main() -> int:
     require(obstructions, "FindUtilityLayerConflicts", "footprint preflight", failures)
     require(obstructions, "FindBuildingLayerConflicts", "grid building-layer preflight", failures)
     require(obstructions, "FindLogicEndpointConflicts", "logic endpoint preflight", failures)
-    require(obstructions, "utility && !endpointBridge", "bridge building-footprint protection", failures)
+    require(obstructions, "utility && !physical", "physical utility tile building-footprint protection", failures)
 
     # Both dry-run/normal TryPlanOne and native path execution must share the
     # safety contract, with a final check directly before BuildingDef.TryPlace.
@@ -145,12 +145,12 @@ def main() -> int:
     auto_connect_body = method_body(placement, "public static McpTool AutoConnectUtility()", "auto-connect method", failures)
     require_order(
         auto_connect_body,
-        ("var pathSafety = ValidateUtilityPathSafety", "if (!pathSafety.Valid)", "foreach (var point in path)"),
+        ("var pathSafety = ValidateUtilityPathSafety", "if (!pathSafety.Valid)", "foreach (var point in uniquePath)"),
         "atomic full-path guard before cell placement",
         failures,
     )
     guard = auto_connect_body[
-        auto_connect_body.find("var pathSafety = ValidateUtilityPathSafety") : auto_connect_body.find("foreach (var point in path)")
+        auto_connect_body.find("var pathSafety = ValidateUtilityPathSafety") : auto_connect_body.find("foreach (var point in uniquePath)")
     ]
     require(guard, "CallToolResult.Error", "path conflict promoted before commit", failures)
     for mutation in ("TryPlanOne(", "OnLeftClickDown", "def.TryPlace"):
@@ -158,7 +158,7 @@ def main() -> int:
 
     require_order(
         auto_connect_body,
-        ("foreach (var point in path)", "CountUtilityPathCells(def, path, worldId)", "bool complete", 'response["reasonCode"] = "utility_path_incomplete"', "CallToolResult.Error"),
+        ("foreach (var point in uniquePath)", "CountUtilityPathCells(def, uniquePath, worldId)", "bool complete", 'response["reasonCode"] = "utility_path_incomplete"', "CallToolResult.Error"),
         "cell fallback final exact-prefab completeness verification",
         failures,
     )

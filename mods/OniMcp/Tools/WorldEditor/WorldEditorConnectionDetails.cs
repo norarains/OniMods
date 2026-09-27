@@ -289,7 +289,7 @@ int cell,
             if (generator != null)
             {
                 parts.Add("role=generator");
-                parts.Add("gen=" + generator.WattageRating.ToString("F0") + "W");
+                parts.Add("ratedGen=" + generator.WattageRating.ToString("F0") + "W");
             }
             var battery = building.GetComponent<Battery>();
             if (battery != null)

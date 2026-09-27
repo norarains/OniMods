@@ -28,6 +28,7 @@ namespace OniMcp.Tools
                     if (Research.Instance == null || Db.Get()?.Techs == null)
                         return CallToolResult.Error("Research not initialized");
 
+                    var queuedTargets = ResearchTargetQueue.Current?.Read();
                     var active = Research.Instance.GetActiveResearch();
                     var target = Research.Instance.GetTargetResearch();
                     var queue = Research.Instance.GetResearchQueue();
@@ -35,6 +36,7 @@ namespace OniMcp.Tools
                     {
                         ["active"] = active != null ? TechToDictionary(active.tech, includeDetails: ToolUtil.GetBool(args, "includeDetails", false)) : null,
                         ["target"] = target != null ? (object)target.tech.Id : null,
+                        ["queuedTargets"] = queuedTargets, ["queueOrder"] = "native_prerequisites_for_fifo_head",
                         ["queue"] = queue.Select(item => item.tech.Id).ToList()
                     };
 
@@ -156,21 +158,17 @@ namespace OniMcp.Tools
                             ["clearQueue"] = clearQueue
                         }, McpJsonUtil.Settings));
 
-                    if (!clearQueue)
-                    {
-                        var append = typeof(Research).GetMethod("AddTechToQueue", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-                        if (append == null) return CallToolResult.Error("Native research queue append is unavailable; queue unchanged");
-                        append.Invoke(Research.Instance, new object[] { tech });
-                    }
-                    Research.Instance.SetActiveResearch(tech, clearQueue);
-                    if (!Research.Instance.GetResearchQueue().Any(item => item.tech.Id == tech.Id) && !IsComplete(tech))
-                        return CallToolResult.Error("Native research queue did not contain requested technology after update: " + tech.Id);
+                    var targetQueue = ResearchTargetQueue.Current;
+                    if (targetQueue == null) return CallToolResult.Error("Persistent research queue unavailable; reload the colony before setting research.");
+                    targetQueue.Select(tech, clearQueue);
 
+                    var requestedTargets = targetQueue.Read();
                     var active = Research.Instance.GetActiveResearch();
                     var queue = Research.Instance.GetResearchQueue();
                     var response = new Dictionary<string, object>
                     {
                         ["selected"] = TechToDictionary(tech, includeDetails: true),
+                        ["queuedTargets"] = requestedTargets, ["queueOrder"] = "native_prerequisites_for_fifo_head",
                         ["active"] = active != null ? TechToDictionary(active.tech, includeDetails: false) : null,
                         ["queue"] = queue.Select(item => item.tech.Id).ToList()
                     };
@@ -194,11 +192,13 @@ namespace OniMcp.Tools
                 Description = "兼容入口：请优先使用 colony_control domain=management kind=research action=clear。取消当前研究队列，等价于 ResearchScreen 的取消研究按钮；需 confirm=true",
                 Parameters = new Dictionary<string, McpToolParameter>
                 {
-                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "必须为 true，确认清空当前研究队列", Required = true }
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Preview clearing research without changing active or queued targets.", Required = false },
+                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "提交必须为 true；dryRun=true 不要求确认", Required = false }
                 },
                 Handler = args =>
                 {
-                    if (!ToolUtil.GetBool(args, "confirm", false))
+                    bool dryRun = ToolUtil.GetBool(args, "dryRun", false);
+                    if (!dryRun && !ToolUtil.GetBool(args, "confirm", false))
                         return CallToolResult.Error("confirm=true is required to clear the research queue");
 
                     if (Research.Instance == null || Db.Get()?.Techs == null)
@@ -208,8 +208,22 @@ namespace OniMcp.Tools
                     var targetBefore = Research.Instance.GetTargetResearch();
                     var queue = Research.Instance.GetResearchQueue();
                     var queueBefore = queue.Select(item => item.tech.Id).ToList();
+                    var before = new Dictionary<string, object>
+                    {
+                        ["active"] = activeBefore != null ? TechToDictionary(activeBefore.tech, includeDetails: false) : null,
+                        ["target"] = targetBefore != null ? TechToDictionary(targetBefore.tech, includeDetails: false) : null,
+                        ["queue"] = queueBefore,
+                        ["queuedTargets"] = ResearchTargetQueue.Current?.Snapshot()
+                    };
+                    if (dryRun)
+                        return CallToolResult.Text(JsonConvert.SerializeObject(new Dictionary<string, object>
+                        {
+                            ["dryRun"] = true, ["committed"] = false, ["cleared"] = 0,
+                            ["wouldClear"] = queueBefore.Count, ["before"] = before
+                        }, McpJsonUtil.Settings));
 
-                    queue.Clear();
+                    ResearchTargetQueue.Current?.Clear();
+                    if (ResearchTargetQueue.Current == null) Research.Instance.SetActiveResearch(null, true);
 
                     var activeAfter = Research.Instance.GetActiveResearch();
                     var targetAfter = Research.Instance.GetTargetResearch();
@@ -219,13 +233,9 @@ namespace OniMcp.Tools
 
                     var response = new Dictionary<string, object>
                     {
+                        ["dryRun"] = false, ["committed"] = true,
                         ["cleared"] = queueBefore.Count,
-                        ["before"] = new Dictionary<string, object>
-                        {
-                            ["active"] = activeBefore != null ? TechToDictionary(activeBefore.tech, includeDetails: false) : null,
-                            ["target"] = targetBefore != null ? TechToDictionary(targetBefore.tech, includeDetails: false) : null,
-                            ["queue"] = queueBefore
-                        },
+                        ["before"] = before,
                         ["after"] = new Dictionary<string, object>
                         {
                             ["active"] = activeAfter != null ? TechToDictionary(activeAfter.tech, includeDetails: false) : null,
@@ -258,6 +268,7 @@ namespace OniMcp.Tools
                     ["includeComplete"] = new McpToolParameter { Type = "boolean", Description = "action=list 时是否包含已完成科技，默认 true", Required = false },
                     ["limit"] = new McpToolParameter { Type = "integer", Description = "action=list 时最多返回数量，默认 30，最大 100", Required = false },
                     ["clearQueue"] = new McpToolParameter { Type = "boolean", Description = "action=set 时是否清空旧队列，默认 true", Required = false },
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Preview set/clear without changing research.", Required = false },
                     ["confirm"] = new McpToolParameter { Type = "boolean", Description = "action=clear 时必须为 true，确认清空当前研究队列", Required = false }
                 },
                 Handler = args =>

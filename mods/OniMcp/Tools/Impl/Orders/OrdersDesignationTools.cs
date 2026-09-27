@@ -22,9 +22,10 @@ namespace OniMcp.Tools
                 Description = "兼容入口：请优先使用 orders_control domain=area action=cancel。取消矩形区域内玩家已下达的订单：挖掘、建造、拆除、清扫、收获、攻击、抓捕等可取消对象",
                 Parameters = RectParams(new Dictionary<string, McpToolParameter>
                 {
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Preview cancellation without changing any order.", Required = false },
                     ["includeAttack"] = new McpToolParameter { Type = "boolean", Description = "是否取消区域内攻击标记，默认 true", Required = false },
                     ["includeCapture"] = new McpToolParameter { Type = "boolean", Description = "是否取消区域内抓捕标记，默认 true", Required = false },
-                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "区域超过 100 格时必须为 true", Required = false }
+                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "提交必须为 true；dryRun=true 不要求确认", Required = false }
                 }),
                 Handler = args =>
                 {
@@ -33,8 +34,9 @@ namespace OniMcp.Tools
 
                     var rect = ToolUtil.GetRect(args);
                     int cells = RectCellCount(rect);
-                    if (cells > 100 && !ToolUtil.GetBool(args, "confirm", false))
-                        return CallToolResult.Error("confirm=true is required when cancelling more than 100 cells");
+                    bool dryRun = ToolUtil.GetBool(args, "dryRun", false);
+                    if (!dryRun && !ToolUtil.GetBool(args, "confirm", false))
+                        return CallToolResult.Error("confirm=true is required to cancel orders; dryRun=true previews only");
 
                     int worldId = ToolUtil.ResolveWorldId(args);
                     bool includeAttack = ToolUtil.GetBool(args, "includeAttack", true);
@@ -56,20 +58,25 @@ namespace OniMcp.Tools
                                 if (go == null || seen.Contains(go))
                                     continue;
                                 seen.Add(go);
-                                go.Trigger(CancelEvent);
+                                if (!dryRun) go.Trigger(CancelEvent);
                                 triggered++;
                             }
                         }
                     }
 
-                    int attacksCancelled = includeAttack ? SetAttackMarks(rect, worldId, false, null, false) : 0;
-                    int capturesCancelled = includeCapture ? SetCaptureMarks(rect, worldId, false, new PrioritySetting(PriorityScreen.PriorityClass.basic, 5), false, false) : 0;
+                    int attacksCancelled = includeAttack ? SetAttackMarks(rect, worldId, false, null, false, dryRun) : 0;
+                    int capturesCancelled = includeCapture ? SetCaptureMarks(rect, worldId, false, new PrioritySetting(PriorityScreen.PriorityClass.basic, 5), false, false, dryRun) : 0;
 
                     return CallToolResult.Text(JsonConvert.SerializeObject(new Dictionary<string, object>
                     {
-                        ["triggeredObjects"] = triggered,
-                        ["attacksCancelled"] = attacksCancelled,
-                        ["capturesCancelled"] = capturesCancelled,
+                        ["dryRun"] = dryRun,
+                        ["committed"] = !dryRun,
+                        ["wouldTriggerObjects"] = triggered,
+                        ["triggeredObjects"] = dryRun ? 0 : triggered,
+                        ["wouldCancelAttacks"] = attacksCancelled,
+                        ["attacksCancelled"] = dryRun ? 0 : attacksCancelled,
+                        ["wouldCancelCaptures"] = capturesCancelled,
+                        ["capturesCancelled"] = dryRun ? 0 : capturesCancelled,
                         ["worldId"] = worldId,
                         ["rect"] = rect
                     }, McpJsonUtil.Settings));
@@ -77,7 +84,7 @@ namespace OniMcp.Tools
             };
         }
 
-        private static int SetAttackMarks(Dictionary<string, int> rect, int worldId, bool mark, Newtonsoft.Json.Linq.JObject args, bool applyPriority)
+        private static int SetAttackMarks(Dictionary<string, int> rect, int worldId, bool mark, Newtonsoft.Json.Linq.JObject args, bool applyPriority, bool dryRun = false)
         {
             int changed = 0;
             foreach (var target in Components.FactionAlignments.Items)
@@ -91,15 +98,15 @@ namespace OniMcp.Tools
                 if (mark && (!target.canBePlayerTargeted || !target.IsAlignmentActive()))
                     continue;
 
-                target.SetPlayerTargeted(mark);
-                if (mark && applyPriority && args != null)
+                if (!dryRun) target.SetPlayerTargeted(mark);
+                if (!dryRun && mark && applyPriority && args != null)
                     ApplyPriority(go, args);
                 changed++;
             }
             return changed;
         }
 
-        private static int SetCaptureMarks(Dictionary<string, int> rect, int worldId, bool mark, PrioritySetting setting, bool updatePriority, bool requireCapturable)
+        private static int SetCaptureMarks(Dictionary<string, int> rect, int worldId, bool mark, PrioritySetting setting, bool updatePriority, bool requireCapturable, bool dryRun = false)
         {
             int changed = 0;
             foreach (var capturable in Components.Capturables.Items)
@@ -113,7 +120,7 @@ namespace OniMcp.Tools
                 if (mark && requireCapturable && !capturable.IsCapturable())
                     continue;
 
-                capturable.MarkForCapture(mark, setting, updatePriority);
+                if (!dryRun) capturable.MarkForCapture(mark, setting, updatePriority);
                 changed++;
             }
             return changed;

@@ -256,7 +256,9 @@ namespace OniMcp.Tools
 
                 ToolCallMiddleware.PresentTaskDescription(taskDescription);
 
-                if (!allowValidatedCoordinates && !IsCoordinateTool(tool.Name) && ContainsCoordinateArguments(arguments))
+                if (!allowValidatedCoordinates && !IsCoordinateTool(tool.Name)
+                    && !(tool.Name == "server_control" && arguments?["domain"]?.ToString() == "batch")
+                    && ContainsCoordinateArguments(arguments))
                 {
                     var coordinateResult = ToolCallMiddleware.Inject(CallToolResult.Error("Use semantic query/target/areaId inputs for this tool; exact cells require a world_editor map patch or supported semantic operation file."), middlewareNotifications);
                     return usedLegacyAlias

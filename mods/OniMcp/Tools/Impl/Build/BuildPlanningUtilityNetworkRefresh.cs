@@ -10,11 +10,7 @@ namespace OniMcp.Tools
     {
         private static bool IsExactConnectionUtilityPrefab(string prefabId)
         {
-            return EqualsIgnoreCase(prefabId, "LogicWire")
-                || EqualsIgnoreCase(prefabId, "Wire")
-                || EqualsIgnoreCase(prefabId, "LiquidConduit")
-                || EqualsIgnoreCase(prefabId, "GasConduit")
-                || EqualsIgnoreCase(prefabId, "SolidConduit");
+            return UtilityPrefabPolicy.IsLinear(prefabId);
         }
 
         private static bool EnsureCompletedUtilityNetworkRegistration(

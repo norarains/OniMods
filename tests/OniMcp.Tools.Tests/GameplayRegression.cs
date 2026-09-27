@@ -149,7 +149,7 @@ internal sealed class MinionIdentity
     // The old Unity component path returns nothing: Amounts is not a component.
     public T GetComponent<T>() where T : class => null;
 }
-internal sealed class Db
+internal sealed partial class Db
 {
     internal static Db Get() => new Db();
     internal DbAmounts Amounts { get; } = new DbAmounts();

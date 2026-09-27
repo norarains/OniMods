@@ -161,6 +161,7 @@ namespace OniMcp.Tools
 
                     var items = AllCandidateObjects()
                         .Where(go => MatchesTarget(go, rect, worldId))
+                        .Where(go => ObjectReadFacts.MatchesId(go, args))
                         .Select(go => go.GetSMI<POITechItemUnlocks.Instance>())
                         .Where(portal => portal != null)
                         .Where(portal => !pendingOnly || portal.sm.pendingChore.Get(portal))

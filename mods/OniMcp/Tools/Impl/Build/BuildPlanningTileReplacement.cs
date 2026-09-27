@@ -6,22 +6,35 @@ namespace OniMcp.Tools
 {
     public static partial class BuildPlanningTools
     {
-        // Ordinary one-cell floor replacement only. Native eligibility must pass before any
-        // obstruction exception; utility endpoints, doors and other buildings keep strict checks.
+        // One-cell floor or linear utility replacement only, gated by native replacement
+        // tags/layers and location checks. Bridges and endpoints keep strict checks.
         private static GameObject NativeTileReplacement(BuildingDef def, PlacementDetails placement)
         {
             if (def == null || placement == null || placement.Footprint.Count != 1
-                || def.TileLayer != ObjectLayer.FoundationTile || def.ReplacementLayer == ObjectLayer.NumLayers)
+                || (def.TileLayer != ObjectLayer.FoundationTile && !IsLinearUtilityPrefab(def.PrefabID))
+                || def.ReplacementLayer == ObjectLayer.NumLayers)
                 return null;
             var cell = placement.Footprint[0];
             if (!cell.Valid || !cell.Visible || !cell.InWorld || def.IsReplacementLayerOccupied(cell.Cell)) return null;
             var target = def.GetReplacementCandidate(cell.Cell);
             var building = target?.GetComponent<BuildingComplete>();
             if (building?.Def == null || building.Def.WidthInCells != 1 || building.Def.HeightInCells != 1
-                || building.Def.TileLayer != ObjectLayer.FoundationTile || !def.CanReplace(target)
-                || Grid.Objects[cell.Cell, (int)ObjectLayer.Building] != target
+                || !def.CanReplace(target)
+                || (IsLinearUtilityPrefab(def.PrefabID)
+                    ? !UtilityPrefabPolicy.SameFamily(def.PrefabID, building.Def.PrefabID)
+                    : building.Def.TileLayer != ObjectLayer.FoundationTile || Grid.Objects[cell.Cell, (int)ObjectLayer.Building] != target)
                 || !def.IsValidPlaceLocation(null, cell.Cell, placement.Orientation, true, out string _)) return null;
             return target;
+        }
+
+        private static bool HasMatchingUtilityReplacement(BuildingDef def, PlacementDetails placement, GameObject existing)
+        {
+            if (!IsLinearUtilityPrefab(def?.PrefabID) || placement.Footprint.Count != 1
+                || def.ReplacementLayer == ObjectLayer.NumLayers || !def.CanReplace(existing)) return false;
+            var replacement = Grid.Objects[placement.Footprint[0].Cell, (int)def.ReplacementLayer];
+            return replacement?.GetComponent<Constructable>() != null
+                && replacement.GetComponent<Building>()?.Def?.PrefabID == def.PrefabID
+                && UtilityPrefabPolicy.SameFamily(def.PrefabID, existing.GetComponent<Building>()?.Def?.PrefabID);
         }
 
         private static List<Dictionary<string, object>> RemoveReplacedTileObstructions(

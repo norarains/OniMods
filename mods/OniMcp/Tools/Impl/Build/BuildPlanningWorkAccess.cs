@@ -44,6 +44,7 @@ namespace OniMcp.Tools
                 ["footprintAccessSource"] = "current_navigator_adjacent_cells",
                 ["reachableFootprintCells"] = reachable,
                 ["footprintCells"] = placement.Footprint.Count, ["allCellsHaveCurrentAccess"] = blocked.Count == 0,
+                ["digSkillRequirements"] = DigSkillObservation.Read(placement.Footprint.Where(cell => cell.Valid && Grid.Solid[cell.Cell]).Select(cell => cell.Cell), placement.WorldId),
                 ["autoDigCells"] = digTotal, ["reachableAutoDigCells"] = digReachable,
                 ["blockedCells"] = blocked.Take(16).ToList(), ["blockedCellCount"] = blocked.Count,
                 ["completionReachabilityVerified"] = false,

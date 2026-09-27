@@ -22,7 +22,7 @@ namespace OniMcp.Tools
                 Risk = "dangerous",
                 Aliases = new List<string> { "buildings_control", "building_system_control" },
                 Tags = new List<string> { "buildings", "planning", "config", "production", "storage", "facility", "side-screen", "materials", "preview", "rocket", "space", "auto-connect", "wire", "power", "conduit", "utility" },
-                Description = "Unified building entrypoint: domain=planning/config/production/storage/filter/tile_selection/receptacle/side_surface/space_building/space_story/special/story_facility/rocket. Exact construction planning is virtual-file only: edit /active/map/viewport.md with world_editor. Public build_area coordinate/anchor calls are forbidden. Preserves each child tool's action/kind/confirm rules.",
+                Description = "Plan colony-wide modules with explicit responsibilities, boundaries, interfaces, capacities and contained failure effects. Unified building entrypoint: domain=planning/config/production/storage/filter/tile_selection/receptacle/side_surface/space_building/space_story/special/story_facility/rocket. Exact construction planning is virtual-file only: edit /active/map/viewport.md with world_editor. Public build_area coordinate/anchor calls are forbidden. Preserves each child tool's action/kind/confirm rules.",
                 Parameters = new Dictionary<string, McpToolParameter>
                 {
                     ["domain"] = new McpToolParameter { Type = "string", Description = "Route domain: planning, config, production, storage, filter, tile_selection, receptacle, side_surface, space_building, space_story, special, story_facility, or rocket.", Required = true, EnumValues = new List<string> { "planning", "config", "production", "storage", "filter", "tile_selection", "receptacle", "side_surface", "space_building", "space_story", "special", "story_facility", "rocket" } },
@@ -38,6 +38,7 @@ namespace OniMcp.Tools
                     ["sequence"] = new McpToolParameter { Type = "string", Description = "Alias for plan; used for combined search-and-action text sequences.", Required = false },
                     ["text"] = new McpToolParameter { Type = "string", Description = "Alias for plan.", Required = false },
                     ["material"] = new McpToolParameter { Type = "string", Description = "Material for planning preview/auto_connect; supports auto.", Required = false },
+                    ["autoConnectPower"] = new McpToolParameter { Type = "boolean", Description = "Opt in to automatic wiring; default false. Inspect circuit capacity and module interfaces first.", Required = false },
                     ["orientation"] = new McpToolParameter { Type = "string", Description = "Planning/build orientation passed to ONI placement, e.g. Neutral, R90, R180, R270.", Required = false },
                     ["rotation"] = new McpToolParameter { Type = "string", Description = "Alias for orientation; accepts 0/90/180/270, right/left, clockwise/counterclockwise.", Required = false },
                     ["recipeId"] = new McpToolParameter { Type = "string", Description = "Target recipe ID for production set/batch/list_recipes.", Required = false },

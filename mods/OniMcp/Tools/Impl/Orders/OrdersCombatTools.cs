@@ -25,6 +25,7 @@ namespace OniMcp.Tools
                             ["action"] = new McpToolParameter { Type = "string", Description = "mark 标记攻击，cancel 取消攻击；默认 mark", Required = false, EnumValues = new List<string> { "mark", "cancel" } },
                             ["priority"] = new McpToolParameter { Type = "integer", Description = "攻击差事优先级 1-9，默认 5", Required = false },
                             ["topPriority"] = new McpToolParameter { Type = "boolean", Description = "是否设为红色最高优先级，默认 false", Required = false },
+                            ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Preview targets without attack or cancellation orders.", Required = false },
                             ["force"] = new McpToolParameter { Type = "boolean", Description = "允许标记友方/协助阵营目标，默认 false", Required = false },
                             ["attackAreaConfirm"] = new McpToolParameter { Type = "string", Description = "区域攻击二次确认；矩形区域 mark 攻击必须精确填写 attack area，防止把挖掘误调成攻击", Required = false },
                             ["confirm"] = new McpToolParameter { Type = "boolean", Description = "危险操作确认；标记攻击时必须为 true", Required = false }
@@ -33,10 +34,11 @@ namespace OniMcp.Tools
                         {
                             string action = (args["action"]?.ToString() ?? "mark").Trim().ToLowerInvariant();
                             bool mark = action != "cancel";
-                            if (mark && !ToolUtil.GetBool(args, "confirm", false))
+                            bool dryRun = ToolUtil.GetBool(args, "dryRun", false);
+                            if (!dryRun && !ToolUtil.GetBool(args, "confirm", false))
                                 return CallToolResult.Error("confirm=true is required for attack orders");
                             bool areaAttack = mark && args["id"] == null && HasRectInput(args);
-                            if (areaAttack && args["attackAreaConfirm"]?.ToString() != "attack area")
+                            if (!dryRun && areaAttack && args["attackAreaConfirm"]?.ToString() != "attack area")
                                 return CallToolResult.Error("Refusing area attack without attackAreaConfirm=\"attack area\". For terrain excavation use orders_control domain=area action=dig, not orders_attack.");
                             if (FactionManager.Instance == null)
                                 return CallToolResult.Error("FactionManager is not initialized");
@@ -62,18 +64,20 @@ namespace OniMcp.Tools
                                     continue;
                                 }
 
-                                target.SetPlayerTargeted(mark);
-                                if (mark)
+                                if (!dryRun) target.SetPlayerTargeted(mark);
+                                if (!dryRun && mark)
                                     ApplyPriority(go, args);
 
                                 changed++;
-                                results.Add(TargetResult(go, target, mark ? "marked" : "cancelled"));
+                                results.Add(TargetResult(go, target, dryRun ? (mark ? "would_mark" : "would_cancel") : (mark ? "marked" : "cancelled")));
                             }
 
                             return CallToolResult.Text(JsonConvert.SerializeObject(new Dictionary<string, object>
                             {
                                 ["action"] = mark ? "mark" : "cancel",
-                                ["changed"] = changed,
+                                ["dryRun"] = dryRun,
+                                ["wouldChange"] = changed,
+                                ["changed"] = dryRun ? 0 : changed,
                                 ["skipped"] = skipped,
                                 ["targets"] = results
                             }, McpJsonUtil.Settings));

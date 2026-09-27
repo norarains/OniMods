@@ -20,6 +20,7 @@ internal static class ErgonomicsRegression
         TestRepeatedDiagnostics();
         TestCapturedDiagnostics();
         TestGeometryCompaction();
+        TestUtilityPathCompaction();
         TestPriority();
         TestStorage();
         TestOccupancy();
@@ -97,6 +98,25 @@ internal static class ErgonomicsRegression
             Console.WriteLine(name + " captured response: " + input.ToString(Formatting.None).Length + " -> " + output.ToString(Formatting.None).Length + " characters");
         }
     }
+    private static void TestUtilityPathCompaction()
+    {
+        var input = JObject.Parse(@"{pathMode:'continuous_manhattan_path',failed:0,pathCells:2,pathSteps:3,
+            segments:[{from:[1,1],to:[2,1]},{from:[2,1],to:[1,1]}],path:[{x:1,y:1},{x:2,y:1},{x:1,y:1}],
+            materialSelection:{requiredKg:50}, results:[
+              {valid:true,anchor:{x:1,y:1},id:11,planned:true, nativeAutoDigTargets:[{x:1,y:1,reason:'natural_solid'}],
+               workAccess:{hasCurrentConstructionAccess:true,blockedCellCount:0,digSkillRequirements:[]}},
+              {valid:true,anchor:{x:2,y:1},id:12,planned:true,replacement:{targetId:2},
+               workAccess:{hasCurrentConstructionAccess:false,blockedCellCount:1,blockedCells:[{x:2,y:1}]}}]}");
+        var compact = WorldEditorResponsePolicy.Normalize(input, true);
+        Check(compact["results"] == null && compact["path"] == null, "utility summary removes repeated planning rows and redundant route");
+        Check(compact["segments"].Count() == 2 && (int)compact["pathSteps"] == 3, "backtracking route remains exact");
+        Check((int)compact["cells"][0]["id"] == 11 && compact["cells"][0]["nativeAutoDigTargets"].HasValues, "compact utility retains instance and dig effects");
+        Check(compact["cells"][1]["workAccess"]["blockedCells"].HasValues && (int)compact["cells"][1]["replacement"]["targetId"] == 2, "blocked work and replacement targets survive");
+        input["failed"] = 1;
+        Check(WorldEditorResponsePolicy.Normalize(input, true)["results"] != null, "failed paths retain all child evidence");
+        Check(JToken.DeepEquals(WorldEditorResponsePolicy.Normalize(input, false), input), "full paths retain source data");
+    }
+
     private static void TestGeometryCompaction()
     {
         var valid = JObject.Parse("{x:288,y:74,valid:true,visible:true,inWorld:true}");
@@ -245,7 +265,7 @@ namespace OniMcp.Tools
 }
 namespace UnityEngine
 {
-    public sealed class GameObject
+    public sealed partial class GameObject
     {
         internal int Cell;
         internal readonly Dictionary<Type, object> Components = new Dictionary<Type, object>();
@@ -260,7 +280,7 @@ internal static class Grid
     internal static int CellColumn(int cell) => cell % WidthInCells;
     internal static int CellRow(int cell) => cell / WidthInCells;
     internal static int XYToCell(int x, int y) => y * WidthInCells + x;
-    internal static readonly UnityEngine.GameObject[,] Objects = new UnityEngine.GameObject[WidthInCells * HeightInCells, 2];
+    internal static readonly UnityEngine.GameObject[,] Objects = new UnityEngine.GameObject[WidthInCells * HeightInCells, 45];
     internal static readonly int[] WorldIdx = new int[WidthInCells * HeightInCells];
     internal static bool IsValidCell(int cell) => cell >= 0 && cell < Objects.GetLength(0);
 }

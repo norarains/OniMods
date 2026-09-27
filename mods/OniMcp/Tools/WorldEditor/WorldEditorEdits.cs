@@ -185,7 +185,11 @@ namespace OniMcp.Tools
                 return false;
             }
 
-            args["prefabId"] = PrefabForConnectionMap(relative);
+            string requested = args["prefabId"]?.ToString();
+            string fallback = PrefabForConnectionMap(relative);
+            if (!UtilityPrefabPolicy.TrySelect(fallback, requested, out string selected))
+            { error = "Requested prefabId is not a supported linear utility for this infrastructure layer."; return false; }
+            args["prefabId"] = selected;
             args["points"] = points;
             args["material"] = args["material"] ?? "auto";
             return true;

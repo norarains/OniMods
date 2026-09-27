@@ -30,7 +30,7 @@ namespace OniMcp.Tools
                 {
                     string query = args["query"]?.ToString();
                     string category = args["category"]?.ToString();
-                    bool includeUnavailable = ToolUtil.GetBool(args, "includeUnavailable", false);
+                    bool includeUnavailable = ToolUtil.GetBool(args, "includeUnavailable", ToolUtil.GetBool(args, "includeLocked", false));
                     int limit = Math.Max(1, Math.Min(ToolUtil.GetInt(args, "limit") ?? 30, 100));
                     var defs = Assets.BuildingDefs
                         .Where(def => def != null && (includeUnavailable || IsUnlockedAndAvailable(def)))
@@ -130,7 +130,7 @@ namespace OniMcp.Tools
                     prefabId = resolvedPrefabId;
 
                     int worldId = ToolUtil.ResolveWorldId(args);
-                    bool includeUnavailable = ToolUtil.GetBool(args, "includeUnavailable", false);
+                    bool includeUnavailable = ToolUtil.GetBool(args, "includeUnavailable", ToolUtil.GetBool(args, "includeLocked", false));
                     int limit = Math.Max(1, Math.Min(ToolUtil.GetInt(args, "limit") ?? 50, 200));
                     var materials = AvailableMaterials(def, worldId, includeUnavailable)
                         .Take(limit)

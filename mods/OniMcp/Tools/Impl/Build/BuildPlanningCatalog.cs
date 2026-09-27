@@ -141,7 +141,9 @@ return null;
 private static bool CanBypassUtilityResearch(BuildingDef def, JObject args)
 {
 return def != null
-&& IsExactConnectionUtilityPrefab(def.PrefabID)
+&& (EqualsIgnoreCase(def.PrefabID, "Wire") || EqualsIgnoreCase(def.PrefabID, "LogicWire")
+    || EqualsIgnoreCase(def.PrefabID, "GasConduit") || EqualsIgnoreCase(def.PrefabID, "LiquidConduit")
+    || EqualsIgnoreCase(def.PrefabID, "SolidConduit"))
 && BuildingControlTools.IsVirtualFileEditContext
 && args != null
 && ToolUtil.GetBool(args, "instantBuild", false)

@@ -178,6 +178,9 @@ namespace OniMcp.Tools
             string domain = (arguments?["domain"]?.ToString() ?? string.Empty).Trim().ToLowerInvariant();
             string action = (arguments?["action"]?.ToString() ?? string.Empty).Trim().ToLowerInvariant();
 
+            if (string.Equals(name, "orders_control", StringComparison.OrdinalIgnoreCase))
+                return (domain == "priority" || string.IsNullOrEmpty(domain)) && action == "list";
+
             if (string.Equals(name, "game_control", StringComparison.OrdinalIgnoreCase))
                 return (domain == "launch" && (action == "status" || action == "restart_status"))
                     || (domain == "save" && (action == "list" || action == "status"))
@@ -198,7 +201,7 @@ namespace OniMcp.Tools
                     || (new[] { "storage", "stores", "filter", "filters", "tile_selection", "receptacle" }.Contains(domain)
                         && new[] { "list", "detail" }.Contains(action))
                     || (new[] { "side_surface", "surface", "generic_surface" }.Contains(domain)
-                        && (arguments?["surface"]?.ToString() ?? "").Equals("user_menu", StringComparison.OrdinalIgnoreCase) && action == "list")
+                        && new[] { "list", "status", "list_rewards", "list_geysers" }.Contains(action))
                     || (new[] { "config", "configuration", "side_screen" }.Contains(domain)
                     && new[] { "list", "status", "list_automation", "automation", "get_access", "state_list" }.Contains(action))
                     || domain == "planning" && (

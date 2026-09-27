@@ -41,9 +41,15 @@ def main() -> None:
     scoped = body(catalog, "private static bool CanBypassUtilityResearch")
     assert "IsLinearUtilityPrefab" not in scoped
     exact = body(refresh, "private static bool IsExactConnectionUtilityPrefab")
+    assert "UtilityPrefabPolicy.IsLinear(prefabId)" in exact
+    policy = (ROOT / "mods/OniMcp/Tools/Shared/UtilityPrefabPolicy.cs").read_text()
+    for prefab in ("LogicWire", "Wire", "WireRefined", "WireHighWattage", "WireRefinedHighWattage",
+                   "LiquidConduit", "LiquidConduitInsulated", "GasConduit", "GasConduitInsulated", "SolidConduit"):
+        assert f'["{prefab}"]' in policy
+    assert "IsExactConnectionUtilityPrefab(def.PrefabID)" not in scoped
     for prefab in ("LogicWire", "Wire", "LiquidConduit", "GasConduit", "SolidConduit"):
-        assert f'EqualsIgnoreCase(prefabId, "{prefab}")' in exact
-    assert "IsExactConnectionUtilityPrefab(def.PrefabID)" in scoped
+        assert f'EqualsIgnoreCase(def.PrefabID, "{prefab}")' in scoped
+    assert 'EqualsIgnoreCase(def.PrefabID, "WireRefined")' not in scoped
     for guard in (
         "BuildingControlTools.IsVirtualFileEditContext",
         "args != null",

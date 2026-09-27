@@ -26,7 +26,7 @@ namespace OniMcp.Tools
             parameters["maxAnchors"] = new McpToolParameter { Type = "integer", Description = "最多处理多少个 anchors，默认 100，最大 500", Required = false };
             parameters["maxCommitAnchors"] = new McpToolParameter { Type = "integer", Description = "confirm=true 时单次最多实际写入多少个 anchor，默认 32，最大 128；超出会返回 remainingAction 供下一次继续，避免一次性大量蓝图/挖掘冲击游戏渲染。", Required = false };
             parameters["allowPartial"] = new McpToolParameter { Type = "boolean", Description = "默认 false。实际建造前若任何 anchor 预检失败则整批拒绝；true 时跳过失败 anchor", Required = false };
-            parameters["autoConnectPower"] = new McpToolParameter { Type = "boolean", Description = "耗电建筑默认 true：放置建筑蓝图时同步从最近已有电线/电源输出接线到电口；传 false 可关闭", Required = false };
+            parameters["autoConnectPower"] = new McpToolParameter { Type = "boolean", Description = "默认 false；显式 true 才从已有电线/电源接线。先审查电路容量和模块边界", Required = false };
             parameters["maxAutoConnectRadius"] = new McpToolParameter { Type = "integer", Description = "autoConnectPower 搜索最近已有电线/电源输出的半径，默认 80，最大 200", Required = false };
 
             return new McpTool

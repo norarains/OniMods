@@ -43,6 +43,7 @@ namespace OniMcp.Tools
 
                     var results = AllCandidateObjects()
                         .Where(go => MatchesTarget(go, rect, worldId))
+                        .Where(go => ObjectReadFacts.MatchesId(go, args))
                         .Select(ButtonTargetInfo)
                         .Where(info => ((List<Dictionary<string, object>>)info["buttons"]).Count > 0)
                         .Where(info => !interactableOnly || ((List<Dictionary<string, object>>)info["buttons"]).Any(button => (bool)button["interactable"]))

@@ -45,6 +45,7 @@ namespace OniMcp.Tools
 
                     var targets = AllCandidateObjects()
                         .Where(go => MatchesTarget(go, rect, worldId))
+                        .Where(go => ObjectReadFacts.MatchesId(go, args))
                         .Select(go => ChecklistTargetInfo(go, checkedOnly, enabledOnly))
                         .Where(info => ((List<Dictionary<string, object>>)info["checklists"]).Count > 0)
                         .Where(info => MatchesQuery(info, query))

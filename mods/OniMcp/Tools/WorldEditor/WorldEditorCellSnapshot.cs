@@ -306,7 +306,7 @@ namespace OniMcp.Tools
 
             string name = CellProperName(go);
             string id = CellPrefabId(go);
-            string label = string.IsNullOrEmpty(id) ? name : name + " (ID=" + id + ")";
+            string label = string.IsNullOrEmpty(id) ? name : name + " (prefabId=" + id + ", id=" + (go.GetComponent<KPrefabID>()?.InstanceID ?? go.GetInstanceID()) + ")";
             return label + " | " + ObjectLocationText(go) + BuildingFootprintText(go);
         }
 

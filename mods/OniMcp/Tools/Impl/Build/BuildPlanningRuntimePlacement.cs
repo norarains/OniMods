@@ -244,7 +244,7 @@ namespace OniMcp.Tools
                 return false;
 
             string id = prefabId.Trim();
-            return id.IndexOf("Wire", StringComparison.OrdinalIgnoreCase) >= 0
+            return UtilityPrefabPolicy.IsLinear(id) || id.IndexOf("Wire", StringComparison.OrdinalIgnoreCase) >= 0
                 || id.IndexOf("Conduit", StringComparison.OrdinalIgnoreCase) >= 0
                 || id.IndexOf("TravelTube", StringComparison.OrdinalIgnoreCase) >= 0
                 || EqualsIgnoreCase(id, "GasConduit")
@@ -258,11 +258,7 @@ namespace OniMcp.Tools
 
         private static bool IsLinearUtilityPrefab(string prefabId)
         {
-            if (!IsUtilityPrefab(prefabId))
-                return false;
-            string id = prefabId.Trim();
-            return id.IndexOf("Bridge", StringComparison.OrdinalIgnoreCase) < 0
-                && id.IndexOf("TravelTube", StringComparison.OrdinalIgnoreCase) < 0;
+            return UtilityPrefabPolicy.IsLinear(prefabId);
         }
 
         private static List<ObjectLayer> UtilityLayersForPrefab(string prefabId)
@@ -278,7 +274,7 @@ namespace OniMcp.Tools
                 layers.AddRange(new[] { ObjectLayer.LiquidConduit, ObjectLayer.LiquidConduitTile, ObjectLayer.ReplacementLiquidConduit });
             else if (id.IndexOf("SolidConduit", StringComparison.OrdinalIgnoreCase) >= 0 || id.IndexOf("Conveyor", StringComparison.OrdinalIgnoreCase) >= 0)
                 layers.AddRange(new[] { ObjectLayer.SolidConduit, ObjectLayer.SolidConduitTile, ObjectLayer.ReplacementSolidConduit });
-            else if (id.IndexOf("LogicWire", StringComparison.OrdinalIgnoreCase) >= 0)
+            else if (id.IndexOf("LogicWire", StringComparison.OrdinalIgnoreCase) >= 0 || id.IndexOf("LogicRibbon", StringComparison.OrdinalIgnoreCase) >= 0)
                 layers.AddRange(new[] { ObjectLayer.LogicWire, ObjectLayer.LogicWireTile, ObjectLayer.ReplacementLogicWire });
             else if (id.IndexOf("Wire", StringComparison.OrdinalIgnoreCase) >= 0)
                 layers.AddRange(new[] { ObjectLayer.Wire, ObjectLayer.WireTile, ObjectLayer.ReplacementWire });

@@ -65,7 +65,7 @@ namespace OniMcp.Tools
                     ["harvestWhenReady"] = new McpToolParameter { Type = "boolean", Description = "Enable automatic harvest when ripe", Required = false },
                     ["areaId"] = new McpToolParameter { Type = "string", Description = "World-bound area handle", Required = false },
                     ["priority"] = new McpToolParameter { Type = "integer", Description = "Work priority 1-9", Required = false },
-                    ["clearQueue"] = new McpToolParameter { Type = "boolean", Description = "Research: replace queue if true (default); append with prerequisites if false", Required = false },
+                    ["clearQueue"] = new McpToolParameter { Type = "boolean", Description = "Research: replace FIFO targets if true (default); append a saved target if false; native prerequisites apply to the head", Required = false },
                     ["removeOccupant"] = new McpToolParameter { Type = "boolean", Description = "Whether to order removal of existing plot occupant", Required = false },
                     ["plantingAction"] = new McpToolParameter { Type = "string", Description = "set or cancel planting requests", Required = false },
                     ["emptyOnly"] = new McpToolParameter { Type = "boolean", Description = "Select only unoccupied plots", Required = false },

@@ -290,7 +290,13 @@ namespace OniMcp.Tools
 
             string text = token?.ToString();
             if (string.IsNullOrWhiteSpace(text))
+            {
+                string path = args?["path"]?.ToString() ?? "";
+                foreach (string view in new[] { "power", "gas_conduits", "liquid_conduits", "automation", "logic", "solid_conveyor" })
+                    if (path.IndexOf("/" + view, StringComparison.OrdinalIgnoreCase) >= 0)
+                        return new[] { view };
                 return DefaultZoomViews();
+            }
 
             return text.Split(new[] { ',', ';', '|', ' ' }, StringSplitOptions.RemoveEmptyEntries);
         }

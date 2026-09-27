@@ -27,6 +27,13 @@ namespace OniMcp.Tools
                     yield return Port(layer, "output", layer, building.GetUtilityOutputCell(), LayersFor(layer),
                         new Dictionary<string, object> { ["connected"] = dispenser.IsConnected });
             }
+            foreach (var secondary in go.GetComponents<ISecondaryOutput>())
+                foreach (var type in new[] { ConduitType.Liquid, ConduitType.Gas })
+                {
+                    string layer = type == ConduitType.Gas ? "gas" : "liquid";
+                    if (Wants(kind, layer) && secondary.HasSecondaryConduitType(type))
+                        yield return DeclaredPort(layer, "secondary_output", PortOffsetCell(go, secondary.GetSecondaryConduitOffset(type)), LayersFor(layer));
+                }
             foreach (var type in new[] { ConduitType.Liquid, ConduitType.Gas })
             {
                 string layer = type == ConduitType.Gas ? "gas" : "liquid";

@@ -43,8 +43,15 @@ internal static class UtilityReadRegression
 }
 
 [Flags] internal enum UtilityConnections { Left = 1, Right = 2, Up = 4, Down = 8 }
-internal enum ObjectLayer { LiquidConduit, NumLayers }
-internal sealed class BuildingComplete { }
+internal enum ObjectLayer
+{
+    LiquidConduit, LiquidConduitTile, ReplacementLiquidConduit,
+    GasConduit, GasConduitTile, ReplacementGasConduit,
+    SolidConduit, SolidConduitTile, ReplacementSolidConduit,
+    Wire, WireTile, ReplacementWire, LogicWire, LogicWireTile, ReplacementLogicWire,
+    TravelTubeTile, ReplacementTravelTube, Building, NumLayers
+}
+internal sealed class BuildingComplete : KMonoBehaviour { }
 internal sealed class Building { internal BuildingDef Def { get; set; } }
 internal interface IHaveUtilityNetworkMgr { TestUtilityNetwork GetNetworkManager(); }
 internal sealed class TestUtilityProvider : IHaveUtilityNetworkMgr

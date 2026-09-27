@@ -50,9 +50,11 @@ namespace OniMcp.Tools
             events.WorkProgress = sample.WorkProgress > previous.WorkProgress
                 || (sample.ResearchId == previous.ResearchId && sample.ResearchProgress > previous.ResearchProgress);
             bool newWork = sample.PendingIds.Except(previous.PendingIds).Any() || sample.ResearchId != previous.ResearchId;
-            if (newWork || events.Activity > 0 || events.Completed > 0 || events.WorkProgress)
+            // Rest/personal needs do not consume the productive-work timeout.
+            bool workResumed = sample.Working == 0 || previous.Working == 0;
+            if (workResumed || newWork || events.Activity > 0 || events.Completed > 0 || events.WorkProgress)
                 lastProgress = sample.GameSeconds;
-            if (newWork || events.Completed > 0 || events.WorkProgress) lastWorkProgress = sample.GameSeconds;
+            if (workResumed || newWork || events.Completed > 0 || events.WorkProgress) lastWorkProgress = sample.GameSeconds;
             if (previous.PendingIds.Count > 0 && sample.PendingIds.Count == 0 && sample.Working == 0 && string.IsNullOrEmpty(sample.ResearchId))
                 events.Add("orders_finished");
             if (!string.IsNullOrEmpty(previous.ResearchId) && string.IsNullOrEmpty(sample.ResearchId) && sample.ResearchQueueCount == 0)
@@ -70,7 +72,7 @@ namespace OniMcp.Tools
     {
         internal bool Available = true;
         internal int WorldId;
-        internal double GameSeconds, FoodKcal, WorkProgress, ResearchProgress;
+        internal double GameSeconds, FoodKcal, StoredFoodKcal, WorkProgress, ResearchProgress;
         internal bool RedAlert, PrintingReady, InfrastructureKnown, AdvancedResearchBlocked, CanLearnAdvancedResearch;
         internal int Beds, Toilets, OxygenProducers, ResearchQueueCount;
         internal int? AdvancedResearchBuildingId;
@@ -81,7 +83,8 @@ namespace OniMcp.Tools
         internal readonly HashSet<int> PendingIds = new HashSet<int>();
         internal readonly HashSet<string> Alerts = new HashSet<string>();
         internal readonly List<ColonyFinding> HudFindings = new List<ColonyFinding>();
-        internal int PendingBuilds, PendingDigs;
+        internal int PendingBuilds, PendingDigs, PendingDeconstructions;
+        internal readonly List<Dictionary<string, object>> MissingDigSkills = new List<Dictionary<string, object>>();
         internal int LocalDupeCount => Dupes.Count(item => (WorldId < 0 || item.WorldId == WorldId));
         internal int Working => Dupes.Count(item => (WorldId < 0 || item.WorldId == WorldId) && item.Working);
         internal int Idle => Dupes.Count(item => (WorldId < 0 || item.WorldId == WorldId) && item.UnexpectedIdle);
@@ -92,7 +95,7 @@ namespace OniMcp.Tools
         internal int Id, WorldId, Cell, SkillPoints;
         internal bool AdvancedResearchSkill;
         internal bool Valid, Working, UnexpectedIdle;
-        internal double Breath = -1, Health = -1, Calories = -1, Stress = -1, BodyTemperature = -1;
+        internal double Stamina = -1, Breath = -1, Health = -1, Calories = -1, Stress = -1, BodyTemperature = -1;
         internal double Morale = -1, MoraleExpectation = -1;
         internal Dictionary<string, object> StressDetails = null;
         internal string Chore;

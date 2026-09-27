@@ -40,7 +40,8 @@ namespace OniMcp.Tools
                         continue;
 
                     string actualPrefabId = PlacementObjectPrefabId(existing);
-                    if (EqualsIgnoreCase(actualPrefabId, def.PrefabID))
+                    if (EqualsIgnoreCase(actualPrefabId, def.PrefabID) || existing == NativeTileReplacement(def, placement)
+                        || HasMatchingUtilityReplacement(def, placement, existing))
                         continue;
 
                     conflicts.Add(new Dictionary<string, object>
@@ -156,7 +157,7 @@ namespace OniMcp.Tools
         private static IEnumerable<BridgeEndpointTarget> NativeBridgeEndpointTargets(
             BuildingDef def, PlacementDetails placement)
         {
-            int anchorCell = Grid.XYToCell(placement.AnchorX, placement.AnchorY);
+            int anchorCell = PlacementOriginCell(def, placement.AnchorX, placement.AnchorY, placement.Orientation);
             if (def.BuildLocationRule == BuildLocationRule.Conduit)
             {
                 if (def.InputConduitType != ConduitType.None)
@@ -209,7 +210,7 @@ namespace OniMcp.Tools
                 yield break;
             }
 
-            int anchorCell = Grid.XYToCell(placement.AnchorX, placement.AnchorY);
+            int anchorCell = PlacementOriginCell(def, placement.AnchorX, placement.AnchorY, placement.Orientation);
             foreach (var offset in def.PlacementOffsets)
             {
                 var rotated = Rotatable.GetRotatedCellOffset(offset, placement.Orientation);
@@ -239,7 +240,8 @@ namespace OniMcp.Tools
         {
             var conflicts = new List<Dictionary<string, object>>();
             if (def == null || placement == null
-                || (IsUtilityPrefab(def.PrefabID) && !UsesNativeBridgeEndpointRegistration(def)))
+                || UsesNativeBridgeEndpointRegistration(def)
+                || IsUtilityPrefab(def.PrefabID) && def.ObjectLayer != ObjectLayer.Building)
                 return conflicts;
 
             var seen = new HashSet<int>();

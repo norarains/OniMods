@@ -10,12 +10,15 @@ namespace OniMcp.Tools
     {
         internal static readonly HashSet<string> Placed = new HashSet<string>();
         internal static readonly List<string> Requested = new List<string>();
+        internal static readonly List<string> PersistedPath = new List<string>();
+        internal static string SelectedMaterial, SelectedPrefab;
         internal static int UiCalls, PersistCalls, FailAt;
         internal static bool Conflict, NetworkFails;
         internal static float Available;
         internal static void ResetPlacement()
         {
-            Placed.Clear(); Requested.Clear(); UiCalls = PersistCalls = 0;
+            Placed.Clear(); Requested.Clear(); PersistedPath.Clear(); UiCalls = PersistCalls = 0;
+            SelectedMaterial = SelectedPrefab = null;
             FailAt = -1; Conflict = NetworkFails = false; Available = 1000;
         }
         private sealed class CellCoord
@@ -43,7 +46,7 @@ namespace OniMcp.Tools
         private static BuildingDef ResolveBuildingDef(string id, out string resolved, out string error)
         { resolved = id; error = null; return new BuildingDef { PrefabID = id }; }
         private static string BuildAvailabilityError(BuildingDef def, JObject args) => null;
-        private static bool IsLinearUtilityPrefab(string id) => true;
+        private static bool IsLinearUtilityPrefab(string id) => UtilityPrefabPolicy.IsLinear(id);
         private static List<CellCoord> ResolveUtilityPath(JObject args, int max, out string error)
         {
             error = null;
@@ -54,7 +57,10 @@ namespace OniMcp.Tools
         private static object UtilityPathConflictResult(BuildingDef def, List<CellCoord> path, PathSafety safety, string phase)
             => new { reasonCode = "utility_path_conflict", planned = 0 };
         private static MaterialChoice SelectElements(BuildingDef def, string material, int worldId)
-            => new MaterialChoice { Selected = new MaterialStock { AvailableKg = Available } };
+        {
+            SelectedPrefab = def.PrefabID; SelectedMaterial = material;
+            return new MaterialChoice { Selected = new MaterialStock { AvailableKg = Available } };
+        }
         private static float RequiredMaterialKg(BuildingDef def) => 25;
         private static int CountUtilityPathCells(BuildingDef def, List<CellCoord> path, int worldId)
             => path.Count(p => Placed.Contains(p.Key));
@@ -83,7 +89,10 @@ namespace OniMcp.Tools
             => result.TryGetValue(key, out var value) && value is bool flag && flag;
         private static bool EqualsIgnoreCase(string a, string b) => string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
         private static bool PersistUtilityPathConnections(BuildingDef def, List<CellCoord> path, out string error)
-        { PersistCalls++; error = NetworkFails ? "network incomplete" : null; return !NetworkFails; }
+        {
+            PersistCalls++; PersistedPath.AddRange(path.Select(point => point.Key));
+            error = NetworkFails ? "network incomplete" : null; return !NetworkFails;
+        }
         private static bool IsCompletedUtilityPath(BuildingDef def, List<CellCoord> path) => false;
         private static object BuildPathSegments(List<CellCoord> path) => path;
     }

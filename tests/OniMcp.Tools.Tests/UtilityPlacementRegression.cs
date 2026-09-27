@@ -57,6 +57,74 @@ internal static class UtilityPlacementRegression
         BuildPlanningTools.ResetPlacement(); BuildPlanningTools.NetworkFails = true;
         var network = BuildPlanningTools.AutoConnectUtility().Handler(Args());
         Check(network.IsError && !(bool)Body(network)["connectionsPersisted"], "network persistence failure is surfaced");
+        TestBacktracking();
+        TestUtilityVariants();
         Console.WriteLine("Utility placement handler regression checks passed");
+    }
+
+    private static void TestBacktracking()
+    {
+        foreach (bool preview in new[] { true, false })
+        {
+            BuildPlanningTools.ResetPlacement();
+            BuildPlanningTools.Available = 75;
+            var args = JObject.Parse("{confirm:true,points:[[1,1],[2,1],[1,1],[1,2]],prefabId:'WireRefined',material:'Aluminum'}");
+            args["dryRun"] = preview;
+            var result = BuildPlanningTools.AutoConnectUtility().Handler(args);
+            var body = Body(result);
+            Check(!result.IsError && (bool)body["complete"], "backtracking must not falsely exhaust the exact three-cell budget");
+            Check((int)body["pathCells"] == 3 && (int)body["pathSteps"] == 4,
+                "unique cells and connection-walk steps have distinct counts");
+            Check((float)body["materialSelection"]["RequiredKg"] == 75,
+                "duplicate coordinate charged once for material");
+            Check(BuildPlanningTools.Requested.SequenceEqual(new[] { "1,1", "2,1", "1,2" }),
+                "placement validates or commits each cell only once");
+            Check(BuildPlanningTools.SelectedMaterial == "Aluminum" && BuildPlanningTools.SelectedPrefab == "WireRefined",
+                "variant and requested material reach native material selection unchanged");
+            if (preview)
+                Check(BuildPlanningTools.Placed.Count == 0 && BuildPlanningTools.PersistedPath.Count == 0,
+                    "confirmed preview cannot place or persist a backtracking path");
+            else
+            {
+                Check((int)body["planned"] == 3 && BuildPlanningTools.Placed.Count == 3,
+                    "committed mutation count is unique-cell count");
+                Check(BuildPlanningTools.PersistedPath.SequenceEqual(new[] { "1,1", "2,1", "1,1", "1,2" }),
+                    "connection persistence retains the original walk so branches are connected");
+                BuildPlanningTools.Available = 0;
+                result = BuildPlanningTools.AutoConnectUtility().Handler(args);
+                body = Body(result);
+                Check(!result.IsError && (int)body["reusedExisting"] == 3 && (int)body["planned"] == 0
+                    && (float)body["materialSelection"]["RequiredKg"] == 0,
+                    "replaying a branch consumes zero new material and reports each existing cell once");
+            }
+        }
+    }
+
+    private static void TestUtilityVariants()
+    {
+        foreach (var family in new[] {
+            new[] { "Wire", "Wire", "WireRefined", "WireHighWattage", "WireRefinedHighWattage" },
+            new[] { "GasConduit", "GasConduit", "GasConduitInsulated", "GasConduitRadiant" },
+            new[] { "LiquidConduit", "LiquidConduit", "LiquidConduitInsulated", "LiquidConduitRadiant" },
+            new[] { "LogicWire", "LogicWire", "LogicRibbon" },
+            new[] { "SolidConduit", "SolidConduit" } })
+        {
+            foreach (string prefab in family.Skip(1))
+            {
+                Check(UtilityPrefabPolicy.IsLinear(prefab), "linear variant recognized: " + prefab);
+                string selected;
+                Check(UtilityPrefabPolicy.TrySelect(family[0], prefab, out selected) && selected == prefab,
+                    "layer must preserve exact requested variant: " + prefab);
+                Check(!UtilityPrefabPolicy.TrySelect(family[0] == "Wire" ? "GasConduit" : "Wire", prefab, out selected),
+                    "cross-layer variant rejected: " + prefab);
+            }
+            string fallback;
+            Check(UtilityPrefabPolicy.TrySelect(family[0], null, out fallback) && fallback == family[0],
+                "omitted variant uses layer default");
+        }
+        foreach (string unsupported in new[] { "WireBridge", "GasConduitBridge", "PowerTransformerSmall", "Unknown", "" })
+            Check(!UtilityPrefabPolicy.IsLinear(unsupported), "nonlinear object rejected: " + unsupported);
+        string ignored;
+        Check(!UtilityPrefabPolicy.TrySelect("Wire", "LiquidConduitInsulated", out ignored), "power path cannot silently place liquid pipe");
     }
 }

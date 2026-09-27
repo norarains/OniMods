@@ -37,7 +37,7 @@ def main() -> None:
     overlay = (TOOLS / "WorldEditor" / "WorldEditorOverlayAnchors.cs").read_text(encoding="utf-8")
     world = (TOOLS / "Impl/World/WorldCellUtilityConnectionSummary.cs").read_text(encoding="utf-8")
     ports = (TOOLS / "WorldEditor" / "WorldEditorPortDetails.cs").read_text(encoding="utf-8")
-    infrastructure = (TOOLS / "Impl/Build/InfrastructurePortReadTools.cs").read_text(encoding="utf-8")
+    infrastructure = (TOOLS / "Impl/Build/InfrastructureLogicPorts.cs").read_text(encoding="utf-8")
     completion = (TOOLS / "Impl/Build/BuildPlanningInstantCompletion.cs").read_text(encoding="utf-8")
 
     actual = body(semantics, "internal static int ActualCell")

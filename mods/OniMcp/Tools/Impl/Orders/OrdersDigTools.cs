@@ -232,6 +232,7 @@ namespace OniMcp.Tools
                 ["hasActiveNavigators"] = hasNavigators,
                 ["navigatorCount"] = navigators.Count,
                 ["diggableTargets"] = targetCells.Count,
+                ["skillRequirements"] = DigSkillObservation.Read(targetCells, worldId),
                 ["reachableTargets"] = reachableTargets,
                 ["unreachableTargets"] = unreachableTargets,
                 ["allTargetsReachable"] = hasNavigators && targetCells.Count > 0 && unreachableTargets == 0,

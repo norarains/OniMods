@@ -24,6 +24,7 @@ namespace OniMcp.Tools
             var items = Components.BuildingCompletes.Items
                 .Select(building => building?.gameObject)
                 .Where(go => MatchesTarget(go, rect, worldId))
+                .Where(go => ObjectReadFacts.MatchesId(go, args))
                 .Where(predicate)
                 .Select(selector)
                 .Where(info => MatchesQuery(info, query))

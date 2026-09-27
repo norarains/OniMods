@@ -67,7 +67,7 @@ internal static class GameTags
     internal static readonly Tag Stored = 1;
     internal static readonly Tag Void = new Tag("Void");
 }
-internal sealed class KPrefabID
+internal sealed partial class KPrefabID
 {
     internal readonly HashSet<Tag> Tags = new HashSet<Tag>();
     internal bool HasTag(Tag tag) => Tags.Contains(tag);

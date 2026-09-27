@@ -34,7 +34,7 @@ namespace OniMcp.Tools
                 height = tmp;
             }
 
-            if (width == 1 && height == 1)
+            if ((width == 1 && height == 1) || string.Equals((parentArgs?["footprintMode"] ?? parentArgs?["payload"]?["footprintMode"])?.ToString(), "anchors", StringComparison.OrdinalIgnoreCase))
             {
                 foreach (var cell in cells)
                     anchors.Add(new JObject { ["x"] = cell.X, ["y"] = cell.Y });
@@ -77,7 +77,7 @@ namespace OniMcp.Tools
 
             if (actualWidth != width || actualHeight != height || component.Count != width * height)
             {
-                error = $"Build token for {prefabId} covers {actualWidth}x{actualHeight}/{component.Count} cells, but prefab footprint is {width}x{height} for orientation {orientation}. Use the full footprint or only the lower-left anchor cell. Refusing ambiguous multi-cell edit.";
+                error = $"Build token for {prefabId} covers {actualWidth}x{actualHeight}/{component.Count} cells, but prefab footprint is {width}x{height} for orientation {orientation}. Use one full footprint, one lower-left anchor cell, or footprintMode=anchors for multiple adjacent anchors. Refusing ambiguous multi-cell edit.";
                 return false;
             }
 

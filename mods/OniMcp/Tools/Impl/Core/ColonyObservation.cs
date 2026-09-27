@@ -71,6 +71,12 @@ namespace OniMcp.Tools
                 if ((sample.WorldId < 0 || dupe.WorldId == sample.WorldId) && dupe.UnexpectedIdle)
                     dupeFinding("worker_idle", "warning", "Idle during work time.");
             }
+            if (sample.MissingDigSkills.Count > 0)
+            {
+                add("dig_skill_missing", "warning", "Pending digs require skills unavailable to local duplicants.", true, null, sample.WorldId);
+                result[result.Count - 1].StopEligible = false;
+                result[result.Count - 1].Details = new Dictionary<string, object> { ["requirements"] = sample.MissingDigSkills };
+            }
             if (sample.InfrastructureKnown)
             {
                 if (sample.Beds < local) add("beds_short", "warning", "Fewer beds than local duplicants.", true, null, sample.WorldId);
@@ -147,21 +153,26 @@ namespace OniMcp.Tools
                     ["foodAndWork"] = sample.WorldId < 0 ? "all_worlds_aggregate" : "selected_world", ["foodMaxAgeSeconds"] = 2, ["infrastructureMaxAgeSeconds"] = 2,
                     ["notChecked"] = new[] { "local_atmosphere", "navigation", "resource_fetchability", "full_utility_networks" }
                 },
-                ["dupeConcerns"] = sample.Dupes.Where(dupe => dupe.Stress > 0
+                ["dupeConcerns"] = sample.Dupes.Where(dupe => dupe.Stress > 0 || dupe.Stamina >= 0 && dupe.Stamina < 20
                     || (dupe.Morale >= 0 && dupe.MoraleExpectation > dupe.Morale)
                     || (dupe.StressDetails != null && Convert.ToDouble(dupe.StressDetails["changePerCycle"]) > 0))
                     .Select(dupe => new Dictionary<string, object> {
                         ["id"] = dupe.Id, ["worldId"] = dupe.WorldId, ["stress"] = Math.Round(dupe.Stress, 1),
-                        ["morale"] = dupe.Morale, ["expectation"] = dupe.MoraleExpectation, ["stressChange"] = dupe.StressDetails }).ToList(),
+                        ["morale"] = dupe.Morale, ["expectation"] = dupe.MoraleExpectation, ["stressChange"] = dupe.StressDetails,
+                        ["stamina"] = dupe.Stamina, ["chore"] = dupe.Chore }).ToList(),
                 ["researchStations"] = sample.ResearchStations.Select(station => station.ToDictionary()).ToList(),
                 ["metrics"] = new Dictionary<string, object>
                 {
                     ["dupes"] = sample.LocalDupeCount, ["foodKcal"] = Math.Round(sample.FoodKcal),
+                    ["storedFoodKcal"] = Math.Round(sample.StoredFoodKcal),
+                    ["looseFoodKcal"] = Math.Round(sample.FoodKcal - sample.StoredFoodKcal),
+                    ["minStamina"] = sample.Dupes.Where(dupe => dupe.Stamina >= 0).Select(dupe => dupe.Stamina).DefaultIfEmpty(-1).Min(),
                     ["maxStress"] = sample.Dupes.Select(dupe => dupe.Stress).DefaultIfEmpty(-1).Max(),
                     ["minBreath"] = sample.Dupes.Where(dupe => dupe.Breath >= 0).Select(dupe => dupe.Breath).DefaultIfEmpty(-1).Min(),
                     ["minHealthPercent"] = sample.Dupes.Where(dupe => dupe.Health >= 0).Select(dupe => dupe.Health).DefaultIfEmpty(-1).Min(),
                     ["working"] = sample.Working, ["unexpectedIdle"] = sample.Idle,
                     ["pendingBuilds"] = sample.PendingBuilds, ["pendingDigs"] = sample.PendingDigs,
+                    ["pendingDeconstructions"] = sample.PendingDeconstructions,
                     ["researchId"] = sample.ResearchId, ["researchPercent"] = Math.Round(sample.ResearchProgress, 1)
                 }
             };

@@ -138,7 +138,7 @@ namespace OniMcp.Tools
                 sb.AppendLine("- Set seed through /active/ops/farming.md: `call domain=bio bioDomain=farming action=set_planting id=" + config["id"] + " seedTag=<seed> dryRun=true`; commit with confirm=true.");
                 sb.AppendLine("- Inventory counts do not prove fetchability. Use resources/search_items for the selected seed when delivery stalls.");
             }
-            if (priority != null)
+            if (priority != null && priority.IsPrioritizable())
                 sb.AppendLine("- Priority: " + priority.GetMasterPriority().priority_value + ". Edit through /active/ops/orders.md: `call domain=priority action=set_building id=" + config["id"] + " priority=7 dryRun=true`; commit with confirm=true.");
             sb.AppendLine("## Related Files");
             sb.AppendLine("- Production and other building actions: /active/ops/build.md");
@@ -168,7 +168,8 @@ namespace OniMcp.Tools
             AddValue(lines, "LogicTimer.OffSeconds", config["timer"]?["offSeconds"]);
             AddValue(lines, "LogicTimer.DisplayCycles", config["timer"]?["displayCyclesMode"]);
             AddValue(lines, "Ribbon.SelectedBit", config["ribbonBit"]?["selectedBit"]);
-            AddValue(lines, "Door.State", NormalizeDoorState(config["door"]?["requested"]?.ToString()));
+            if (config["door"] is JObject door && door["requested"] != null)
+                AddValue(lines, "Door.State", NormalizeDoorState(door["requested"].ToString()));
             AddValue(lines, "Capacity", state["capacity"]?["userMaxCapacity"]);
             AddValue(lines, "Checkbox", state["checkbox"]?["value"]);
             AddValue(lines, "Counter.Max", state["counter"]?["maxCount"]);

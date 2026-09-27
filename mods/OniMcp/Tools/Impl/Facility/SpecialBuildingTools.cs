@@ -123,6 +123,7 @@ namespace OniMcp.Tools
                     var results = Components.BuildingCompletes.Items
                         .Select(building => building?.gameObject)
                         .Where(go => MatchesTarget(go, rect, worldId))
+                        .Where(go => ObjectReadFacts.MatchesId(go, args))
                         .Where(go => go.GetComponent<Artable>() != null)
                         .Select(go => ArtableInfo(go.GetComponent<Artable>(), includeOptions))
                         .Where(info => MatchesQuery(info, query))

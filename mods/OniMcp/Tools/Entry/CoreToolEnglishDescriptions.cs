@@ -12,11 +12,11 @@ namespace OniMcp.Tools
             switch (tool.Name)
             {
                 case "building_control":
-                    tool.Description = "Smart battery thresholds: domain=config action=set_battery_thresholds lowThreshold/highThreshold (percent), dryRun supported. Printing Pod care package rewards: domain=side_surface surface=facility kind=printing_pod action=list_rewards (claim requires confirm=true). Unified building entrypoint. Use action plus query, target, search, id, plan, or areaId for locating targets. Coordinate input is not accepted here; use world_editor map SEARCH/REPLACE patches for exact cells.";
+                    tool.Description = "Use colony-wide modular design: clear responsibilities, boundaries, interfaces, capacities and failure containment; stage upgrades and verify integration. Automatic power routing is opt-in. Smart battery thresholds: domain=config action=set_battery_thresholds lowThreshold/highThreshold (percent), dryRun supported. Printing Pod care package rewards: domain=side_surface surface=facility kind=printing_pod action=list_rewards (claim requires confirm=true). Unified building entrypoint. Use action plus query, target, search, id, plan, or areaId for locating targets. Coordinate input is not accepted here; use world_editor map SEARCH/REPLACE patches for exact cells.";
                     Describe(tool, BuildingDescriptions());
                     break;
                 case "colony_control":
-                    tool.Description = "Unified colony entrypoint: snapshots/diagnostics share observation.findings, including native yellow HUD warnings. Management/research set clearQueue=false appends. Bio/farming uses id, query or areaId; planting and uproot support dryRun.";
+                    tool.Description = "Unified colony entrypoint: snapshots/diagnostics share observation.findings, including native yellow HUD warnings. Management/research set clearQueue=false appends saved FIFO queuedTargets; native queue is the head target plus prerequisites. Bio/farming uses id, query or areaId; planting and uproot support dryRun.";
                     Describe(tool, ColonyDescriptions());
                     break;
                 case "coordinate_control":

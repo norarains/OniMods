@@ -137,7 +137,7 @@ namespace OniMcp.Tools
                 ["y1"] = new McpToolParameter { Type = "integer", Description = "区域起点 Y；list 操作可用", Required = false },
                 ["x2"] = new McpToolParameter { Type = "integer", Description = "区域终点 X；list 操作可用", Required = false },
                 ["y2"] = new McpToolParameter { Type = "integer", Description = "区域终点 Y；list 操作可用", Required = false },
-                ["id"] = new McpToolParameter { Type = "integer", Description = "目标对象 InstanceID；press/focus 操作可用", Required = false },
+                ["id"] = new McpToolParameter { Type = "integer", Description = "目标对象 InstanceID；list/press/focus 操作可用", Required = false },
                 ["x"] = new McpToolParameter { Type = "integer", Description = "目标格子 X；press/focus 操作可用", Required = false },
                 ["y"] = new McpToolParameter { Type = "integer", Description = "目标格子 Y；press/focus 操作可用", Required = false },
                 ["worldId"] = new McpToolParameter { Type = "integer", Description = "目标世界 ID", Required = false },

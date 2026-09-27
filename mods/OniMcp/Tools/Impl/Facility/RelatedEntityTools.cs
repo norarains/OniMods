@@ -41,6 +41,7 @@ namespace OniMcp.Tools
 
                     var targets = AllCandidateObjects()
                         .Where(go => MatchesTarget(go, rect, worldId))
+                        .Where(go => ObjectReadFacts.MatchesId(go, args))
                         .Select(RelatedTargetInfo)
                         .Where(info => ((List<Dictionary<string, object>>)info["related"]).Count > 0)
                         .Where(info => MatchesQuery(info, query))

@@ -21,7 +21,7 @@ namespace OniMcp.Tools
                 ["includeNotes"] = new McpToolParameter { Type = "boolean", Description = "report: 是否包含报告注释明细，默认 false", Required = false },
                 ["limit"] = new McpToolParameter { Type = "integer", Description = "report: 最多返回多少个主条目，默认 80，最大 300", Required = false },
                 ["includeStats"] = new McpToolParameter { Type = "boolean", Description = "summary: 是否包含概要统计曲线，默认 true", Required = false },
-                ["maxStatPoints"] = new McpToolParameter { Type = "integer", Description = "summary: 每条统计曲线最多返回多少个点，默认 60，最大 500", Required = false }
+                ["maxStatPoints"] = new McpToolParameter { Type = "integer", Description = "summary: 每条统计曲线最多返回多少个点，默认 5，最大 500", Required = false }
             };
 
             return new McpTool
@@ -121,7 +121,7 @@ namespace OniMcp.Tools
                 Parameters = new Dictionary<string, McpToolParameter>
                 {
                     ["includeStats"] = new McpToolParameter { Type = "boolean", Description = "是否包含概要统计曲线，默认 true", Required = false },
-                    ["maxStatPoints"] = new McpToolParameter { Type = "integer", Description = "每条统计曲线最多返回多少个点，默认 60，最大 500", Required = false }
+                    ["maxStatPoints"] = new McpToolParameter { Type = "integer", Description = "每条统计曲线最多返回多少个点，默认 5，最大 500", Required = false }
                 },
                 Handler = args =>
                 {
@@ -129,11 +129,12 @@ namespace OniMcp.Tools
                         return CallToolResult.Error("Game not initialized");
 
                     bool includeStats = ToolUtil.GetBool(args, "includeStats", true);
-                    int maxStatPoints = Math.Max(1, Math.Min(ToolUtil.GetInt(args, "maxStatPoints") ?? 60, 500));
+                    int maxStatPoints = Math.Max(1, Math.Min(ToolUtil.GetInt(args, "maxStatPoints") ?? 5, 500));
                     var data = RetireColonyUtility.GetCurrentColonyRetiredColonyData();
                     if (data == null)
                         return CallToolResult.Error("Colony summary data not available");
 
+                    bool full = args["detail"]?.ToString() == "full";
                     var result = new Dictionary<string, object>
                     {
                         ["colonyName"] = data.colonyName,
@@ -154,6 +155,11 @@ namespace OniMcp.Tools
                             .ToList()
                     };
 
+                    if (!full)
+                    {
+                        result.Remove("achievements");
+                        foreach (var dupe in (List<Dictionary<string, object>>)result["duplicants"]) dupe.Remove("accessories");
+                    }
                     if (includeStats)
                     {
                         result["stats"] = (data.Stats ?? new RetiredColonyData.RetiredColonyStatistic[0])

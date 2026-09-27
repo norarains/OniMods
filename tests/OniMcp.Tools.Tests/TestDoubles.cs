@@ -60,7 +60,7 @@ namespace OniMcp.Tools
             .ToList();
     }
 
-    public static class ToolUtil
+    public static partial class ToolUtil
     {
         public static bool GetBool(JObject args, string name, bool fallback)
         {

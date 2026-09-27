@@ -17,12 +17,13 @@ namespace OniMcp.Tools
             var footprintCells = new HashSet<int>(safetyFootprint.Where(cell => cell.Valid).Select(cell => cell.Cell));
             bool utility = IsUtilityPrefab(placement.PrefabId);
             bool endpointBridge = UsesNativeBridgeEndpointRegistration(placementDef);
+            bool physical = placementDef?.ObjectLayer == ObjectLayer.Building && !endpointBridge && !IsLinearUtilityPrefab(placement.PrefabId);
 
             foreach (var cellInfo in safetyFootprint)
             {
                 if (!cellInfo.Valid)
                     continue;
-                if (!utility && Grid.Solid[cellInfo.Cell])
+                if (Grid.Solid[cellInfo.Cell] && (!utility || physical || IsNaturalDiggableSolidCell(cellInfo.Cell, placement.WorldId)))
                 {
                     bool diggable = IsNaturalDiggableSolidCell(cellInfo.Cell, placement.WorldId);
                     bool alreadyMarked = Grid.Objects[cellInfo.Cell, (int)ObjectLayer.DigPlacer] != null;
@@ -41,6 +42,7 @@ namespace OniMcp.Tools
                     });
                 }
 
+                if (physical)
                 foreach (var uproot in UprootableObstructionsAtCell(cellInfo.Cell, placement.WorldId))
                 {
                     uproot["x"] = cellInfo.X;
@@ -61,7 +63,7 @@ namespace OniMcp.Tools
             foreach (var obstruction in ExistingBuildingFootprintObstructions(placement.WorldId, footprintCells))
             {
                 string id = obstruction.ContainsKey("id") ? obstruction["id"]?.ToString() : "";
-                if ((utility && !endpointBridge) || IsUtilityPrefab(id))
+                if ((utility && !physical) || endpointBridge || IsUtilityPrefab(id))
                     continue;
                 string key = obstruction["kind"] + "|" + id + "|" + obstruction["objectX"] + "|" + obstruction["objectY"] + "|" + obstruction["x"] + "|" + obstruction["y"];
                 if (seen.Add(key))
@@ -123,6 +125,8 @@ namespace OniMcp.Tools
                 .Where(cell => IsNaturalDiggableSolidCell(cell.Cell, placement.WorldId))
                 .ToList();
             var uprootTargets = placement.Footprint
+                .Where(cell => ResolveBuildingDefForPlacement(placement)?.ObjectLayer == ObjectLayer.Building
+                    && !UsesNativeBridgeEndpointRegistration(ResolveBuildingDefForPlacement(placement)))
                 .SelectMany(cell => UprootablesAtCell(cell.Cell, placement.WorldId).Select(uprootable => new { cell, uprootable }))
                 .GroupBy(item => item.uprootable.gameObject.GetInstanceID())
                 .Select(group => group.First())

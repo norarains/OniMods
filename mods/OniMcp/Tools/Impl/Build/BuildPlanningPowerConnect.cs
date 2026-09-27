@@ -18,7 +18,7 @@ namespace OniMcp.Tools
         {
             bool enabled = def != null
                 && def.RequiresPowerInput
-                && ToolUtil.GetBool(args, "autoConnectPower", true);
+                && ToolUtil.GetBool(args, "autoConnectPower", false);
             if (!enabled)
             {
                 return new Dictionary<string, object>

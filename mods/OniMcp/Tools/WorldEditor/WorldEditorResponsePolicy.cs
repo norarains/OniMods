@@ -226,6 +226,36 @@ namespace OniMcp.Tools
             }
         }
 
+        private static void CompactUtilityPath(JObject output)
+        {
+            if (output["pathMode"]?.ToString() != "continuous_manhattan_path"
+                || output["failed"]?.Value<int>() != 0 || !(output["results"] is JArray rows)
+                || !(output["segments"] is JArray)) return;
+            var cells = new JArray();
+            foreach (var token in rows)
+            {
+                if (!(token is JObject row) || row["valid"]?.Value<bool>() != true || HasWarningEvidence(row)) return;
+                var cell = new JObject();
+                foreach (string key in new[] { "anchor", "id", "planned", "alreadyPresent", "alreadyBlueprint",
+                    "alreadyBuilding", "placementVerified", "registrationPending", "replacement", "autoDig", "nativeAutoDigTargets" })
+                    if (row[key] != null && (!(row[key] is JArray a) || a.Count > 0)) cell[key] = row[key].DeepClone();
+                if (row["workAccess"] is JObject access)
+                {
+                    cell["hasCurrentConstructionAccess"] = access["hasCurrentConstructionAccess"]?.DeepClone();
+                    // Keep blocked access and skill evidence in full. Successful
+                    // per-cell navigation explanations need not repeat the table.
+                    if (access["hasCurrentConstructionAccess"]?.Value<bool>() != true
+                        || access["blockedCellCount"]?.Value<int>() > 0 || access["digSkillRequirements"]?.HasValues == true)
+                        cell["workAccess"] = access.DeepClone();
+                }
+                cells.Add(cell);
+            }
+            output["cells"] = cells;
+            output["accessEvidence"] = "current_native_construction_offsets; future_completion_unverified";
+            output.Remove("results");
+            output.Remove("path"); // segments preserve the complete route and backtracking
+        }
+
         internal static JToken Normalize(JToken token, bool compact, int depth = 0)
         {
             if (token == null || depth > 40)
@@ -259,6 +289,7 @@ namespace OniMcp.Tools
                     CompactAutoDig(output);
                     CompactSuccessfulGeometry(output);
                     CompactPlacementReceipt(output);
+                    CompactUtilityPath(output);
                 }
                 return output;
             }

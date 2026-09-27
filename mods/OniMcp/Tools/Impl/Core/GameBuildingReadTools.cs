@@ -112,40 +112,16 @@ namespace OniMcp.Tools
                     if (args["limit"] != null && int.TryParse(args["limit"].ToString(), out int parsedLimit))
                         limit = Math.Max(1, Math.Min(parsedLimit, 500));
 
-                    var buildings = new List<Dictionary<string, object>>();
-                    var seen = new HashSet<string>();
-
-                    foreach (var building in Components.BuildingCompletes.Items)
-                    {
-                        if (building == null) continue;
-
-                        var prefabName = building.name;
-                        var def = building.Def;
-                        var name = ToolUtil.CleanName(def?.Name ?? prefabName);
-                        var position = building.transform?.position ?? Vector3.zero;
-                        var x = Mathf.RoundToInt(position.x);
-                        var y = Mathf.RoundToInt(position.y);
-                        var worldId = building.GetMyWorldId();
-                        var identity = (def?.PrefabID ?? prefabName) + "|" + x + "|" + y + "|" + worldId;
-                        if (!seen.Add(identity)) continue;
-
-                        if (!string.IsNullOrEmpty(filterType) &&
-                            !name.ToLower().Contains(filterType) &&
-                            !prefabName.ToLower().Contains(filterType))
-                            continue;
-
-                        var operational = building.GetComponent<Operational>();
-
-                        buildings.Add(new Dictionary<string, object>
-                        {
-                            ["name"] = name,
-                            ["prefabId"] = def?.PrefabID ?? "unknown",
-                            ["position"] = new { x, y },
-                            ["isOperational"] = operational?.IsOperational ?? false,
-                            ["isActive"] = operational?.IsActive ?? false,
-                            ["worldId"] = worldId
-                        });
-                    }
+                    int selectedWorld = ToolUtil.GetInt(args, "worldId") ?? -1;
+                    bool includePlanned = ToolUtil.GetBool(args, "includePlanned", false);
+                    var buildings = BuildingReadCandidates(includePlanned)
+                        .Where(go => ToolUtil.GameObjectMatchesWorld(go, selectedWorld) && ObjectReadFacts.MatchesId(go, args))
+                        .Where(go => ToolUtil.VisibleCellAllowed(Grid.PosToCell(go), true))
+                        .Select(ObjectReadFacts.Read)
+                        .Where(info => string.IsNullOrEmpty(filterType)
+                            || info["name"].ToString().IndexOf(filterType, StringComparison.OrdinalIgnoreCase) >= 0
+                            || info["prefabId"].ToString().IndexOf(filterType, StringComparison.OrdinalIgnoreCase) >= 0)
+                        .ToList();
 
                     var limited = buildings.Take(limit).ToList();
                     var summary = new Dictionary<string, object>
@@ -202,14 +178,14 @@ namespace OniMcp.Tools
 
                     foreach (var building in Components.BuildingCompletes.Items)
                     {
-                        if (building == null) continue;
+                        if (building == null || !ToolUtil.GameObjectMatchesWorld(building.gameObject, ToolUtil.GetInt(args, "worldId") ?? -1)) continue;
 
                         var def = building.Def;
                         var prefabId = def?.PrefabID ?? building.name;
                         var name = ToolUtil.CleanName(def?.Name ?? prefabId);
                         var position = building.transform?.position ?? Vector3.zero;
-                        var x = Mathf.RoundToInt(position.x);
-                        var y = Mathf.RoundToInt(position.y);
+                        var x = Grid.CellColumn(Grid.PosToCell(building));
+                        var y = Grid.CellRow(Grid.PosToCell(building));
                         var worldId = building.GetMyWorldId();
                         var identity = prefabId + "|" + x + "|" + y + "|" + worldId;
                         if (!seen.Add(identity)) continue;

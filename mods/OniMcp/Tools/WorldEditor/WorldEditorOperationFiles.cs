@@ -345,6 +345,11 @@ namespace OniMcp.Tools
                 return false;
             }
             toolName = tool.Name;
+            // This typed file owns explicit utility route coordinates and still uses
+            // the ordinary utility preflight, confirmation and sandbox gates.
+            semanticCoordinates = relative == "ops/build.md" && toolName == "building_control"
+                && arguments["domain"]?.ToString() == "planning"
+                && arguments["action"]?.ToString() == "auto_connect";
             if (relative == "ops/farming.md" && toolName == "colony_control" && arguments["domain"] == null)
             { arguments["domain"] = "bio"; arguments["bioDomain"] = "farming"; }
             error = null;
@@ -361,7 +366,7 @@ namespace OniMcp.Tools
             }
             if (!semanticCoordinates && toolName != "coordinate_control" && OniToolRegistry.HasCoordinateArguments(arguments))
             {
-                error = "Raw ops calls cannot pass coordinates to ordinary tools; use a supported semantic command or coordinate_control.";
+                error = "Raw ops calls cannot pass coordinates to ordinary tools; use a supported world_editor map or infrastructure plan.";
                 return false;
             }
             if (toolName == "game_control"

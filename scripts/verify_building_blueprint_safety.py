@@ -61,12 +61,12 @@ def verify_building_blueprint_safety(
     require_order(
         auto_connect,
         (
-            "foreach (var point in path)",
+            "foreach (var point in uniquePath)",
             "TryPlanOne(def.PrefabID, point.x, point.y",
         ),
         "utility auto-connect must use per-cell blueprint planning",
     )
-    path_loop = extract_block(auto_connect, "foreach (var point in path)")
+    path_loop = extract_block(auto_connect, "foreach (var point in uniquePath)")
     if "TryPlanOne(def.PrefabID, point.x, point.y" not in path_loop:
         fail("utility fallback path loop must call TryPlanOne for each cell")
 

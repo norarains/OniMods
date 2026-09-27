@@ -87,6 +87,10 @@ int cell = Grid.XYToCell(x, y);
             var placement = BuildPlacementDetails(def, x, y, worldId, orientation);
             var replacementTarget = NativeTileReplacement(def, placement);
             var replacement = TileReplacementInfo(replacementTarget);
+            var nativeDigs = NativeConstructionDigs(def, placement);
+            if (nativeDigs.Count > 0 && !ToolUtil.GetBool(args, "autoDigObstructions", true))
+                return ErrorResult(prefabId, x, y, "Native construction requires digging; autoDigObstructions=false rejects the blueprint before mutation.",
+                    new Dictionary<string, object> { ["reasonCode"] = "native_auto_dig_disabled", ["nativeAutoDigTargets"] = nativeDigs });
             var workAccess = CurrentWorkAccess(def, placement);
             var footprintResult = ValidateFootprint(placement);
             var existingBuild = ExistingMatchingBuildAtPlacement(def, placement);
@@ -166,6 +170,7 @@ int cell = Grid.XYToCell(x, y);
                     ["powerAutoConnect"] = powerAutoConnect,
                     ["autoDig"] = autoDig,
                     ["replacement"] = replacement, ["workAccess"] = workAccess,
+                    ["nativeAutoDigTargets"] = nativeDigs,
                     ["actionable"] = GetBool(workAccess, "hasCurrentConstructionAccess")
                 }, powerAutoConnect, false);
             }
@@ -222,6 +227,7 @@ int cell = Grid.XYToCell(x, y);
                     return ErrorResult(prefabId, x, y, "Placement failed", failureDetails);
                 }
                 SetPriority(go, ToolUtil.GetInt(args, "priority") ?? 5);
+                ConstructionPriorityIntent.Mark(go);
             }
             RegisterSupportBlueprint(prefabId, x, y, plannedSupportCells);
             var actualPlacement = ActualPlacementDetails(go, def, x, y);
@@ -257,6 +263,7 @@ int cell = Grid.XYToCell(x, y);
                 ["powerAutoConnect"] = placedPowerAutoConnect,
                 ["autoDig"] = autoDig,
                 ["replacement"] = replacement, ["workAccess"] = workAccess,
+                    ["nativeAutoDigTargets"] = nativeDigs,
                 ["actionable"] = GetBool(workAccess, "hasCurrentConstructionAccess"),
                 ["instantCompletion"] = instantCompletion,
                 ["id"] = go.GetComponent<KPrefabID>()?.InstanceID ?? -1

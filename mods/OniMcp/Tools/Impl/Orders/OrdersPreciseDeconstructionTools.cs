@@ -182,22 +182,34 @@ namespace OniMcp.Tools
             var deconstructable = go.GetComponent<Deconstructable>();
             if (deconstructable != null)
             {
-                if (!deconstructable.allowDeconstruction && !DebugHandler.InstantBuildMode)
+                if (!deconstructable.allowDeconstruction)
                 {
                     error = "Target does not allow deconstruction";
                     return false;
                 }
 
-                deconstructable.QueueDeconstruction(userTriggered: true);
-                ApplyPriority(go, args);
+                if (!ToolUtil.GetBool(args, "dryRun", false))
+                {
+                    deconstructable.QueueDeconstruction(userTriggered: false);
+                    ApplyPriority(go, args);
+                }
                 error = null;
                 return true;
             }
 
             if (IsUtilityDeconstructTarget(go))
             {
-                go.Trigger((int)GameHashes.MarkForDeconstruct);
-                ApplyPriority(go, args);
+                if (!ToolUtil.GetBool(args, "dryRun", false))
+                {
+                    bool previousInstant = DebugHandler.InstantBuildMode;
+                    try
+                    {
+                        DebugHandler.InstantBuildMode = false;
+                        go.Trigger((int)GameHashes.MarkForDeconstruct);
+                    }
+                    finally { DebugHandler.InstantBuildMode = previousInstant; }
+                    ApplyPriority(go, args);
+                }
                 error = null;
                 return true;
             }

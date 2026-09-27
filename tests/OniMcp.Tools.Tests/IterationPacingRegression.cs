@@ -84,7 +84,43 @@ internal static class IterationPacingRegression
         Check(ContinueResponse.Events(events, true, old, current).Count == 4, "full response retains all events");
         Check(ContinueResponse.Events(events, false, old, current, new HashSet<string> { "supply:1" }).Count == 4,
             "ignored condition that changed and returned within the window is retained");
+        TestObservationNeeds();
         Console.WriteLine("Iteration pacing regression: " + checks + " checks passed");
+    }
+
+    private static void TestObservationNeeds()
+    {
+        var sample = new ContinueSample {
+            WorldId = 1, FoodKcal = 10000, StoredFoodKcal = 6500,
+            PendingBuilds = 3, PendingDigs = 4, PendingDeconstructions = 2
+        };
+        sample.Dupes.Add(new ContinueDupe {
+            Id = 7, WorldId = 1, Valid = true, Health = 100, Breath = 100,
+            Stress = 0, Stamina = 12, Chore = "Sleep"
+        });
+        sample.MissingDigSkills.Add(new Dictionary<string, object> {
+            ["perk"] = "CanDigVeryFirm", ["cells"] = 4
+        });
+        var findings = ColonyObservation.Findings(sample);
+        var skill = findings.Single(item => item.Code == "dig_skill_missing");
+        Check(!skill.StopEligible, "missing dig skill remains a planning fact without unconditional interruption");
+        Check(!new GameContinuePolicy().Observe(sample).Stops, "low stamina and unavailable dig skill do not force an immediate stop");
+        var brief = ContinueResponse.Observation(sample, findings, false, false);
+        var metrics = brief["metrics"];
+        Check(metrics["foodKcal"].Value<int>() == 10000 && metrics["storedFoodKcal"].Value<int>() == 6500
+            && metrics["looseFoodKcal"].Value<int>() == 3500, "compact food separates stored and loose calories without double counting");
+        Check(metrics["pendingBuilds"].Value<int>() == 3 && metrics["pendingDigs"].Value<int>() == 4
+            && metrics["pendingDeconstructions"].Value<int>() == 2, "compact work preserves distinct outstanding order counts");
+        Check(metrics["minStamina"].Value<int>() == 12 && brief["dupeConcerns"].Single()["id"].Value<int>() == 7
+            && brief["dupeConcerns"].Single()["stamina"].Value<int>() == 12,
+            "exhaustion remains visible even with zero stress and no morale deficit");
+        var reportedSkill = brief["findings"].Single(item => item["code"].Value<string>() == "dig_skill_missing");
+        Check(reportedSkill["details"]["requirements"][0]["perk"].Value<string>() == "CanDigVeryFirm",
+            "compact response retains missing dig skill details");
+        sample.Dupes[0].Stamina = -1;
+        brief = ContinueResponse.Observation(sample, ColonyObservation.Findings(sample), false, false);
+        Check(brief["metrics"]["minStamina"].Value<int>() == -1 && brief["dupeConcerns"] == null,
+            "unavailable stamina is not fabricated as exhaustion");
     }
 
     private static Dictionary<string, object> Event(string id, bool ignored) => new Dictionary<string, object> {

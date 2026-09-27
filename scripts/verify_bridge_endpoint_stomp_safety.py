@@ -81,7 +81,9 @@ def main() -> None:
     assert "ObjectLayer.LogicWire" not in targets
 
     building = body(safety, "private static List<Dictionary<string, object>> FindBuildingLayerConflicts")
-    assert "IsUtilityPrefab(def.PrefabID) && !UsesNativeBridgeEndpointRegistration(def)" in building
+    assert "UsesNativeBridgeEndpointRegistration(def)" in building
+    assert "IsUtilityPrefab(def.PrefabID) && def.ObjectLayer != ObjectLayer.Building" in building
+    assert "PlacementOriginCell(def, placement.AnchorX, placement.AnchorY, placement.Orientation)" in targets
     assert "PlacementSafetyFootprint(def, placement)" in building
     oriented_footprint = body(safety, "private static IEnumerable<FootprintCell> PlacementSafetyFootprint")
     assert "def.PlacementOffsets" in oriented_footprint
@@ -89,7 +91,9 @@ def main() -> None:
     footprint = body(obstructions, "private static List<Dictionary<string, object>> FindFootprintObstructions")
     assert "var safetyFootprint = PlacementSafetyFootprint(placementDef, placement).ToList()" in footprint
     assert "bool endpointBridge = UsesNativeBridgeEndpointRegistration(placementDef)" in footprint
-    assert "(utility && !endpointBridge) || IsUtilityPrefab(id)" in footprint
+    assert "(utility && !physical) || endpointBridge || IsUtilityPrefab(id)" in footprint
+    assert "placementDef?.ObjectLayer == ObjectLayer.Building" in footprint
+    assert "PlacementOriginCell(def, placement.AnchorX, placement.AnchorY, placement.Orientation)" in oriented_footprint
 
     signature = "private static PlacementDetails BuildPlacementDetails(BuildingDef def, int x, int y, int worldId,"
     placement_builder = body(geometry, signature)

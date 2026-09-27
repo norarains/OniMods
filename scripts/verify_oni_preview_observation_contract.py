@@ -56,7 +56,13 @@ runner = (ROOT / 'Impl/Core/GameContinueRunner.cs').read_text()
 configure = extract_block(runner, 'internal static CallToolResult Configure')
 assert configure.index('"dryRun"') < configure.index('Settings(args)')
 monitor = (ROOT / 'Impl/Core/GameContinueMonitor.cs').read_text()
-assert monitor.count('(worldId < 0 || item.GetMyWorldId() == worldId)') == 2
+for order_array in ("builds", "digs", "deconstructions"):
+    loop = extract_block(monitor, "foreach (var item in " + order_array + ")")
+    # The condition lies before the loop body in single-statement foreach syntax.
+    start = monitor.index("foreach (var item in " + order_array + ")")
+    assert '(worldId < 0 || item.GetMyWorldId() == worldId)' in monitor[start:start + 250]
+assert "!Grid.Solid[dig.Value]" in monitor
+assert "sample.PendingDeconstructions++" in monitor
 assert 'wallSeconds >= nextInfrastructureRead' in monitor
 assert 'BuildingSupplyObservation.Read(building.gameObject, false, buildingSupplies)' in monitor
 assert 'BuildingSupplyObservation.Read(building.gameObject, true, buildingSupplies)' in monitor

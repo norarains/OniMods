@@ -9,6 +9,14 @@
     <StartupObject>BenchmarkMetadataRegressionEntry</StartupObject>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Management/ResearchTargetQueue.cs" Link="Source/ResearchTargetQueue.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Management/ResearchTools.cs" Link="Source/ResearchTools.cs" />
+    <Compile Include="../../mods/OniMcp/Patches/ConstructionPriorityIntent.cs" Link="Source/ConstructionPriorityIntent.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Orders/OrdersDesignationTools.cs" Link="Source/OrdersDesignationTools.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Orders/OrdersCombatTools.cs" Link="Source/OrdersCombatTools.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Orders/OrdersConduitTools.cs" Link="Source/OrdersConduitTools.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Orders/OrdersPreciseDeconstructionTools.cs" Link="Source/OrdersPreciseDeconstructionTools.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Shared/UtilityPrefabPolicy.cs" Link="Source/UtilityPrefabPolicy.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Build/FilterMutationTools.cs" Link="Source/FilterMutationTools.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Build/ConstructionWorkCells.cs" Link="Source/ConstructionWorkCells.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Orders/UserMenuMoveAction.cs" Link="Source/UserMenuMoveAction.cs" />

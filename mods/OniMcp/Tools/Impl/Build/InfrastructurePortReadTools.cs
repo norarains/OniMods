@@ -98,6 +98,8 @@ namespace OniMcp.Tools
                 return;
 
             var ports = BuildPorts(go, building, def, kind).ToList();
+            if (blueprint)
+                foreach (var port in ports) { port["connected"] = null; port["source"] = "blueprint_definition"; }
             if (ports.Count == 0)
                 return;
 
@@ -122,7 +124,7 @@ namespace OniMcp.Tools
         {
             if (Wants(kind, "power"))
             {
-                foreach (var port in PowerPorts(go, building, def))
+                foreach (var port in PowerPorts(go, building, def).Concat(PowerBridgePorts(go, def)))
                     yield return port;
             }
             if (Wants(kind, "liquid") || Wants(kind, "gas"))
@@ -157,50 +159,6 @@ namespace OniMcp.Tools
             var generator = go.GetComponent<Generator>();
             if (generator != null && !def.RequiresPowerOutput)
                 yield return Port("power", "generator", "发电端", building.GetPowerOutputCell(), PowerLayers, PowerStatus(go, "generator", null, generator));
-        }
-
-        private static IEnumerable<Dictionary<string, object>> LogicPorts(GameObject go)
-        {
-            var ports = go.GetComponent<LogicPorts>();
-            if (ports == null)
-                yield break;
-            if (LogicPortReadSemantics.TryBridgeRoute(go, out int from, out int to))
-            {
-                string route = "from:" + Grid.CellColumn(from) + "," + Grid.CellRow(from)
-                    + " via:" + Grid.CellColumn(Grid.PosToCell(go)) + "," + Grid.CellRow(Grid.PosToCell(go))
-                    + " to:" + Grid.CellColumn(to) + "," + Grid.CellRow(to);
-                yield return Port("logic", "input", "信号输入", from, LogicLayers,
-                    new Dictionary<string, object> { ["semanticRole"] = "bridge_from",
-                        ["connected"] = LogicPortReadSemantics.ConnectedAtCell(from), ["bridgeRoute"] = route });
-                yield return Port("logic", "output", "信号输出", to, LogicLayers,
-                    new Dictionary<string, object> { ["semanticRole"] = "bridge_to",
-                        ["connected"] = LogicPortReadSemantics.ConnectedAtCell(to), ["bridgeRoute"] = route });
-                yield break;
-            }
-            for (int i = 0; i < ports.inputPortInfo.Length; i++)
-            {
-                var port = ports.inputPortInfo[i];
-                int cell = LogicPortReadSemantics.ActualCell(ports, port);
-                yield return Port("logic", "input", "信号输入", cell, LogicLayers, new Dictionary<string, object>
-                {
-                    ["id"] = port.id.ToString(),
-                    ["connected"] = LogicPortReadSemantics.ConnectedAtCell(cell),
-                    ["value"] = LogicPortReadSemantics.InputValue(ports, i),
-                    ["required"] = port.requiresConnection
-                });
-            }
-            for (int i = 0; i < ports.outputPortInfo.Length; i++)
-            {
-                var port = ports.outputPortInfo[i];
-                int cell = LogicPortReadSemantics.ActualCell(ports, port);
-                yield return Port("logic", "output", "信号输出", cell, LogicLayers, new Dictionary<string, object>
-                {
-                    ["id"] = port.id.ToString(),
-                    ["connected"] = LogicPortReadSemantics.ConnectedAtCell(cell),
-                    ["value"] = LogicPortReadSemantics.OutputValue(ports, i),
-                    ["required"] = port.requiresConnection
-                });
-            }
         }
 
         private static Dictionary<string, object> Port(string layer, string role, string label, int cell, ObjectLayer[] layers, Dictionary<string, object> extra)

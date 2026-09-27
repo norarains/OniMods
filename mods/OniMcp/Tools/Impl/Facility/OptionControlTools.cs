@@ -44,7 +44,7 @@ namespace OniMcp.Tools
                     foreach (var building in Components.BuildingCompletes.Items)
                     {
                         var go = building?.gameObject;
-                        if (!MatchesTarget(go, rect, worldId))
+                        if (!MatchesTarget(go, rect, worldId) || !ObjectReadFacts.MatchesId(go, args))
                             continue;
                         var info = ControlInfo(go, includeOptions);
                         var kinds = (List<string>)info["controlKinds"];

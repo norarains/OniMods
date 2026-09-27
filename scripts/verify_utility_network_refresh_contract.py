@@ -27,8 +27,11 @@ def main() -> None:
     placement = (BUILD / "BuildPlanningUtilityConnect.cs").read_text(encoding="utf-8")
 
     exact = body(refresh, "private static bool IsExactConnectionUtilityPrefab")
-    for prefab in ("LogicWire", "Wire", "LiquidConduit", "GasConduit", "SolidConduit"):
-        assert f'EqualsIgnoreCase(prefabId, "{prefab}")' in exact
+    assert "UtilityPrefabPolicy.IsLinear(prefabId)" in exact
+    policy = (ROOT / "mods/OniMcp/Tools/Shared/UtilityPrefabPolicy.cs").read_text()
+    for prefab in ("LogicWire", "Wire", "WireRefined", "WireHighWattage", "WireRefinedHighWattage",
+                   "LiquidConduit", "LiquidConduitInsulated", "GasConduit", "GasConduitInsulated", "SolidConduit"):
+        assert f'["{prefab}"]' in policy
     for forbidden in ("Sensor", "Bridge", "Endpoint", "IndexOf", "Contains"):
         assert forbidden not in exact
 
@@ -122,7 +125,7 @@ def main() -> None:
 
     # All supported utility prefabs share this exact path-edge implementation.
     for prefab in ("LogicWire", "Wire", "LiquidConduit", "GasConduit", "SolidConduit"):
-        assert prefab in exact
+        assert prefab in policy
         assert explicit_path({}, [(0, 0), (1, 0)]) == {(0, 0): RIGHT, (1, 0): LEFT}
     print("utility network refresh contract passed")
 

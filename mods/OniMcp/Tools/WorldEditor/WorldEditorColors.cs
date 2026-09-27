@@ -151,9 +151,8 @@ namespace OniMcp.Tools
             if (generator != null)
             {
                 var op = go.GetComponent<Operational>();
-                bool isActive = op != null && op.IsOperational;
-                float currentGen = isActive ? generator.WattageRating : 0f;
-                return $"[发电设备] 当前发电: {currentGen:F0}W / 额定: {generator.WattageRating:F0}W";
+                bool active = op != null && op.IsActive;
+                return $"[发电设备] active={active}; 额定={generator.WattageRating:F0}W; 实际发电未测量";
             }
 
             var consumer = go.GetComponent<EnergyConsumer>();

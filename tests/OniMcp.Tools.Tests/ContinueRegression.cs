@@ -15,6 +15,7 @@ internal static class ContinueRegression
     internal static void Run()
     {
         TestDecisions();
+        TestRestToWorkGrace();
         ObservationRegression.Run();
         UtilityReadRegression.Run();
         TestWindows();
@@ -31,6 +32,32 @@ internal static class ContinueRegression
     }
 
     private static bool Has(ContinueEvents d, string code) => d.Items.Any(r => (string)r["code"] == code);
+
+    private static void TestRestToWorkGrace()
+    {
+        var policy = new GameContinuePolicy();
+        var resting = Sample(0, false); resting.PendingIds.Add(10);
+        policy.Reset(resting);
+        // The next sample can be far away: rest time must not count as time
+        // available for construction, even when the first work chore is stationary.
+        var awake = Sample(300); awake.PendingIds.Add(10);
+        Check(!policy.Observe(awake).Stops, "first work sample after long rest starts productive-work grace");
+        var waiting = Sample(359); waiting.PendingIds.Add(10);
+        Check(!policy.Observe(waiting).Stops, "worker gets full 60-second grace after waking");
+        waiting = Sample(360); waiting.PendingIds.Add(10);
+        Check(Has(policy.Observe(waiting), "no_observed_progress"), "actual stationary work stall remains detectable after grace");
+
+        policy.Reset(resting);
+        awake = Sample(300); awake.PendingIds.Add(10); awake.Dupes[0].Cell++;
+        Check(!policy.Observe(awake).Stops, "commute immediately after rest is not stalled construction");
+        foreach (int time in new[] { 340, 380, 419 })
+        {
+            var moving = Sample(time); moving.PendingIds.Add(10); moving.Dupes[0].Cell = time;
+            Check(!policy.Observe(moving).Stops, "productive-work timer excludes earlier rest at " + time);
+        }
+        var stalled = Sample(420); stalled.PendingIds.Add(10); stalled.Dupes[0].Cell = 420;
+        Check(Has(policy.Observe(stalled), "orders_not_progressing"), "120 seconds of only movement eventually stops");
+    }
 
     private static void TestDecisions()
     {

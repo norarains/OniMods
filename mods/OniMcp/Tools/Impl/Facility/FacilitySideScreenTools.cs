@@ -84,6 +84,7 @@ namespace OniMcp.Tools
             return Components.BuildingCompletes.Items
                 .Select(building => building?.gameObject)
                 .Where(go => MatchesTarget(go, rect, worldId))
+                .Where(go => ObjectReadFacts.MatchesId(go, args))
                 .Where(predicate)
                 .Select(selector)
                 .Where(info => MatchesQuery(info, query))
@@ -102,6 +103,7 @@ namespace OniMcp.Tools
             int limit = ToolUtil.ClampLimit(args, 100, 500);
             var items = AllCandidateObjects()
                 .Where(go => MatchesTarget(go, rect, worldId))
+                .Where(go => ObjectReadFacts.MatchesId(go, args))
                 .Where(predicate)
                 .Select(selector)
                 .Where(info => MatchesQuery(info, query))

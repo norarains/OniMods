@@ -63,6 +63,7 @@ Description = "state=current/current_state/overview; world=cell_info/cell_detail
                 ["includeItems"] = new McpToolParameter { Type = "boolean", Description = "Include pickupables/dropped items when supported.", Required = false },
                 ["includeBuildings"] = new McpToolParameter { Type = "boolean", Description = "Include building anchors/details when supported.", Required = false },
                 ["includeDupes"] = new McpToolParameter { Type = "boolean", Description = "Include duplicants when supported.", Required = false },
+                ["includePlanned"] = new McpToolParameter { Type = "boolean", Description = "buildings/list: include construction blueprints alongside completed buildings.", Required = false },
                 ["includeDetails"] = new McpToolParameter { Type = "boolean", Description = "Include detailed records for summary actions.", Required = false },
                 ["includeReachability"] = new McpToolParameter { Type = "boolean", Description = "For world cell_info/cell_detail, include duplicant reachability to the target cell.", Required = false },
 

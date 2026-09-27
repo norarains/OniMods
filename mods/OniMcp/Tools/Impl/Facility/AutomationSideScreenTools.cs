@@ -38,6 +38,7 @@ namespace OniMcp.Tools
                     var controls = Components.BuildingCompletes.Items
                         .Select(item => item?.gameObject)
                         .Where(go => MatchesTarget(go, rect, worldId))
+                        .Where(go => ObjectReadFacts.MatchesId(go, args))
                         .Where(go => go.GetComponent<Automatable>() != null)
                         .Select(AutomatableInfo)
                         .Where(info => MatchesQuery(info, query))
@@ -196,6 +197,7 @@ namespace OniMcp.Tools
                     var sensors = Components.BuildingCompletes.Items
                         .Select(item => item?.gameObject)
                         .Where(go => MatchesTarget(go, rect, worldId))
+                        .Where(go => ObjectReadFacts.MatchesId(go, args))
                         .Where(go => go.GetComponent<LogicCritterCountSensor>() != null)
                         .Select(CritterSensorInfo)
                         .Where(info => MatchesQuery(info, query))

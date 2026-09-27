@@ -117,7 +117,13 @@ Normal construction, orders and configuration must not activate interactive mous
 
 The player may inspect buildings, pan, zoom and switch overlays during ordinary MCP work. Hand over the UI for screenshots (including pending capture frames), explicit camera/panel/hotkey/notification-click actions, Printing Pod reward selection/claim, and native buttons that report UI effects. Do not open panels just to read or configure data. Pickupable delivery requires `destinationId`; never start a mouse destination picker. Coordinate manual world edits, asteroid/save changes and speed control with the player. On `external_pause`, keep paused until the user explicitly hands control back. See [UI boundary contract](../../../docs/mcp-tools-reference.md#与玩家共享-ui-的边界) for remaining dependencies.
 
+## Colony architecture
+
+Use modular design throughout the colony by default. Give each system a clear responsibility, boundary and explicit interfaces. Account for its dependencies, inputs, outputs, capacity and operating conditions; contain unintended effects and failures at the boundary. Choose useful module sizes, with independent inspection, maintenance, replacement and expansion where practical. Stage construction and retrofits so essential services remain available. Verify each module and its integration under sustained operation. This rule applies to every colony system; particular machines or resource examples do not limit its scope.
+
 ## Build and order discipline
+
+Budget the complete construction batch against fresh material availability, including unique utility cells and prerequisites. Read actual ports and current circuit capacity before routing; automatic power connection is opt-in. Keep an existing service available until its replacement is built and verified. Inspect falling material and liquid exposure before opening roofs or walls. Duplicant chore preferences use 0–5; building and order priorities use 1–9.
 
 For construction:
 

@@ -33,6 +33,9 @@ internal static class Program
             Handler = args => { calls++; return CallToolResult.Text("ok"); }
         };
         UtilityPlacementRegression.Run();
+        OrdersDryRunRegression.Run();
+        ResearchQueueRegression.Run();
+        ConstructionPriorityRegression.Run();
         ConstructionAndFilterRegression.Run();
         PickupableMoveRegression.Run();
         ErgonomicsRegression.Run();

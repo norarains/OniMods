@@ -86,8 +86,9 @@ return CallToolResult.Error("utility_auto_connect only supports linear utility p
                     if (!pathSafety.Valid)
                         return CallToolResult.Error(JsonConvert.SerializeObject(
                             UtilityPathConflictResult(def, path, pathSafety, "path_preflight"), McpJsonUtil.Settings));
+                    var uniquePath = path.GroupBy(point => new { point.x, point.y }).Select(group => group.First()).ToList();
                     var pathMaterial = SelectElements(def, args["material"]?.ToString(), worldId);
-                    pathMaterial.RequiredKg = RequiredMaterialKg(def) * Math.Max(0, path.Count - CountUtilityPathCells(def, path, worldId));
+                    pathMaterial.RequiredKg = RequiredMaterialKg(def) * Math.Max(0, uniquePath.Count - CountUtilityPathCells(def, uniquePath, worldId));
                     if (!pathMaterial.Valid || (!IsFreeBuildContext() && pathMaterial.Elements.Count == 1 && pathMaterial.Selected != null
                         && pathMaterial.RequiredKg > pathMaterial.Selected.AvailableKg))
                         return CallToolResult.Error(JsonConvert.SerializeObject(new Dictionary<string, object> {
@@ -102,7 +103,7 @@ return CallToolResult.Error("utility_auto_connect only supports linear utility p
                     int reused = 0;
                     int valid = 0;
                     int autoMarked = 0;
-                    foreach (var point in path)
+                    foreach (var point in uniquePath)
                     {
                         var result = TryPlanOne(def.PrefabID, point.x, point.y, args, plannedSupportCells, autoDigContext);
                         bool ok = result.ContainsKey("planned") && (bool)result["planned"];
@@ -130,8 +131,8 @@ return CallToolResult.Error("utility_auto_connect only supports linear utility p
                     string networkError = null;
                     bool networkConnected = dryRun || (errors.Count == 0 && PersistUtilityPathConnections(def, path, out networkError));
                     if (!networkConnected && networkError != null) errors.Add(new Dictionary<string, object> { ["reasonCode"] = "utility_network_incomplete", ["error"] = networkError });
-                    int connectedCells = dryRun ? valid : CountUtilityPathCells(def, path, worldId);
-                    bool complete = dryRun ? errors.Count == 0 && valid == path.Count : connectedCells >= path.Count && networkConnected;
+                    int connectedCells = dryRun ? valid : CountUtilityPathCells(def, uniquePath, worldId);
+                    bool complete = dryRun ? errors.Count == 0 && valid == uniquePath.Count : connectedCells >= uniquePath.Count && networkConnected;
                     var response = new Dictionary<string, object>
                     {
                         ["prefabId"] = def.PrefabID,
@@ -140,7 +141,8 @@ return CallToolResult.Error("utility_auto_connect only supports linear utility p
                         ["placementMode"] = dryRun ? "dry_run_validation" : "cell_by_cell",
                         ["materialSelection"] = pathMaterial.ToDictionary(),
                         ["pathMode"] = "continuous_manhattan_path",
-                ["pathCells"] = path.Count,
+                ["pathCells"] = uniquePath.Count,
+                ["pathSteps"] = path.Count,
                 ["planned"] = planned,
                 ["reusedExisting"] = reused,
                 ["valid"] = valid,

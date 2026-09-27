@@ -41,6 +41,7 @@ namespace OniMcp.Tools
 
                     var targets = AllCandidateObjects()
                         .Where(go => MatchesTarget(go, rect, worldId))
+                        .Where(go => ObjectReadFacts.MatchesId(go, args))
                         .Select(TargetProgressInfo)
                         .Where(info => MatchesQuery(info, query))
                         .OrderBy(info => info["name"].ToString())

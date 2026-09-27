@@ -88,8 +88,8 @@ namespace OniMcp.Tools
                     if (!TryFindPriorityTarget(args, out go, out error))
                         return CallToolResult.Error(error);
                     var prioritizable = go.GetComponent<Prioritizable>();
-                    if (prioritizable == null)
-                        return CallToolResult.Error("Target is not prioritizable");
+                    if (prioritizable == null || !prioritizable.IsPrioritizable())
+                        return CallToolResult.Error("Target does not currently support native chore priority changes");
 
                     int priority = Math.Max(1, Math.Min(ToolUtil.GetInt(args, "priority") ?? 5, 9));
                     bool top = ToolUtil.GetBool(args, "topPriority", false);
@@ -150,7 +150,7 @@ namespace OniMcp.Tools
 
                     foreach (var prioritizable in Components.Prioritizables.Items)
                     {
-                        if (!MatchesPriorityTarget(prioritizable, rect, worldId, query, includeInactive))
+                        if (prioritizable == null || !prioritizable.IsPrioritizable() || !MatchesPriorityTarget(prioritizable, rect, worldId, query, includeInactive))
                             continue;
 
                         matched++;

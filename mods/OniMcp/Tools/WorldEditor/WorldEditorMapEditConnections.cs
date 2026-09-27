@@ -21,7 +21,10 @@ namespace OniMcp.Tools
             var seen = new HashSet<string>(StringComparer.Ordinal);
             bool anyError = false;
             int applied = 0;
-            string prefabId = PrefabForConnectionMap(parentArgs["sourcePath"]?.ToString());
+            var payload = CopyPayload(parentArgs);
+            string layerDefault = PrefabForConnectionMap(parentArgs["sourcePath"]?.ToString());
+            if (!UtilityPrefabPolicy.TrySelect(layerDefault, payload["prefabId"]?.ToString(), out string prefabId))
+                return CallToolResult.Error("Requested prefabId is not a supported linear utility for this infrastructure layer.");
 
             foreach (var cell in cells)
             {
@@ -39,7 +42,7 @@ namespace OniMcp.Tools
                     call["domain"] = "planning";
                     call["action"] = "auto_connect";
                     call["prefabId"] = prefabId;
-                    call["material"] = parentArgs["material"] ?? "auto";
+                    call["material"] = call["material"] ?? "auto";
                     call["confirm"] = ToolUtil.GetBool(parentArgs, "confirm", false);
                     call["allowCellFallback"] = false;
                     call["points"] = new JArray

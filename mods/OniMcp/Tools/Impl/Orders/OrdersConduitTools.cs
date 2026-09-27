@@ -23,6 +23,7 @@ namespace OniMcp.Tools
                 Description = "兼容入口：请优先使用 orders_control domain=designation action=empty_conduits。按区域标记气管、液管或运输轨道清空内容，对应游戏 Empty Pipe 工具",
                 Parameters = RectParams(new Dictionary<string, McpToolParameter>
                 {
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Preview only; no orders or content changes.", Required = false },
                     ["type"] = new McpToolParameter
                     {
                         Type = "string",
@@ -32,7 +33,7 @@ namespace OniMcp.Tools
                     },
                     ["priority"] = new McpToolParameter { Type = "integer", Description = "清空差事优先级 1-9，默认 5", Required = false },
                     ["topPriority"] = new McpToolParameter { Type = "boolean", Description = "是否设为红色最高优先级，默认 false", Required = false },
-                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "区域超过 100 格时必须为 true", Required = false }
+                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "提交必须为 true；dryRun=true 不要求确认", Required = false }
                 }),
                 Handler = args =>
                 {
@@ -41,8 +42,9 @@ namespace OniMcp.Tools
 
                     var rect = ToolUtil.GetRect(args);
                     int cells = RectCellCount(rect);
-                    if (cells > 100 && !ToolUtil.GetBool(args, "confirm", false))
-                        return CallToolResult.Error("confirm=true is required when emptying conduits in more than 100 cells");
+                    bool dryRun = ToolUtil.GetBool(args, "dryRun", false);
+                    if (!dryRun && !ToolUtil.GetBool(args, "confirm", false))
+                        return CallToolResult.Error("confirm=true is required to empty conduits; use dryRun=true to preview");
 
                     var layers = GetEmptyLayers(args["type"]?.ToString());
                     if (layers.Count == 0)
@@ -71,20 +73,22 @@ namespace OniMcp.Tools
                                 if (workable == null)
                                     continue;
 
-                                if (DebugHandler.InstantBuildMode)
-                                    workable.EmptyContents();
-                                else
+                                if (!dryRun)
+                                {
                                     workable.MarkForEmptying();
-                                ApplyPriority(go, args);
+                                    ApplyPriority(go, args);
+                                }
                                 marked++;
-                                results.Add(ObjectResult(go, DebugHandler.InstantBuildMode ? "instant_emptied" : "marked"));
+                                results.Add(ObjectResult(go, dryRun ? "would_mark" : "marked"));
                             }
                         }
                     }
 
                     return CallToolResult.Text(JsonConvert.SerializeObject(new Dictionary<string, object>
                     {
-                        ["marked"] = marked,
+                        ["dryRun"] = dryRun,
+                        ["wouldMark"] = marked,
+                        ["marked"] = dryRun ? 0 : marked,
                         ["worldId"] = worldId,
                         ["rect"] = rect,
                         ["type"] = string.IsNullOrWhiteSpace(args["type"]?.ToString()) ? "all" : args["type"].ToString(),
@@ -108,8 +112,10 @@ namespace OniMcp.Tools
                 Description = "兼容入口：请优先使用 orders_control domain=designation action=cut_conduits。按格子或矩形区域剪断管路/电线/运输轨道，实际下达拆除对应段的命令，需要 confirm=true",
                 Parameters = RectParams(new Dictionary<string, McpToolParameter>
                 {
+                    ["id"] = new McpToolParameter { Type = "integer", Description = "Exact utility object ID, takes precedence over area.", Required = false },
                     ["x"] = new McpToolParameter { Type = "integer", Description = "目标格子 X；不提供矩形时按单格处理", Required = false },
                     ["y"] = new McpToolParameter { Type = "integer", Description = "目标格子 Y；不提供矩形时按单格处理", Required = false },
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Preview only; no orders or content changes.", Required = false },
                     ["type"] = new McpToolParameter
                     {
                         Type = "string",
@@ -119,12 +125,26 @@ namespace OniMcp.Tools
                     },
                     ["priority"] = new McpToolParameter { Type = "integer", Description = "拆除差事优先级 1-9，默认 5", Required = false },
                     ["topPriority"] = new McpToolParameter { Type = "boolean", Description = "是否设为红色最高优先级，默认 false", Required = false },
-                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "危险操作确认，必须为 true", Required = true }
+                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "Commit confirmation; not required for dryRun.", Required = false }
                 }),
                 Handler = args =>
                 {
-                    if (!ToolUtil.GetBool(args, "confirm", false))
+                    bool dryRun = ToolUtil.GetBool(args, "dryRun", false);
+                    if (!dryRun && !ToolUtil.GetBool(args, "confirm", false))
                         return CallToolResult.Error("confirm=true is required for cutting conduits");
+                    GameObject exact = null;
+                    if (ToolUtil.GetInt(args, "id") is int targetId)
+                    {
+                        exact = FindObjectByInstanceId(targetId);
+                        if (exact == null) return CallToolResult.Error("Target id not found");
+                        int targetCell = Grid.PosToCell(exact);
+                        if (!Grid.IsValidCell(targetCell) || !ToolUtil.GameObjectMatchesWorld(exact, ToolUtil.ResolveWorldId(args)))
+                            return CallToolResult.Error("Target is outside the selected world");
+                        args = (Newtonsoft.Json.Linq.JObject)args.DeepClone();
+                        args.Remove("areaId");
+                        args["x1"] = args["x2"] = Grid.CellColumn(targetCell);
+                        args["y1"] = args["y2"] = Grid.CellRow(targetCell);
+                    }
                     if (!HasRectInput(args) && (args["x"] == null || args["y"] == null))
                         return CallToolResult.Error("areaId, x/y or x1/y1/x2/y2 are required");
 
@@ -152,7 +172,7 @@ namespace OniMcp.Tools
 
                             foreach (var go in FindCuttableObjects(cell, layers))
                             {
-                                if (go == null || seen.Contains(go))
+                                if (go == null || seen.Contains(go) || (exact != null && go != exact))
                                     continue;
                                 seen.Add(go);
 
@@ -160,7 +180,7 @@ namespace OniMcp.Tools
                                 if (QueueDeconstruct(go, args, out error))
                                 {
                                     queued++;
-                                    results.Add(CutResult(go, cell, "queued", null));
+                                    results.Add(CutResult(go, cell, dryRun ? "would_queue_deconstruction" : "queued_deconstruction", null));
                                 }
                                 else
                                 {
@@ -173,7 +193,10 @@ namespace OniMcp.Tools
 
                     return CallToolResult.Text(JsonConvert.SerializeObject(new Dictionary<string, object>
                     {
-                        ["queued"] = queued,
+                        ["dryRun"] = dryRun,
+                        ["effect"] = "deconstruction_order",
+                        ["wouldQueue"] = queued,
+                        ["queued"] = dryRun ? 0 : queued,
                         ["skipped"] = skipped,
                         ["worldId"] = worldId,
                         ["rect"] = rect,
@@ -194,9 +217,9 @@ namespace OniMcp.Tools
                 layers.AddRange(new[] { ObjectLayer.LiquidConduit, ObjectLayer.LiquidConduitTile, ObjectLayer.ReplacementLiquidConduit });
             if (type == "auto" || type == "all" || type == "solid")
                 layers.AddRange(new[] { ObjectLayer.SolidConduit, ObjectLayer.SolidConduitTile, ObjectLayer.ReplacementSolidConduit });
-            if (type == "auto" || type == "all" || type == "wire")
+            if (type == "all" || type == "wire")
                 layers.AddRange(new[] { ObjectLayer.Wire, ObjectLayer.WireTile, ObjectLayer.ReplacementWire });
-            if (type == "auto" || type == "all" || type == "logic")
+            if (type == "all" || type == "logic")
                 layers.AddRange(new[] { ObjectLayer.LogicWire, ObjectLayer.LogicWireTile, ObjectLayer.ReplacementLogicWire });
             if (type == "all" || type == "travel_tube")
                 layers.AddRange(new[] { ObjectLayer.TravelTubeTile, ObjectLayer.ReplacementTravelTube, ObjectLayer.Building });
