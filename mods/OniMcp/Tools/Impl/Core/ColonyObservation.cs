@@ -12,13 +12,19 @@ namespace OniMcp.Tools
         internal int WorldId;
         internal int? TargetId;
         internal bool Actionable = true;
+        internal Dictionary<string, object> Details;
         internal string Signature => Severity + ":" + Actionable + ":" + Revision;
-        internal Dictionary<string, object> ToDictionary() => new Dictionary<string, object>
+        internal Dictionary<string, object> ToDictionary()
         {
+            var result = new Dictionary<string, object>
+            {
             ["id"] = Id, ["code"] = Code, ["severity"] = Severity,
             ["worldId"] = WorldId, ["targetId"] = TargetId,
             ["actionable"] = Actionable, ["message"] = Message
-        };
+            };
+            if (Details != null) result["details"] = Details;
+            return result;
+        }
     }
 
     internal static class ColonyObservation
@@ -73,8 +79,19 @@ namespace OniMcp.Tools
                     add("research_unpowered", "warning", "Research station has no power; circuit " + station.CircuitId + ".", true, station.Id, station.WorldId);
                 if (station.MissingMaterial)
                     add("research_material_missing", "warning", "Research station storage is empty; delivery item " + station.DeliveryItem + ". Fetchability unverified.", true, station.Id, station.WorldId);
-                if (station.Operational == false && station.Powered != false)
+                if (station.Operational == false && station.Powered != false && !station.PowerNetworkPending)
                     add("research_inoperable", "warning", "Research station inactive requirements: " + string.Join(",", station.FailedFlags) + ".", true, station.Id, station.WorldId);
+            }
+            foreach (var supply in sample.BuildingSupplies)
+            {
+                // Keep the established research event key without reporting the same empty station twice.
+                if (sample.ResearchStations.Any(station => station.Id == supply.Id && station.Required && station.MissingMaterial))
+                {
+                    var existing = result.First(item => item.Code == "research_material_missing" && item.TargetId == supply.Id);
+                    existing.Details = supply.ToFinding().Details;
+                    continue;
+                }
+                result.Add(supply.ToFinding());
             }
             foreach (string alert in sample.Alerts.OrderBy(item => item, StringComparer.Ordinal))
                 add("hud", alert.StartsWith("DuplicantThreatening:", StringComparison.Ordinal) ? "critical" : "warning",
@@ -102,6 +119,7 @@ namespace OniMcp.Tools
                 ["coverage"] = new Dictionary<string, object>
                 {
                     ["available"] = sample.Available, ["vitals"] = "all_live_dupes",
+                    ["buildingSupply"] = "visible_native_shortage_statuses_in_selected_world",
                     ["foodAndWork"] = sample.WorldId < 0 ? "all_worlds_aggregate" : "selected_world", ["foodMaxAgeSeconds"] = 2, ["infrastructureMaxAgeSeconds"] = 2,
                     ["notChecked"] = new[] { "local_atmosphere", "navigation", "resource_fetchability", "full_utility_networks" }
                 },

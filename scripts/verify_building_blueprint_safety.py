@@ -101,7 +101,7 @@ def verify_building_blueprint_safety(
             "else",
             "def.TryPlace(",
             'return ErrorResult(prefabId, x, y, "Placement failed"',
-            "return new Dictionary<string, object>",
+            "return PowerConnectionReceipt(new Dictionary<string, object>",
             '["blueprintPlaced"] = !completedImmediately,',
             '["buildingCompleted"] = completedImmediately,',
         ),

@@ -48,39 +48,8 @@ namespace OniMcp.Tools
 
         private static bool TryGetUtilityConnections(int cell, ObjectLayer[] layers, out UtilityConnections connections)
         {
-            connections = (UtilityConnections)0;
-            foreach (var layer in layers)
-            {
-                var go = Grid.Objects[cell, (int)layer];
-                if (go == null)
-                    continue;
-
-                var provider = UtilityNetworkProvider(go);
-                if (provider == null)
-                    continue;
-
-                var manager = provider.GetNetworkManager();
-                if (manager == null)
-                    continue;
-
-                connections = manager.GetConnections(cell, is_physical_building: false);
-                return true;
-            }
-
-            return false;
-        }
-
-        private static IHaveUtilityNetworkMgr UtilityNetworkProvider(GameObject go)
-        {
-            var provider = go.GetComponent<IHaveUtilityNetworkMgr>();
-            if (provider != null)
-                return provider;
-
-            var building = go.GetComponent<Building>();
-            if (building != null && building.Def != null && building.Def.BuildingComplete != null)
-                return building.Def.BuildingComplete.GetComponent<IHaveUtilityNetworkMgr>();
-
-            return null;
+            connections = UtilityConnectionRead.Read(cell, layers);
+            return true;
         }
 
         private static bool PowerCellsShareCircuit(ushort circuitId, int neighbor)

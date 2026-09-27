@@ -9,6 +9,7 @@ namespace OniMcp.Tools
     {
         private static readonly FieldInfo FetchListField = typeof(ManualDeliveryKG).GetField("fetchList", BindingFlags.Instance | BindingFlags.NonPublic);
         private static readonly FieldInfo ChoreField = typeof(ResearchCenter).GetField("chore", BindingFlags.Instance | BindingFlags.NonPublic);
+        private static readonly FieldInfo CircuitDirtyField = typeof(CircuitManager).GetField("dirty", BindingFlags.Instance | BindingFlags.NonPublic);
 
         internal static List<ContinueResearchStation> Read(int worldId)
         {
@@ -30,14 +31,16 @@ namespace OniMcp.Tools
                 var consumer = building.GetComponent<EnergyConsumer>();
                 var storage = building.GetComponent<Storage>();
                 var delivery = building.GetComponent<ManualDeliveryKG>();
+                bool powerPending = consumer != null && PowerNetworkPending(consumer);
                 var item = new ContinueResearchStation
                 {
                     Id = building.GetComponent<KPrefabID>()?.InstanceID ?? building.GetInstanceID(),
                     WorldId = building.GetMyWorldId(), PrefabId = building.Def.PrefabID, ResearchType = type,
                     Required = required > earned, RemainingPoints = Math.Max(0, required - earned),
-                    Operational = operational?.IsOperational, Powered = consumer?.IsPowered,
+                    Operational = operational?.IsOperational, Powered = powerPending ? (bool?)null : consumer?.IsPowered,
+                    PowerNetworkPending = powerPending,
                     CircuitId = consumer == null ? (int?)null : consumer.CircuitID == ushort.MaxValue ? -1 : consumer.CircuitID,
-                    HasPowerSource = consumer == null ? (bool?)null : sourceCircuits.Contains(consumer.CircuitID),
+                    HasPowerSource = consumer == null || powerPending ? (bool?)null : sourceCircuits.Contains(consumer.CircuitID),
                     StoredKg = Math.Round(storage?.MassStored() ?? 0f, 2),
                     MissingMaterial = storage != null && storage.MassStored() <= 0,
                     FailedFlags = operational?.Flags.Where(pair => !pair.Value).Select(pair => pair.Key.Name).OrderBy(name => name).ToArray() ?? new string[0],
@@ -50,6 +53,15 @@ namespace OniMcp.Tools
                 result.Add(item);
             }
             return result;
+        }
+
+        private static bool PowerNetworkPending(EnergyConsumer consumer)
+        {
+            var manager = Game.Instance?.circuitManager;
+            if (manager == null) return true;
+            return (Game.Instance.electricalConduitSystem?.IsDirty ?? true)
+                || (CircuitDirtyField?.GetValue(manager) is bool dirty && dirty)
+                || (Grid.IsValidCell(consumer.PowerCell) && manager.GetCircuitID(consumer.PowerCell) != consumer.CircuitID);
         }
     }
 }

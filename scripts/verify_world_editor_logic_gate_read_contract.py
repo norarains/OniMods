@@ -24,7 +24,7 @@ def main() -> None:
     details = source("mods/OniMcp/Tools/WorldEditor/WorldEditorConnectionDetails.cs")
     next_reads = source("mods/OniMcp/Tools/WorldEditor/WorldEditorCellNextReads.cs")
     port_details = source("mods/OniMcp/Tools/WorldEditor/WorldEditorPortDetails.cs")
-    decision_hints = source("mods/OniMcp/Tools/WorldEditor/WorldEditorCellDecisionHints.cs")
+    assert "AppendCellDecisionHints" not in cell
     spatial_summary = source("mods/OniMcp/Tools/WorldEditor/WorldEditorVisualSpatialSummary.cs")
     anchors = source("mods/OniMcp/Tools/WorldEditor/WorldEditorOverlayAnchors.cs")
 
@@ -47,7 +47,6 @@ def main() -> None:
     # visible in the cell identity but silently drops its ports/hints/footprint.
     for name, text in (
         ("port details", port_details),
-        ("decision hints", decision_hints),
         ("spatial summary", spatial_summary),
     ):
         assert "CellBuildingObject(cell)" in text, name

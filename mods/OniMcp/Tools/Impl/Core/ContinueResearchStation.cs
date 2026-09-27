@@ -12,6 +12,7 @@ namespace OniMcp.Tools
         internal double RemainingPoints { get; set; }
         internal bool? Operational { get; set; }
         internal bool? Powered { get; set; }
+        internal bool PowerNetworkPending { get; set; }
         internal int? CircuitId { get; set; }
         internal bool? HasPowerSource { get; set; }
         internal double StoredKg { get; set; }
@@ -28,6 +29,7 @@ namespace OniMcp.Tools
             ["id"] = Id, ["worldId"] = WorldId, ["prefabId"] = PrefabId,
             ["researchType"] = ResearchType, ["required"] = Required, ["remainingPoints"] = RemainingPoints,
             ["operational"] = Operational, ["powered"] = Powered, ["circuitId"] = CircuitId,
+            ["powerNetworkPending"] = PowerNetworkPending,
             ["hasPowerSource"] = HasPowerSource, ["storedKg"] = StoredKg, ["failedFlags"] = FailedFlags,
             ["deliveryItem"] = DeliveryItem, ["deliveryPaused"] = DeliveryPaused,
             ["deliveryMeetsRequirements"] = DeliveryMeetsRequirements, ["fetchPending"] = FetchPending,

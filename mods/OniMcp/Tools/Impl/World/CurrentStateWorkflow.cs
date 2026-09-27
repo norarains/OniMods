@@ -20,7 +20,7 @@ namespace OniMcp.Tools
                 WorkflowStep("solid_rails", "/active/infrastructure/solid_conveyor.md",
                     "Use rail links plus loader input and receptacle output anchors before conveyor edits."),
                 WorkflowStep("single_cell_crosscheck", "/active/map/cell_X_Y.md",
-                    "Cell snapshot joins pivot/footprint, ports, line links, bridge text, power role, items, and Decision Hints."),
+                    "Cell snapshot joins pivot/footprint, ports, line links, bridge text, power role, items, and native cell facts."),
                 new JObject
                 {
                     ["step"] = "line_repair_rules",
@@ -218,7 +218,7 @@ namespace OniMcp.Tools
                     ["when"] = "generated call reports blocked/obstructed/missing support",
                     ["tool"] = "world_editor",
                     ["arguments"] = new JObject { ["command"] = "read", ["path"] = "/active/map/cell_X_Y.md" },
-                    ["why"] = "Cell detail objects, pickups, ports, temperature suitability, Decision Hints."
+                    ["why"] = "Cell detail objects, pickups, ports, temperature suitability, native cell facts."
                 },
                 new JObject
                 {

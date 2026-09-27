@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace OniMcp.Tools
 {
-    public static class InfrastructurePortReadTools
+    public static partial class InfrastructurePortReadTools
     {
         private static readonly ObjectLayer[] PowerLayers = { ObjectLayer.Wire, ObjectLayer.WireTile, ObjectLayer.ReplacementWire };
         private static readonly ObjectLayer[] LiquidLayers = { ObjectLayer.LiquidConduit, ObjectLayer.LiquidConduitTile, ObjectLayer.ReplacementLiquidConduit };
@@ -26,6 +26,7 @@ namespace OniMcp.Tools
             string action = (args["action"]?.ToString() ?? string.Empty).Trim().ToLowerInvariant();
             string kind = NormalizeKind(args["kind"]?.ToString() ?? args["type"]?.ToString());
             string query = args["query"]?.ToString();
+            int? id = ToolUtil.GetInt(args, "id");
             bool includeBlueprints = ToolUtil.GetBool(args, "includeBlueprints", true);
             bool hasRect = HasRectInput(args);
             bool hasPointRadius = IsNearbyAction(action) && HasPointInput(args);
@@ -38,7 +39,7 @@ namespace OniMcp.Tools
 
             foreach (var building in Components.BuildingCompletes.Items)
             {
-                AddBuildingPorts(results, seen, building?.gameObject, false, kind, query, rect, worldId, limit);
+                AddBuildingPorts(results, seen, building?.gameObject, false, kind, query, rect, worldId, limit, id);
                 if (results.Count >= limit)
                     break;
             }
@@ -47,7 +48,7 @@ namespace OniMcp.Tools
             {
                 foreach (var constructable in FindConstructables(worldId))
                 {
-                    AddBuildingPorts(results, seen, constructable?.gameObject, true, kind, query, rect, worldId, limit);
+                    AddBuildingPorts(results, seen, constructable?.gameObject, true, kind, query, rect, worldId, limit, id);
                     if (results.Count >= limit)
                         break;
                 }
@@ -77,13 +78,14 @@ namespace OniMcp.Tools
             string query,
             Dictionary<string, int> rect,
             int worldId,
-            int limit)
+            int limit, int? id)
         {
             if (go == null || results.Count >= limit)
                 return;
             if (!ToolUtil.GameObjectMatchesWorld(go, worldId))
                 return;
 
+            if (id.HasValue && go.GetComponent<KPrefabID>()?.InstanceID != id.Value) return;
             int anchorCell = Grid.PosToCell(go);
             if (rect != null && !CellInRect(anchorCell, rect, worldId))
                 return;
@@ -107,6 +109,7 @@ namespace OniMcp.Tools
             {
                 ["name"] = ToolUtil.CleanName(go.GetProperName()),
                 ["prefabId"] = def.PrefabID,
+                ["id"] = go.GetComponent<KPrefabID>()?.InstanceID,
                 ["blueprint"] = blueprint,
                 ["anchor"] = CellObject(anchorCell),
                 ["判定点"] = CellObject(anchorCell),
@@ -124,7 +127,7 @@ namespace OniMcp.Tools
             }
             if (Wants(kind, "liquid") || Wants(kind, "gas"))
             {
-                foreach (var port in ConduitPorts(go, building, kind))
+                foreach (var port in ConduitPorts(go, building, def, kind))
                     yield return port;
             }
             if (Wants(kind, "logic"))
@@ -134,7 +137,7 @@ namespace OniMcp.Tools
             }
             if (Wants(kind, "rail"))
             {
-                foreach (var port in RailPorts(go, building))
+                foreach (var port in RailPorts(go, building, def))
                     yield return port;
             }
         }
@@ -154,28 +157,6 @@ namespace OniMcp.Tools
             var generator = go.GetComponent<Generator>();
             if (generator != null && !def.RequiresPowerOutput)
                 yield return Port("power", "generator", "发电端", building.GetPowerOutputCell(), PowerLayers, PowerStatus(go, "generator", null, generator));
-        }
-
-        private static IEnumerable<Dictionary<string, object>> ConduitPorts(GameObject go, Building building, string kind)
-        {
-            if (building == null)
-                yield break;
-            foreach (var consumer in go.GetComponents<ConduitConsumer>())
-            {
-                string layer = consumer.ConduitType == ConduitType.Gas ? "gas" : "liquid";
-                if (!Wants(kind, layer))
-                    continue;
-                yield return Port(layer, "input", layer == "gas" ? "气体输入" : "液体输入", building.GetUtilityInputCell(), LayersFor(layer),
-                    new Dictionary<string, object> { ["connected"] = consumer.IsConnected });
-            }
-            foreach (var dispenser in go.GetComponents<ConduitDispenser>())
-            {
-                string layer = dispenser.ConduitType == ConduitType.Gas ? "gas" : "liquid";
-                if (!Wants(kind, layer))
-                    continue;
-                yield return Port(layer, "output", layer == "gas" ? "气体输出" : "液体输出", building.GetUtilityOutputCell(), LayersFor(layer),
-                    new Dictionary<string, object> { ["connected"] = dispenser.IsConnected });
-            }
         }
 
         private static IEnumerable<Dictionary<string, object>> LogicPorts(GameObject go)
@@ -222,22 +203,6 @@ namespace OniMcp.Tools
             }
         }
 
-        private static IEnumerable<Dictionary<string, object>> RailPorts(GameObject go, Building building)
-        {
-            if (building == null)
-                yield break;
-            foreach (var consumer in go.GetComponents<SolidConduitConsumer>())
-            {
-                yield return Port("rail", "input", "轨道输入", building.GetUtilityInputCell(), RailLayers,
-                    new Dictionary<string, object> { ["connected"] = consumer.IsConnected });
-            }
-            foreach (var dispenser in go.GetComponents<SolidConduitDispenser>())
-            {
-                yield return Port("rail", "output", "轨道输出", building.GetUtilityOutputCell(), RailLayers,
-                    new Dictionary<string, object> { ["connected"] = dispenser.IsConnected });
-            }
-        }
-
         private static Dictionary<string, object> Port(string layer, string role, string label, int cell, ObjectLayer[] layers, Dictionary<string, object> extra)
         {
             var result = new Dictionary<string, object>
@@ -247,6 +212,7 @@ namespace OniMcp.Tools
                 ["label"] = label,
                 ["cell"] = CellObject(cell),
                 ["hasLine"] = HasLayer(cell, layers),
+                ["hasBuiltLine"] = UtilityConnectionRead.IsBuilt(cell, layers),
                 ["line"] = LineObject(cell, layers)
             };
             foreach (var item in extra)
@@ -346,8 +312,10 @@ namespace OniMcp.Tools
             List<Dictionary<string, object>> to)
         {
             int neighbor = Grid.XYToCell(Grid.CellColumn(cell) + dx, Grid.CellRow(cell) + dy);
-            if (!HasLayer(neighbor, layers))
-                return;
+            var bits = UtilityConnectionRead.Read(cell, layers);
+            var flag = dir == "U" ? UtilityConnections.Up : dir == "D" ? UtilityConnections.Down
+                : dir == "L" ? UtilityConnections.Left : UtilityConnections.Right;
+            if ((bits & flag) == 0) return;
             dirs.Add(dir);
             to.Add(CellObject(neighbor));
         }
@@ -401,7 +369,7 @@ namespace OniMcp.Tools
         {
             var kpid = go.GetComponent<KPrefabID>();
             string id = kpid?.PrefabTag.Name ?? go.name;
-            return string.IsNullOrWhiteSpace(id) ? null : Assets.GetBuildingDef(id);
+            return string.IsNullOrWhiteSpace(id) ? null : Assets.GetBuildingDef(PrefabIdentity.BaseId(id));
         }
 
         private static bool HasRectInput(JObject args)

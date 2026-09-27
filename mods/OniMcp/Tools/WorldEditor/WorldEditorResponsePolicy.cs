@@ -13,7 +13,8 @@ namespace OniMcp.Tools
         private static readonly HashSet<string> VerboseFields = new HashSet<string>
         {
             "planResolution", "anchorResolution", "actionTemplate", "buildingCandidates",
-            "materialCandidates", "tokenHint", "guidance", "placementPoint", "dragGuidance", "coordinateContract"
+            "materialCandidates", "tokenHint", "guidance", "placementPoint", "dragGuidance", "coordinateContract",
+            "next", "suggestion", "recommendedFollowUp", "priorityAction", "priorityPlan"
         };
 
         internal static bool IncludeHelp(JObject args)
@@ -175,6 +176,41 @@ namespace OniMcp.Tools
                 property.Remove();
         }
 
+        private static void CompactSatisfiedMaterial(JObject output)
+        {
+            if (output["valid"]?.Type != JTokenType.Boolean || !output["valid"].Value<bool>()
+                || output["satisfied"]?.Type != JTokenType.Boolean || !output["satisfied"].Value<bool>()
+                || output["elements"] == null || HasWarningEvidence(output)) return;
+            // The chosen material and quantitative budget suffice for an already satisfied selection.
+            foreach (string key in new[] { "availableMaterials", "candidateMaterials", "fallbackMaterial" })
+                output.Remove(key);
+            if (output["selected"] is JObject selected) selected.Remove("categories");
+        }
+
+        private static void CompactAutoDig(JObject output)
+        {
+            if (!(output["autoDig"] is JObject dig) || HasWarningEvidence(dig)
+                || dig["failed"]?.Value<int>() != 0 || dig["skipped"]?.Value<int>() != 0) return;
+            dig.Remove("note");
+            foreach (string name in new[] { "wouldMark", "uprootWouldMark", "uprootTargets", "uprootMarked", "alreadyUprootMarked", "truncatedTargets" })
+                if (dig[name]?.Type == JTokenType.Null || dig[name]?.Type == JTokenType.Integer && dig[name].Value<int>() == 0)
+                    dig.Remove(name);
+            if (dig["targets"] is JArray targets && targets.Count > 0 && targets.All(target => target is JObject))
+            {
+                // Coordinates preserve exact side effects; publish a shared world only once.
+                var worlds = targets.Select(item => item["worldId"]).ToList();
+                if (worlds[0] != null && worlds.All(world => JToken.DeepEquals(world, worlds[0])))
+                {
+                    dig["worldId"] = worlds[0].DeepClone();
+                    foreach (JObject target in targets)
+                    {
+                        target.Remove("worldId");
+                        if (target["x"] != null && target["y"] != null) target.Remove("cell");
+                    }
+                }
+            }
+        }
+
         internal static JToken Normalize(JToken token, bool compact, int depth = 0)
         {
             if (token == null || depth > 40)
@@ -204,6 +240,8 @@ namespace OniMcp.Tools
                 if (compact)
                 {
                     CompactRepeatedDiagnostics(output);
+                    CompactSatisfiedMaterial(output);
+                    CompactAutoDig(output);
                     CompactSuccessfulGeometry(output);
                     CompactPlacementReceipt(output);
                 }

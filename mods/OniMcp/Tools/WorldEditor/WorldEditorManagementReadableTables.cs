@@ -191,8 +191,8 @@ namespace OniMcp.Tools
             var root = ParseManagementState(state);
             var sb = ManagementHeader("Research", path, "server_control domain=batch action=call_many calls=[{tool:colony_control,args:{domain:management,kind:research,action:status}}]");
             sb.AppendLine("## Current");
-            AppendScalar(sb, "active", root, "active", "current", "target", "researching");
-            AppendScalar(sb, "queue", root, "queue", "queued", "researchQueue");
+            sb.AppendLine("- active: " + (root?["active"]?.Type == JTokenType.Null ? "none" : root?["active"]?.ToString(Newtonsoft.Json.Formatting.None) ?? "unknown"));
+            sb.AppendLine("- queue: " + (root?["queue"]?.ToString(Newtonsoft.Json.Formatting.None) ?? "unknown"));
             sb.AppendLine("- available technologies: `server_control domain=batch action=call_many responseMode=full calls=[{tool:colony_control,args:{domain:management,kind:research,action:list,includeComplete:false,limit:10}}]`");
             sb.AppendLine();
             var rows = FindObjectArray(root, "research", "techs", "technologies", "items", "tree");

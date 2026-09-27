@@ -158,8 +158,8 @@ Ask the tester to return:
 Optimize toward a tester agent surviving 100 cycles with low manual steering:
 
 - Prefer semantic search and reusable area handles over raw coordinates.
-- Every action dryRun should explain reachability, material availability, risk, and next action.
-- Every write/action path that creates dupe work must include priority handling. Set priority directly when supported, or return compact `priorityAction`/`nextActions` using existing order/priority endpoints. Critical survival work such as access ladders, food, oxygen, toilets, reachable material digs, prerequisite sweeps, and rescue paths should default high priority, usually 7, unless user specified another value.
+- Every action dryRun should expose reachability, material availability, risks, and intended side effects. The agent decides the next action.
+- Every write/action path that creates dupe work must include priority handling. Set priority directly when supported and return the actual priority. Report unsupported priority handling as a limitation; do not generate follow-up orders. Critical survival work such as access ladders, food, oxygen, toilets, reachable material digs, prerequisite sweeps, and rescue paths should default high priority, usually 7, unless user specified another value.
 - Tool schemas should expose all supported parameters at the aggregate entrypoint.
 - One-call search/action paths should return compact metadata that lets the next agent decide without reading large maps.
-- Printing pod rewards must use existing `building_control domain=side_surface surface=facility kind=printing_pod`, never a new public tool. Use `action=list_rewards`, then `action=claim rewardIndex=N dryRun=true`, then `confirm=true` only when explicitly consuming the reward. After claiming survival-critical material/food/oxygen, immediately plan or return sweep/storage/build priority follow-up so the reward actually helps the colony.
+- Printing pod rewards must use existing `building_control domain=side_surface surface=facility kind=printing_pod`, never a new public tool. Use `action=list_rewards`, then `action=claim rewardIndex=N dryRun=true`, then `confirm=true` only when explicitly consuming the reward. Return the claimed entity and quantity as facts. The agent evaluates storage, access and priority follow-up; a critter reward is not a sweep target.

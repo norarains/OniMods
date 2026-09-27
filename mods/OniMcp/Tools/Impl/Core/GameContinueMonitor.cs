@@ -17,6 +17,7 @@ namespace OniMcp.Tools
         private int beds, toilets, oxygenProducers;
         private string infrastructureResearchId;
         private List<ContinueResearchStation> researchStations = new List<ContinueResearchStation>();
+        private readonly List<BuildingSupplyFinding> buildingSupplies = new List<BuildingSupplyFinding>();
 
         internal GameContinueMonitor(int worldId)
         {
@@ -125,21 +126,27 @@ namespace OniMcp.Tools
             if (refresh || wallSeconds >= nextInfrastructureRead)
             {
                 beds = toilets = oxygenProducers = 0;
+                buildingSupplies.Clear();
                 researchStations = ResearchStationObservation.Read(worldId);
                 infrastructureResearchId = sample.ResearchId;
                 foreach (var building in Components.BuildingCompletes.Items)
                 {
                     if (building == null || (worldId >= 0 && building.GetMyWorldId() != worldId)) continue;
+                    BuildingSupplyObservation.Read(building.gameObject, false, buildingSupplies);
                     string id = building.Def?.PrefabID ?? "";
                     if (id == "Bed" || id == "LuxuryBed") beds++;
                     if (id == "Outhouse" || id == "FlushToilet") toilets++;
                     if (id == "OxygenDiffuser" || id == "MineralDeoxidizer" || id == "Electrolyzer") oxygenProducers++;
                 }
+                foreach (var building in builds)
+                    if (building != null && (worldId < 0 || building.GetMyWorldId() == worldId))
+                        BuildingSupplyObservation.Read(building.gameObject, true, buildingSupplies);
                 nextInfrastructureRead = wallSeconds + 2;
             }
             sample.InfrastructureKnown = true;
             sample.Beds = beds; sample.Toilets = toilets; sample.OxygenProducers = oxygenProducers;
             sample.ResearchStations.AddRange(researchStations);
+            sample.BuildingSupplies.AddRange(buildingSupplies);
             sample.AdvancedResearchBuildingId = researchStations.FirstOrDefault(station => station.ResearchType == "advanced" && station.Required)?.Id;
             var local = sample.Dupes.Where(dupe => worldId < 0 || dupe.WorldId == worldId).ToList();
             sample.AdvancedResearchBlocked = sample.AdvancedResearchBuildingId.HasValue && !local.Any(dupe => dupe.AdvancedResearchSkill);

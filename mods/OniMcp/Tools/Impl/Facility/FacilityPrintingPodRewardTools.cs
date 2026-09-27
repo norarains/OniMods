@@ -10,8 +10,6 @@ namespace OniMcp.Tools
 {
     public static partial class FacilitySideScreenTools
     {
-        private const int PrintingPodRewardPriority = 7;
-
         private static GameObject FindTelepadTarget(JObject args)
         {
             var explicitTarget = FindBuildingTarget(args, target => target.GetComponent<Telepad>() != null);
@@ -54,7 +52,6 @@ namespace OniMcp.Tools
                 return CallToolResult.Error("No current claimable care-package reward matched. If the printing pod offers duplicants, use action=open_immigrants for manual UI selection.");
 
             var reward = CarePackageInfoDictionary(selected, rewards.IndexOf(selected));
-            var priorityPlan = PrintingRewardPriorityPlan(telepad, reward);
             if (ToolUtil.GetBool(args, "dryRun", false))
             {
                 return JsonResult(new Dictionary<string, object>
@@ -62,7 +59,6 @@ namespace OniMcp.Tools
                     ["dryRun"] = true,
                     ["before"] = before,
                     ["selectedReward"] = reward,
-                    ["priorityPlan"] = priorityPlan,
                     ["printingRewards"] = PrintingRewardStatus(telepad),
                     ["initializedScreenForClaim"] = initializedScreenForClaim
                 });
@@ -81,7 +77,6 @@ namespace OniMcp.Tools
                 ["before"] = before,
                 ["after"] = TelepadInfo(telepad, includeVictory: false),
                 ["selectedReward"] = reward,
-                ["priorityAction"] = priorityPlan["priorityAction"],
                 ["printingRewards"] = PrintingRewardStatus(telepad),
                 ["initializedScreenForClaim"] = initializedScreenForClaim,
                 ["screenClosed"] = screenClosed
@@ -180,6 +175,7 @@ namespace OniMcp.Tools
                 ["id"] = info?.id,
                 ["prefabId"] = info?.id,
                 ["name"] = prefab == null ? info?.id : ToolUtil.CleanName(prefab.GetProperName()),
+                ["entityKind"] = prefab?.GetComponent<CreatureBrain>() != null ? "critter" : "item",
                 ["quantity"] = info == null ? (object)null : Math.Round(ToolUtil.SafeFloat(info.quantity), 3),
                 ["facadeId"] = info?.facadeID,
                 ["requirementMet"] = info?.requirement == null ? (object)null : SafeRequirement(info.requirement),
@@ -211,28 +207,5 @@ namespace OniMcp.Tools
             }
         }
 
-        private static Dictionary<string, object> PrintingRewardPriorityPlan(Telepad telepad, Dictionary<string, object> reward)
-        {
-            int cell = telepad == null ? -1 : Grid.PosToCell(telepad);
-            int x = Grid.IsValidCell(cell) ? Grid.CellColumn(cell) : 0;
-            int y = Grid.IsValidCell(cell) ? Grid.CellRow(cell) : 0;
-            int worldId = telepad == null ? (ClusterManager.Instance?.activeWorldId ?? 0) : telepad.gameObject.GetMyWorldId();
-            return new Dictionary<string, object>
-            {
-                ["priority"] = PrintingPodRewardPriority,
-                ["reward"] = reward,
-                ["priorityAction"] = new Dictionary<string, object>
-                {
-                    ["tool"] = "world_editor",
-                    ["arguments"] = new Dictionary<string, object>
-                    {
-                        ["command"] = "edit", ["path"] = "/active/ops/orders.md",
-                        ["content"] = "<<<<<<< SEARCH\n=======\nsweep @(" + x + "," + y + "):" + PrintingPodRewardPriority + "\n>>>>>>> REPLACE",
-                        ["dryRun"] = true, ["worldId"] = worldId,
-                        ["task"] = "Preview sweeping the delivered care package"
-                    }
-                }
-            };
-        }
     }
 }

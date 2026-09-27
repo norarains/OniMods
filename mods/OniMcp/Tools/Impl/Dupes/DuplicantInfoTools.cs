@@ -216,9 +216,6 @@ namespace OniMcp.Tools
                             ["warning"] = checks.Count(item => item["risk"].ToString() == "warning"),
                             ["ok"] = checks.Count(item => item["risk"].ToString() == "ok")
                         },
-                        ["recommendedFollowUp"] = flagged.Count == 0
-                            ? "No suspected trapped duplicants; no additional map read needed."
-                            : "Inspect only newly flagged hazards with world_editor command=zoom views=default syncView=false before rescue actions. Idle alone does not require a terrain scan."
                     }, McpJsonUtil.Settings));
                 }
             };

@@ -76,6 +76,7 @@ namespace OniMcp.Tools
         internal int? AdvancedResearchBuildingId;
         internal string ResearchId;
         internal readonly List<ContinueResearchStation> ResearchStations = new List<ContinueResearchStation>();
+        internal readonly List<BuildingSupplyFinding> BuildingSupplies = new List<BuildingSupplyFinding>();
         internal readonly List<ContinueDupe> Dupes = new List<ContinueDupe>();
         internal readonly HashSet<int> PendingIds = new HashSet<int>();
         internal readonly HashSet<string> Alerts = new HashSet<string>();

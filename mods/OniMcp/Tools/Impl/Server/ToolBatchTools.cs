@@ -126,10 +126,6 @@ namespace OniMcp.Tools
                         ["failed"] = preflight.Count(item => item.ContainsKey("isError") && (bool)item["isError"]),
                         ["warnings"] = preflightWarnings.Values.Distinct().ToList(),
                         ["requireAllValid"] = requireAllValid,
-                        ["next"] = preflightValid
-                            ? "Dry run passed. Re-run with dryRun=false, keeping confirm on dangerous child calls."
-                            : "Fix failed child calls first; inspect results[*].text and missingRequired before executing.",
-                        ["tokenHint"] = "Use valid/failed/warnings first; request responseMode=errors or includeArguments=true only when debugging.",
                         ["results"] = preflight
                     };
                         return new CallToolResult
@@ -186,10 +182,6 @@ namespace OniMcp.Tools
                     ["warnings"] = preflightWarnings.Values.Distinct().ToList(),
                     ["requireAllValid"] = requireAllValid,
                     ["responseMode"] = responseMode,
-                    ["next"] = failed == 0
-                        ? "Batch completed. Verify changed game state with a focused snapshot/search instead of repeating the same batch."
-                        : "Inspect error results; fix inputs or run a dryRun with responseMode=errors before retrying.",
-                    ["tokenHint"] = "Use resultCount/failed/executed first; prefer responseMode=summary or errors for autonomous loops.",
                     ["results"] = results
                 };
 

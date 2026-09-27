@@ -355,7 +355,7 @@ int cell = Grid.XYToCell(x, y);
             {
                 RegisterSupportBlueprint(prefabId, x, y, plannedSupportCells);
                 var powerAutoConnect = TryAutoConnectPower(def, x, y, orientation, args, plannedSupportCells, autoDigContext);
-                return new Dictionary<string, object>
+                return PowerConnectionReceipt(new Dictionary<string, object>
                 {
                     ["planned"] = false,
                     ["blueprintPlaced"] = false,
@@ -377,7 +377,7 @@ int cell = Grid.XYToCell(x, y);
                     ["facade"] = facadeResult.ResponseId,
                     ["powerAutoConnect"] = powerAutoConnect,
                     ["autoDig"] = autoDig
-                };
+                }, powerAutoConnect, false);
             }
 
             var executionExistingBuild = ExistingMatchingBuildAtPlacement(def, placement);
@@ -444,7 +444,7 @@ int cell = Grid.XYToCell(x, y);
                         ["mutationAttempted"] = true, ["blueprintPlaced"] = !completedImmediately,
                         ["buildingCompleted"] = completedImmediately, ["actualPlacement"] = actualPlacement, ["placementCheck"] = placementCheck });
             var placedPowerAutoConnect = TryAutoConnectPower(def, x, y, orientation, args, plannedSupportCells, autoDigContext);
-            return new Dictionary<string, object>
+            return PowerConnectionReceipt(new Dictionary<string, object>
             {
                 ["planned"] = true,
                 ["blueprintPlaced"] = !completedImmediately,
@@ -471,7 +471,7 @@ int cell = Grid.XYToCell(x, y);
                 ["autoDig"] = autoDig,
                 ["instantCompletion"] = instantCompletion,
                 ["id"] = go.GetComponent<KPrefabID>()?.InstanceID ?? -1
-            };
+            }, placedPowerAutoConnect, true);
         }
     }
 }

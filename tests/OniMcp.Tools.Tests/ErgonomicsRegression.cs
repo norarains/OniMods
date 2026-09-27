@@ -52,6 +52,20 @@ internal static class ErgonomicsRegression
         Check(WorldEditorResponsePolicy.Format(CallToolResult.Error("plain error"), JObject.Parse("{command:'edit'}")).Content[0].Text == "plain error", "plain errors preserved");
         Check(WorldEditorResponsePolicy.Normalize(JObject.Parse("{result:'{bad json',error:'reason'}"), true)["result"].Type == JTokenType.String, "malformed JSON text preserved");
         Check(!WorldEditorResponsePolicy.IncludeHelp(new JObject()) && WorldEditorResponsePolicy.IncludeHelp(JObject.Parse("{includeHelp:true}")), "help is opt-in");
+        var material = JObject.Parse("{valid:true,satisfied:true,elements:['CopperOre'],requiredKg:100,selectedAvailableKg:200,shortageKg:0,availableMaterials:[{tag:'IronOre'}],candidateMaterials:[],next:'build more',suggestion:'use auto'}");
+        var compact = WorldEditorResponsePolicy.Normalize(material, true);
+        Check(compact["availableMaterials"] == null && compact["next"] == null && compact["suggestion"] == null
+            && (int)compact["requiredKg"] == 100 && (int)compact["selectedAvailableKg"] == 200, "satisfied material reports keep budgets without repeated choices or advice");
+        material["satisfied"] = false;
+        Check(WorldEditorResponsePolicy.Normalize(material, true)["availableMaterials"] != null, "unsatisfied material evidence stays available");
+        Check(JToken.DeepEquals(WorldEditorResponsePolicy.Normalize(material, false), material), "full mode retains material diagnostics");
+        var digging = JObject.Parse("{autoDig:{failed:0,skipped:0,marked:1,uprootMarked:0,kgTotal:100,targets:[{x:2,y:3,cell:3074,worldId:1,status:'marked'}],note:'repeated explanation'}}");
+        var dig = WorldEditorResponsePolicy.Normalize(digging, true)["autoDig"];
+        Check(dig["note"] == null && dig["uprootMarked"] == null && (int)dig["worldId"] == 1
+            && (int)dig["targets"][0]["x"] == 2 && (string)dig["targets"][0]["status"] == "marked"
+            && (int)dig["marked"] == 1 && (int)dig["kgTotal"] == 100, "compact digging retains locations, actions and mass");
+        digging["autoDig"]["failed"] = 1;
+        Check(JToken.DeepEquals(WorldEditorResponsePolicy.Normalize(digging, true), digging), "failed digging keeps complete evidence");
         Console.WriteLine("Nested error fixture: " + raw.Length + " -> " + result.Content[0].Text.Length + " characters");
     }
     private static void TestRepeatedDiagnostics()
@@ -197,6 +211,14 @@ internal static class ErgonomicsRegression
         var caps = ToolCatalogCapabilities.Read();
         Check(caps["batchOperations"].Values<string>().Contains("dupes_control") && !caps["publicTools"].Values<string>().Contains("dupes_control"), "manifest separates routing surfaces");
         Check(!(bool)caps["editMarks"], "unsupported edit marks are not advertised");
+        OniToolRegistry.Internal["building_control"] = new McpTool {
+            Name = "building_control", Mode = "execute", Risk = "dangerous",
+            Handler = args => { calls++; return CallToolResult.Text("{ok:true}"); }
+        };
+        result = ToolBatchTools.CallMany().Handler(JObject.Parse("{calls:[{tool:'building_control',args:{domain:'config',action:'list',id:2062,capability:'manual_delivery'}}]}"));
+        Check(!result.IsError && calls == 2, "read-only building configuration needs no mutation confirmation");
+        result = ToolBatchTools.CallMany().Handler(JObject.Parse("{calls:[{tool:'building_control',args:{domain:'config',action:'set',id:2062}}]}"));
+        Check(result.IsError && calls == 2, "configuration writes still require confirmation");
         OniToolRegistry.Internal.Clear();
     }
 }
@@ -216,8 +238,15 @@ namespace OniMcp.Tools
         private static JObject InheritWorldEditorSandboxPolicy(JObject parent, JObject child) => child;
     }
 }
-namespace UnityEngine { public sealed class GameObject { } }
-internal sealed class BuildingDef { internal int ObjectLayer { get; set; } internal int WidthInCells { get; set; } internal int HeightInCells { get; set; } }
+namespace UnityEngine
+{
+    public sealed class GameObject
+    {
+        internal readonly Dictionary<Type, object> Components = new Dictionary<Type, object>();
+        public T GetComponent<T>() where T : class => Components.Values.OfType<T>().FirstOrDefault();
+    }
+}
+internal sealed class BuildingDef { internal int ObjectLayer { get; set; } internal int WidthInCells { get; set; } internal int HeightInCells { get; set; } internal UnityEngine.GameObject BuildingComplete { get; set; } }
 internal static class Grid
 {
     internal const int WidthInCells = 1024, HeightInCells = 8;
@@ -225,5 +254,6 @@ internal static class Grid
     internal static int CellRow(int cell) => cell / WidthInCells;
     internal static int XYToCell(int x, int y) => y * WidthInCells + x;
     internal static readonly UnityEngine.GameObject[,] Objects = new UnityEngine.GameObject[WidthInCells * HeightInCells, 2];
+    internal static readonly int[] WorldIdx = new int[WidthInCells * HeightInCells];
     internal static bool IsValidCell(int cell) => cell >= 0 && cell < Objects.GetLength(0);
 }

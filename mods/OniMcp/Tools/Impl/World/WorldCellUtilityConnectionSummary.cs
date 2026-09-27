@@ -71,17 +71,17 @@ namespace OniMcp.Tools
             }
             else if (kind == "rail")
             {
-                if (go.GetComponents<SolidConduitConsumer>().Any())
+                if (building.Def.InputConduitType == ConduitType.Solid || go.GetComponents<SolidConduitConsumer>().Any())
                     endpoints["input"] = PortCell("⊗", building.GetUtilityInputCell());
-                if (go.GetComponents<SolidConduitDispenser>().Any())
+                if (building.Def.OutputConduitType == ConduitType.Solid || go.GetComponents<SolidConduitDispenser>().Any())
                     endpoints["output"] = PortCell("⊙", building.GetUtilityOutputCell());
             }
             else
             {
                 ConduitType type = kind == "gas" ? ConduitType.Gas : ConduitType.Liquid;
-                if (go.GetComponents<ConduitConsumer>().Any(item => item.ConduitType == type))
+                if (building.Def.InputConduitType == type || go.GetComponents<ConduitConsumer>().Any(item => item.ConduitType == type))
                     endpoints["input"] = PortCell("⊗", building.GetUtilityInputCell());
-                if (go.GetComponents<ConduitDispenser>().Any(item => item.ConduitType == type))
+                if (building.Def.OutputConduitType == type || go.GetComponents<ConduitDispenser>().Any(item => item.ConduitType == type))
                     endpoints["output"] = PortCell("⊙", building.GetUtilityOutputCell());
             }
 
@@ -162,23 +162,13 @@ namespace OniMcp.Tools
 
         private static List<KeyValuePair<string, int>> UtilityNeighborDirs(int cell, ObjectLayer[] layers, bool power)
         {
-            ushort circuit = power ? UtilityPowerCircuitId(cell) : ushort.MaxValue;
+            var bits = UtilityConnectionRead.Read(cell, layers);
             var result = new List<KeyValuePair<string, int>>();
-            AddUtilityDir(result, cell, "U", 0, 1, layers, power, circuit);
-            AddUtilityDir(result, cell, "D", 0, -1, layers, power, circuit);
-            AddUtilityDir(result, cell, "L", -1, 0, layers, power, circuit);
-            AddUtilityDir(result, cell, "R", 1, 0, layers, power, circuit);
+            if ((bits & UtilityConnections.Up) != 0) result.Add(new KeyValuePair<string, int>("U", NeighborCell(cell, 0, 1)));
+            if ((bits & UtilityConnections.Down) != 0) result.Add(new KeyValuePair<string, int>("D", NeighborCell(cell, 0, -1)));
+            if ((bits & UtilityConnections.Left) != 0) result.Add(new KeyValuePair<string, int>("L", NeighborCell(cell, -1, 0)));
+            if ((bits & UtilityConnections.Right) != 0) result.Add(new KeyValuePair<string, int>("R", NeighborCell(cell, 1, 0)));
             return result;
-        }
-
-        private static void AddUtilityDir(List<KeyValuePair<string, int>> result, int cell, string dir, int dx, int dy, ObjectLayer[] layers, bool power, ushort circuit)
-        {
-            int neighbor = NeighborCell(cell, dx, dy);
-            if (!Grid.IsValidCell(neighbor) || !HasAnyUtilityLayer(neighbor, layers))
-                return;
-            if (power && circuit != ushort.MaxValue && UtilityPowerCircuitId(neighbor) != circuit)
-                return;
-            result.Add(new KeyValuePair<string, int>(dir, neighbor));
         }
 
         private static string UtilityOpenText(int cell, ObjectLayer[] layers, List<KeyValuePair<string, int>> dirs)

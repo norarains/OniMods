@@ -16,6 +16,7 @@ internal static class ContinueRegression
     {
         TestDecisions();
         ObservationRegression.Run();
+        UtilityReadRegression.Run();
         TestWindows();
         TestDeferredCalls();
         Console.WriteLine("Bounded continue regression checks passed: " + checks);

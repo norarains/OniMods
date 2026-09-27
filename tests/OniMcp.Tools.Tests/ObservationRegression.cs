@@ -94,7 +94,45 @@ internal static class ObservationRegression
         Check(!codes.Contains("research_inoperable"), "power failure is not duplicated as a generic inoperable finding");
         Check(((object)ColonyObservation.Serialize(sample)["researchStations"]) != null, "station facts travel with the common observation");
         TestFootprints();
+        TestSupplies();
         Console.WriteLine("Observation and footprint regression checks passed: " + checks);
+    }
+
+    private static void TestSupplies()
+    {
+        Check(BuildingSupplyFinding.IsShortage("MaterialsUnavailable") && BuildingSupplyFinding.IsShortage("NeedLiquidIn"), "native supply blockers are recognized");
+        Check(!BuildingSupplyFinding.IsShortage("WaitingForMaterials") && !BuildingSupplyFinding.IsShortage("FabricatorEmpty")
+            && !BuildingSupplyFinding.IsShortage("ElementConverterInput"), "routine deliveries, unused recipes and normal consumption are not shortages");
+        var sample = Sample();
+        var shortage = new BuildingSupplyFinding { Id = 31, WorldId = 1, X = 200, Y = 42, PrefabId = "Electrolyzer", Construction = false };
+        shortage.Statuses.Add("NeedLiquidIn"); shortage.Messages.Add("Water input missing"); shortage.Missing["Water:kg"] = 1;
+        sample.BuildingSupplies.Add(shortage);
+        var policy = new GameContinuePolicy(); var settings = new ContinueStopEvents();
+        Check(policy.Observe(sample, settings).Stops, "general building shortages stop by default");
+        var finding = policy.Findings.Single();
+        Check(finding.Id == "building_material_missing:1:31" && (string)finding.Details["prefabId"] == "Electrolyzer", "supply findings include a stable target and compact location");
+        settings.Update(new[] { finding.Id }, null);
+        Check(!policy.Observe(sample, settings).Stops && policy.Findings.Count == 1, "ignoring one building does not hide its shortage");
+        shortage.Construction = true;
+        Check(policy.Observe(sample, settings).Stops && policy.Findings.Single().Code == "construction_material_missing", "construction shortages are separate controllable events");
+        settings.Update(new[] { "construction_material_missing" }, null);
+        Check(!policy.Observe(sample, settings).Stops, "construction event ignore applies");
+        var old = policy.Findings.ToDictionary(f => f.Id, f => f.Signature);
+        shortage.Missing["Water:kg"] = 0.5; policy.Observe(sample, settings);
+        Check(ColonyObservation.Delta(old, policy.Findings.ToDictionary(f => f.Id, f => f.Signature))["changed"].Length == 0, "small delivery changes do not churn finding identities");
+        sample.BuildingSupplies.Clear();
+        Check(ColonyObservation.Findings(sample).Count == 0, "resolved shortages disappear");
+        shortage.Construction = false; sample.BuildingSupplies.Add(shortage);
+        var station = new ContinueResearchStation { Id = 31, WorldId = 1, Required = true, MissingMaterial = true, Powered = null,
+            PowerNetworkPending = true, Operational = false, DeliveryItem = "Water" };
+        sample.ResearchStations.Add(station);
+        finding = ColonyObservation.Findings(sample).Single();
+        Check(finding.Code == "research_material_missing" && finding.Details != null, "research compatibility event absorbs native supply details without duplicates");
+        sample.BuildingSupplies.Clear(); station.MissingMaterial = false;
+        Check(ColonyObservation.Findings(sample).Count == 0, "pending power refresh is not a reported outage");
+        station.PowerNetworkPending = false; station.Powered = false;
+        Check(ColonyObservation.Findings(sample).Single().Code == "research_unpowered", "resolved power state still reports real outages");
+        Check(JObject.FromObject(ColonyObservation.Serialize(sample))["coverage"]["notChecked"].Values<string>().Contains("local_atmosphere"), "no routine atmospheric polling added");
     }
 
     private static void TestFootprints()

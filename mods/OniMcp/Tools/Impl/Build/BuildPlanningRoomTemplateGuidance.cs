@@ -74,16 +74,16 @@ namespace OniMcp.Tools
                     }
                 });
                 AddCellRead(plan, "verify_outhouse_cell", anchor.X + 2, anchor.Y + 1,
-                    "Verify outhouse blueprint/building, debris, temperature, element, Decision Hints.");
+                    "Verify outhouse blueprint/building, debris, temperature, element, native cell facts.");
                 AddCellRead(plan, "verify_wash_basin_cell", washBasinX, anchor.Y + 1,
-                    "Verify wash basin blueprint/building, ports if any, debris, Decision Hints.");
+                    "Verify wash basin blueprint/building, ports if any, debris, native cell facts.");
                 AddCellRead(plan, "verify_research_station_cell", anchor.X + roomWidth + 3, anchor.Y + 1,
                     "Verify lab research station blueprint/building without counting columns.");
             }
             else
             {
                 AddCellRead(plan, "verify_core_cell", anchor.X + 2, anchor.Y + 1,
-                    "Check building, pickup stacks, element, temperature, ports, Decision Hints, and obstruction first core cell.");
+                    "Check building, pickup stacks, element, temperature, ports, native cell facts, and obstruction first core cell.");
             }
 
             plan.Add(new JObject
@@ -213,7 +213,7 @@ namespace OniMcp.Tools
             if (kind == "starter")
                 actions.Add(StarterCoreCellBatchRead(anchor));
             else
-                actions.Add(CoreCellRead(anchor.X + 2, anchor.Y + 1, "Verify core building cell, debris, material status, temperature, ports, Decision Hints, quick ops."));
+                actions.Add(CoreCellRead(anchor.X + 2, anchor.Y + 1, "Verify core building cell, debris, material status, temperature, ports, native cell facts, quick ops."));
 
             actions.Add(SweepDryRun(anchor, priority));
             actions.Add(ZoomTemplateRead(kind, anchor));
@@ -242,7 +242,7 @@ namespace OniMcp.Tools
                     ["maxTextChars"] = 900,
                     ["calls"] = calls
                 },
-                ["why"] = "Use the public batch endpoint to verify Outhouse, WashBasin, and ResearchCenter core cells in one low-token call; each cell shows debris, temperature, ports, Decision Hints, quick ops."
+                ["why"] = "Use the public batch endpoint to verify Outhouse, WashBasin, and ResearchCenter core cells in one low-token call; each cell shows debris, temperature, ports, native cell facts, quick ops."
             };
         }
 

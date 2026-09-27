@@ -192,7 +192,8 @@ namespace OniMcp.Tools
                         bool wasAlreadyPresent = GetBool(result, "alreadyPresent");
                         bool wasAlreadyConnected = GetBool(result, "alreadyConnected");
                         bool isAutoDig = IsAutoDigResult(result);
-                        bool ok = wasPlanned || wasAlreadyPresent || wasAlreadyConnected || isAutoDig;
+                        bool ok = (wasPlanned || wasAlreadyPresent || wasAlreadyConnected || isAutoDig)
+                            && !EqualsIgnoreCase(result.TryGetValue("reasonCode", out object failure) ? failure?.ToString() : null, "power_connection_failed");
                         autoDigQueued += GetAutoDigInt(result, "marked");
                         autoDigAlreadyMarked += GetAutoDigInt(result, "alreadyMarked");
                         if (wasPlanned && !wasAlreadyPresent && !wasAlreadyConnected)
@@ -206,7 +207,7 @@ namespace OniMcp.Tools
                         else if (!isAutoDig)
                         {
                             failed++;
-                            remainingAnchors.Add(anchor);
+                            if (!wasPlanned) remainingAnchors.Add(anchor);
                         }
                         if (!wasPlanned && !wasAlreadyPresent && !wasAlreadyConnected && isAutoDig)
                             remainingAnchors.Add(anchor);
@@ -220,7 +221,8 @@ namespace OniMcp.Tools
             string executionConflictReason = results
                 .Select(item => item.TryGetValue("reasonCode", out object reasonCode) ? reasonCode?.ToString() : null)
                 .FirstOrDefault(reasonCode => EqualsIgnoreCase(reasonCode, "placement_conflict")
-                    || EqualsIgnoreCase(reasonCode, "utility_path_conflict"));
+                    || EqualsIgnoreCase(reasonCode, "utility_path_conflict")
+                    || EqualsIgnoreCase(reasonCode, "power_connection_failed"));
 
                     var executionResponse = new Dictionary<string, object>
                     {
@@ -244,7 +246,7 @@ namespace OniMcp.Tools
                         ["autoDigLimitReached"] = autoDigContext.LimitReached,
                         ["pendingBuildAfterDig"] = autoDigQueued + autoDigAlreadyMarked,
                         ["failed"] = failed + (allowPartial ? hardFailedPreviews.Count : 0),
-                ["allRequestedSatisfied"] = !throttled && planned + alreadyPresent + alreadyConnected >= anchors.Count,
+                ["allRequestedSatisfied"] = failed == 0 && !throttled && planned + alreadyPresent + alreadyConnected >= anchors.Count,
                         ["remainingAnchors"] = remainingAnchors.Select(anchor => AnchorDictionary(anchor.x, anchor.y, ToolUtil.ResolveWorldId(args))).ToList(),
                 ["remainingAction"] = BuildRemainingBuildAreaAction(args, prefabId, remainingAnchors),
                 ["next"] = throttled
@@ -259,6 +261,7 @@ namespace OniMcp.Tools
                     {
                         executionResponse["reasonCode"] = executionConflictReason;
                         executionResponse["success"] = false;
+                        executionResponse["partial"] = planned > 0;
                         return CallToolResult.Error(JsonConvert.SerializeObject(executionResponse, McpJsonUtil.Settings));
                     }
                     return CallToolResult.Text(JsonConvert.SerializeObject(executionResponse, McpJsonUtil.Settings));

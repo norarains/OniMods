@@ -190,7 +190,9 @@ namespace OniMcp.Tools
             }
 
             if (string.Equals(name, "building_control", StringComparison.OrdinalIgnoreCase))
-                return domain == "planning" && (
+                return (new[] { "config", "configuration", "side_screen" }.Contains(domain)
+                    && new[] { "list", "status", "list_automation", "automation", "get_access", "state_list" }.Contains(action))
+                    || domain == "planning" && (
                     action == "parse_plan" || action == "parse_sequence" || action == "parse"
                     || action == "search_defs" || action == "search" || action == "defs"
                     || action == "materials" || action == "preview"

@@ -46,7 +46,6 @@ namespace OniMcp.Tools
             AppendCellPickupDetailSnapshot(sb, cell, args);
             if (WorldEditorResponsePolicy.IncludeHelp(args))
                 AppendCellPickupSummary(sb, cell);
-            AppendCellDecisionHints(sb, x, y, cell);
             if (WorldEditorResponsePolicy.IncludeHelp(args))
             {
                 AppendCellQuickOps(sb, x, y, cell);

@@ -74,7 +74,6 @@ namespace OniMcp.Tools
                 ["sort"] = request.Sort,
                 ["near"] = request.HasNear ? (object)new[] { request.NearX.Value, request.NearY.Value } : null,
                 ["summary"] = hits.GroupBy(hit => hit.Kind).ToDictionary(group => group.Key, group => group.Count()),
-                ["recommendedFollowUp"] = "Use world_area_snapshot or world_text_map around a cluster bbox when terrain context is needed; use camera_focus_cell for visual inspection."
             };
 
             if (request.ReturnMode == "summary")

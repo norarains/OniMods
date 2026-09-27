@@ -42,6 +42,7 @@ namespace OniMcp.Tools
         {
             RuntimeDatabaseReady = true;
             RuntimeRoomGlyphsLoaded = false;
+            RuntimePlantGlyphsLoaded = false;
         }
 
         private static void AddRuntimeRoomGlyphs(Dictionary<string, char> result, HashSet<char> used)
@@ -191,6 +192,7 @@ namespace OniMcp.Tools
 
             string cleanId = StripLinkTags(id).Trim();
             EnsureRuntimeRoomGlyphs();
+            EnsureRuntimePlantGlyphs();
             char glyph;
             if (ResolvedGlyphById.TryGetValue(cleanId, out glyph))
                 return glyph;
@@ -210,7 +212,9 @@ namespace OniMcp.Tools
                 return entry;
 
             string baseId = StripCompleteSuffix(cleanId);
-            return GeneratedGlyphById.TryGetValue(baseId, out entry) ? entry : null;
+            if (GeneratedGlyphById.TryGetValue(baseId, out entry)) return entry;
+            EnsureRuntimePlantGlyphs();
+            return RuntimePlantGlyphs.TryGetValue(baseId, out entry) ? entry : null;
         }
 
         private static string StripCompleteSuffix(string id) => PrefabIdentity.BaseId(id);

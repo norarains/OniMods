@@ -200,6 +200,26 @@ blockers. Coverage explicitly leaves navigation, local atmosphere and resource
 fetchability unchecked. Raw HUD reads remain raw UI data; duplicate researcher HUD
 notifications are coalesced only when a matching semantic finding is available.
 
+General input and construction shortages are included in the same findings as
+`building_material_missing` and `construction_material_missing`. They are default
+stop events and support exact-target ignores. Details include prefab, coordinates,
+native status IDs and missing amounts when the game provides them (`:kg` or
+`:units` keys). Ordinary delivery waits and unused fabricator recipes are not
+shortages. Research retains its existing event key and absorbs matching supply
+details without duplicating the condition. Native statuses are sampled with the
+two-second infrastructure cache; fetchability is still unverified. Power network
+refreshes report `powerNetworkPending:true` and unknown powered/source state,
+rather than a false outage. Atmospheric checks remain targeted to dupe symptoms.
+
+Infrastructure port reads accept exact `id` filters, include blueprint conduit
+ports from native building definitions, and distinguish line presence from a
+built connection. Link directions require reciprocal native bits and actual line
+objects; physical and planned line states remain distinct. Automatic power wiring
+reuses an existing line on the input cell and never adds excavation or uproot
+orders along its inferred route. A failed connection is reported separately from
+any building already placed; partial receipts must not be replayed wholesale.
+Routine cell/reward/batch results contain facts, not proposed gameplay actions.
+
 `changes.added/resolved/changed` is the net delta from the previous returned
 continue observation; the first result compares with an empty baseline. The three
 sets are disjoint. `events` contains event types detected during the window, even

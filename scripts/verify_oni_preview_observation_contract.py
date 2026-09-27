@@ -50,13 +50,28 @@ claim = extract_block(reward, 'private static CallToolResult ClaimPrintingReward
 assert claim.index('!Immigration.Instance.ImmigrantsAvailable') < claim.index('CurrentCarePackages()') < claim.index('telepad.OnAcceptDelivery')
 current = extract_block(reward, 'private static IEnumerable<CarePackageInfo> CurrentCarePackages')
 assert current.index('!Immigration.Instance.ImmigrantsAvailable') < current.index('GetField("containers"')
-assert '"/active/ops/orders.md"' in reward and '"orders_control"' not in reward
+assert '"priorityAction"' not in reward and '"priorityPlan"' not in reward
+assert '"entityKind"' in reward and '"quantity"' in reward
 runner = (ROOT / 'Impl/Core/GameContinueRunner.cs').read_text()
 configure = extract_block(runner, 'internal static CallToolResult Configure')
 assert configure.index('"dryRun"') < configure.index('Settings(args)')
 monitor = (ROOT / 'Impl/Core/GameContinueMonitor.cs').read_text()
 assert monitor.count('(worldId < 0 || item.GetMyWorldId() == worldId)') == 2
 assert 'wallSeconds >= nextInfrastructureRead' in monitor
+assert 'BuildingSupplyObservation.Read(building.gameObject, false, buildingSupplies)' in monitor
+assert 'BuildingSupplyObservation.Read(building.gameObject, true, buildingSupplies)' in monitor
+assert 'sample.BuildingSupplies.AddRange(buildingSupplies)' in monitor
+supply = (ROOT / 'Impl/Core/BuildingSupplyObservation.cs').read_text()
+assert 'GetStatusItemGroup()' in supply and 'BuildingSupplyFinding.IsShortage(status)' in supply
+assert 'GetRemainingMinimum()' in supply and 'VisibleCellAllowed(cell, true)' in supply
+power = (ROOT / 'Impl/Build/BuildPlanningPowerConnect.cs').read_text()
+assert 'sourceCell == inputCell && UtilityConnectionRead.HasLine' in power
+for field in ('autoDigObstructions', 'autoUprootObstructions', 'nativePathPlacement'):
+    assert f'["{field}"] = false' in power
+assert 'result["partial"] = placed' in power and 'result["safeToRetry"] = !placed' in power
+ports = (ROOT / 'Impl/Build/InfrastructureConduitPorts.cs').read_text()
+assert 'def.InputConduitType == type' in ports and 'def.OutputConduitType == type' in ports
+assert 'building.GetUtilityInputCell()' in ports and 'building.GetUtilityOutputCell()' in ports
 snapshot = (ROOT / 'Impl/World/SnapshotTools.cs').read_text()
 assert 'FoodSnapshot food = !compactObservation' in snapshot
 assert 'BuildingSnapshot buildings = !compactObservation' in snapshot
