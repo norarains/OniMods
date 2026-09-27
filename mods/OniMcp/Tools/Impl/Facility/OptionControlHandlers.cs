@@ -53,6 +53,8 @@ namespace OniMcp.Tools
             var method = OniReflection.GetMethodSafe(typeof(DirectionControl), "SetAllowedDirection", false, new[] { typeof(WorkableReactable.AllowedDirection) });
             if (method == null)
                 return CallToolResult.Error("DirectionControl.SetAllowedDirection not found");
+            var preview = ConfigMutation.Preview(args, TargetInfo(go), new { direction = direction.ToString() });
+            if (preview != null) return preview;
             method.Invoke(control, new object[] { direction });
 
             return CallToolResult.Text(JsonConvert.SerializeObject(new Dictionary<string, object>
@@ -80,6 +82,8 @@ namespace OniMcp.Tools
                 return CallToolResult.Error("tag is not a valid option for this target");
 
             var before = control.GetSelectedOption();
+            var preview = ConfigMutation.Preview(args, TargetInfo(go), new { tag = tag.Name });
+            if (preview != null) return preview;
             control.OnOptionSelected(option);
 
             return CallToolResult.Text(JsonConvert.SerializeObject(new Dictionary<string, object>
@@ -101,6 +105,8 @@ namespace OniMcp.Tools
             var before = receiver.GetChannel();
             if (ToolUtil.GetBool(args, "clear", false))
             {
+                var preview = ConfigMutation.Preview(args, TargetInfo(go), new { clear = true });
+                if (preview != null) return preview;
                 receiver.SetChannel(null);
             }
             else
@@ -111,6 +117,8 @@ namespace OniMcp.Tools
                 var broadcaster = FindBroadcaster(broadcasterId.Value);
                 if (broadcaster == null)
                     return CallToolResult.Error("LogicBroadcaster not found");
+                var preview = ConfigMutation.Preview(args, TargetInfo(go), new { broadcasterId });
+                if (preview != null) return preview;
                 receiver.SetChannel(broadcaster);
             }
 
@@ -135,6 +143,8 @@ namespace OniMcp.Tools
                 return CallToolResult.Error("direction must be one of the eight EightDirection values");
 
             var before = control.Direction;
+            var preview = ConfigMutation.Preview(args, TargetInfo(go), new { direction = direction.ToString() });
+            if (preview != null) return preview;
             control.Direction = direction;
             if (Game.Instance != null)
                 Game.Instance.ForceOverlayUpdate(clearLastMode: true);

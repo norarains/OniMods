@@ -35,6 +35,8 @@ namespace OniMcp.Tools
                         return CallToolResult.Error("Target does not support enabled/disabled state");
 
                     bool enabled = ToolUtil.GetBool(args, "enabled", true);
+                    var preview = ConfigMutation.Preview(args, go.GetComponent<KPrefabID>()?.InstanceID, new { enabled });
+                    if (preview != null) return preview;
                     button.IsEnabled = enabled;
                     return CallToolResult.Text(JsonConvert.SerializeObject(new Dictionary<string, object>
                     {
@@ -72,6 +74,8 @@ namespace OniMcp.Tools
 
                     bool desired = ToolUtil.GetBool(args, "on", true);
                     bool before = toggle.ToggledOn();
+                    var preview = ConfigMutation.Preview(args, go.GetComponent<KPrefabID>()?.InstanceID, new { on = desired });
+                    if (preview != null) return preview;
                     if (before != desired)
                         toggle.ToggledByPlayer();
 

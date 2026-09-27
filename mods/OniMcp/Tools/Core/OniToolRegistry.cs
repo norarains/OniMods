@@ -47,7 +47,6 @@ namespace OniMcp.Tools
             RegisterInternal(ColonyTools.ControlColony());
             RegisterInternal(DuplicantTools.ControlDupes());
             RegisterInternal(ReadTools.ControlRead());
-            RegisterInternal(SearchControlTools.ControlSearch());
             RegisterInternal(CoordinateControlTools.ControlCoordinate());
             BuildToolInfoCache();
             _initialized = true;

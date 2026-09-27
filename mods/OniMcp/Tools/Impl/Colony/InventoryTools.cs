@@ -20,15 +20,14 @@ namespace OniMcp.Tools
                 Risk = "medium",
                 Aliases = new List<string> { "inventory_control", "resource_management_control" },
                 Tags = new List<string> { "resources", "inventory", "food", "items", "search", "pin", "notification" },
-                Description = "资源统一入口：action=inventory/food/search_items/pins/set_pin。set_pin 写入需 confirm=true。",
+                Description = "资源统一入口：action=inventory/food/pins/set_pin。set_pin 写入需 confirm=true。",
                 Parameters = new Dictionary<string, McpToolParameter>
                 {
-                    ["action"] = new McpToolParameter { Type = "string", Description = "inventory、food、search_items、pins 或 set_pin", Required = true, EnumValues = new List<string> { "inventory", "food", "search_items", "pins", "set_pin" } },
-                    ["resource"] = new McpToolParameter { Type = "string", Description = "inventory/search_items/set_pin 时按资源、物品名、prefabId、元素或 tag 过滤/指定资源", Required = false },
-                    ["query"] = new McpToolParameter { Type = "string", Description = "search_items/pins 时按物品名、prefabId、元素、tag 或资源名模糊搜索", Required = false },
+                    ["action"] = new McpToolParameter { Type = "string", Description = "inventory、food、pins 或 set_pin", Required = true, EnumValues = new List<string> { "inventory", "food", "pins", "set_pin" } },
+                    ["resource"] = new McpToolParameter { Type = "string", Description = "inventory/set_pin 时按资源、物品名、prefabId、元素或 tag 过滤/指定资源", Required = false },
+                    ["query"] = new McpToolParameter { Type = "string", Description = "pins 时按物品名、prefabId、元素、tag 或资源名模糊搜索", Required = false },
                     ["worldId"] = new McpToolParameter { Type = "integer", Description = "按世界 ID 过滤，留空返回全部世界或当前激活世界", Required = false },
-                    ["includeStored"] = new McpToolParameter { Type = "boolean", Description = "inventory/search_items 时是否包含已储存在容器/复制人身上的物品", Required = false },
-                    ["looseOnly"] = new McpToolParameter { Type = "boolean", Description = "search_items 时仅返回地上散落物；等价于 includeStored=false", Required = false },
+                    ["includeStored"] = new McpToolParameter { Type = "boolean", Description = "inventory 时是否包含已储存在容器/复制人身上的物品", Required = false },
                     ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "是否只统计已揭示格子内资源，默认 true；调试可传 false", Required = false },
                     ["includeUnpinned"] = new McpToolParameter { Type = "boolean", Description = "pins 时是否包含未固定且未通知的已发现资源，默认 false", Required = false },
                     ["limit"] = new McpToolParameter { Type = "integer", Description = "最多返回数量；各 action 使用原工具默认值和上限", Required = false },
@@ -43,7 +42,6 @@ namespace OniMcp.Tools
                     {
                         case "inventory":
                         case "food":
-                        case "search_items":
                             return ReadResourcesControl().Handler(args);
                         case "pins":
                         case "pin_list":
@@ -60,7 +58,7 @@ namespace OniMcp.Tools
                                 return ControlResourcePin().Handler(forwarded);
                             }
                         default:
-                            return CallToolResult.Error("action must be inventory, food, search_items, pins, or set_pin");
+                            return CallToolResult.Error("action must be inventory, food, pins, or set_pin");
                     }
                 }
             };
@@ -75,15 +73,14 @@ namespace OniMcp.Tools
                 Mode = "read",
                 Risk = "none",
                 Tags = new List<string> { "resources", "inventory", "food", "items", "search", "资源", "库存", "食物", "搜索" },
-                Description = "资源读取聚合入口：action=inventory 读资源库存；action=food 读食物库存；action=search_items 搜索地图可拾取物品",
+                Description = "资源读取聚合入口：action=inventory 读资源库存；action=food 读食物库存",
                 Parameters = new Dictionary<string, McpToolParameter>
                 {
-                    ["action"] = new McpToolParameter { Type = "string", Description = "inventory、food 或 search_items", Required = true, EnumValues = new List<string> { "inventory", "food", "search_items" } },
-                    ["resource"] = new McpToolParameter { Type = "string", Description = "action=inventory/search_items 时按资源、物品名、prefabId 或元素过滤", Required = false },
-                    ["query"] = new McpToolParameter { Type = "string", Description = "action=search_items 时按物品名、prefabId、元素或 tag 模糊搜索", Required = false },
+                    ["action"] = new McpToolParameter { Type = "string", Description = "inventory 或 food", Required = true, EnumValues = new List<string> { "inventory", "food" } },
+                    ["resource"] = new McpToolParameter { Type = "string", Description = "action=inventory 时按资源、物品名、prefabId 或元素过滤", Required = false },
+                    ["query"] = new McpToolParameter { Type = "string", Description = "Optional food/pin filter", Required = false },
                     ["worldId"] = new McpToolParameter { Type = "integer", Description = "按世界 ID 过滤，留空返回全部世界", Required = false },
-                    ["includeStored"] = new McpToolParameter { Type = "boolean", Description = "action=inventory/search_items 时是否包含已储存在容器/复制人身上的物品", Required = false },
-                    ["looseOnly"] = new McpToolParameter { Type = "boolean", Description = "action=search_items 时仅返回地上散落物；等价于 includeStored=false", Required = false },
+                    ["includeStored"] = new McpToolParameter { Type = "boolean", Description = "action=inventory 时是否包含已储存在容器/复制人身上的物品", Required = false },
                     ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "是否只返回已揭示格子内资源，默认 true；调试可传 false", Required = false },
                     ["limit"] = new McpToolParameter { Type = "integer", Description = "最多返回数量；各 action 使用原工具默认值和上限", Required = false }
                 },
@@ -94,14 +91,8 @@ namespace OniMcp.Tools
                         return GetInventory().Handler(args);
                     if (action == "food")
                         return GetFoodInventory().Handler(args);
-                    if (action == "search_items")
-                    {
-                        var forwarded = args != null ? (JObject)args.DeepClone() : new JObject();
-                        forwarded.Remove("action");
-                        return SearchItems().Handler(forwarded);
-                    }
 
-                    return CallToolResult.Error("action must be inventory, food, or search_items");
+                    return CallToolResult.Error("action must be inventory, food");
                 }
             };
         }
@@ -241,86 +232,6 @@ namespace OniMcp.Tools
                     };
 
                     return CallToolResult.Text(JsonConvert.SerializeObject(result, McpJsonUtil.Settings));
-                }
-            };
-        }
-
-        public static McpTool SearchItems()
-        {
-            return new McpTool
-            {
-                Name = "items_search",
-                Hidden = true,
-                Group = "resources",
-                Mode = "read",
-                Risk = "none",
-                Aliases = new List<string> { "find_items", "resources_find_items", "pickupables_search", "map_items_search" },
-                Tags = new List<string> { "items", "pickupables", "resources", "search", "map", "物品", "搜索", "全图" },
-                Description = "弃用警告：旧工具将在 0.3.0 移除；请改用 read_control domain=resources action=search_items",
-                Parameters = new Dictionary<string, McpToolParameter>
-                {
-                    ["query"] = new McpToolParameter { Type = "string", Description = "按物品名、prefabId、元素或 tag 模糊搜索；留空返回全部", Required = false },
-                    ["resource"] = new McpToolParameter { Type = "string", Description = "query 的别名，适合搜索 Dirt、Water、CopperOre 等资源 tag", Required = false },
-                    ["worldId"] = new McpToolParameter { Type = "integer", Description = "按世界 ID 过滤；留空搜索全部世界", Required = false },
-                    ["includeStored"] = new McpToolParameter { Type = "boolean", Description = "是否包含储物箱/复制人/建筑内物品，默认 true", Required = false },
-                    ["looseOnly"] = new McpToolParameter { Type = "boolean", Description = "仅返回地上散落物；等价于 includeStored=false", Required = false },
-                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "是否只返回已揭示格子内物品，默认 true；调试可传 false", Required = false },
-                    ["limit"] = new McpToolParameter { Type = "integer", Description = "最多返回实例数，默认 120，最大 1000", Required = false }
-                },
-                Handler = args =>
-                {
-                    if (Game.Instance == null)
-                        return CallToolResult.Error("Game not initialized");
-
-                    string query = (args["query"] ?? args["resource"])?.ToString();
-                    int? worldId = TryGetInt(args, "worldId");
-                    bool looseOnly = TryGetBool(args, "looseOnly", false);
-                    bool includeStored = !looseOnly && TryGetBool(args, "includeStored", true);
-                    bool visibleOnly = TryGetBool(args, "visibleOnly", true);
-                    int limit = ClampLimit(args, 120, 1000);
-
-                    int scanned = 0;
-                    int matched = 0;
-                    var results = new List<Dictionary<string, object>>();
-
-                    foreach (var pickupable in Components.Pickupables.Items)
-                    {
-                        if (pickupable == null || pickupable.gameObject == null)
-                            continue;
-                        scanned++;
-
-                        bool stored = pickupable.storage != null || (pickupable.KPrefabID != null && pickupable.KPrefabID.HasTag(GameTags.Stored));
-                        if (!includeStored && stored)
-                            continue;
-                        int cell = ToolUtil.PickupableCell(pickupable);
-                        if (!ToolUtil.VisibleCellAllowed(cell, visibleOnly))
-                            continue;
-
-                        var info = ItemSearchInfo(pickupable);
-                        int itemWorldId = info.ContainsKey("worldId") && info["worldId"] != null ? Convert.ToInt32(info["worldId"]) : pickupable.GetMyWorldId();
-                        if (worldId.HasValue && itemWorldId != worldId.Value)
-                            continue;
-
-                        if (!ItemMatches(info, query))
-                            continue;
-
-                        matched++;
-                        if (results.Count < limit)
-                            results.Add(info);
-                    }
-
-                    return CallToolResult.Text(JsonConvert.SerializeObject(new Dictionary<string, object>
-                    {
-                        ["query"] = string.IsNullOrWhiteSpace(query) ? null : query,
-                        ["worldId"] = worldId.HasValue ? (object)worldId.Value : null,
-                        ["includeStored"] = includeStored,
-                        ["visibleOnly"] = visibleOnly,
-                        ["scannedPickupables"] = scanned,
-                        ["matched"] = matched,
-                        ["returned"] = results.Count,
-                        ["truncated"] = Math.Max(0, matched - results.Count),
-                        ["items"] = results
-                    }, McpJsonUtil.Settings));
                 }
             };
         }

@@ -47,9 +47,8 @@ namespace OniMcp.Tools
             if (building == null)
                 return;
 
-            sb.AppendLine("- nearby ports: `read_control domain=infrastructure action=nearby_ports x="
-                + x + " y=" + y + " radius=8 kind=all`");
-            sb.AppendLine("- port workflow: read nearby_ports -> inspect this cell Ports / Interfaces -> confirm matching line in infrastructure view.");
+            int id = building.GetComponent<KPrefabID>()?.InstanceID ?? building.GetInstanceID();
+            sb.AppendLine("- ports: `server_control domain=query action=select query=\"SELECT ports FROM ports WHERE id=" + id + " LIMIT 1\"`");
         }
 
         private static void AppendCellInfrastructureReads(StringBuilder sb, int x, int y, int cell)

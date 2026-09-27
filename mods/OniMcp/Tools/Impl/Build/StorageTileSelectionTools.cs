@@ -75,7 +75,7 @@ namespace OniMcp.Tools
                 }),
                 Handler = args =>
                 {
-                    if (!ToolUtil.GetBool(args, "confirm", false))
+                    if (!ToolUtil.GetBool(args, "confirm", false) && !ToolUtil.GetBool(args, "dryRun", false))
                         return CallToolResult.Error("confirm=true is required for storage tile target changes");
 
                     var tile = FindStorageTile(args);
@@ -89,6 +89,7 @@ namespace OniMcp.Tools
 
                     return JsonResult(new Dictionary<string, object>
                     {
+                        ["dryRun"] = ToolUtil.GetBool(args, "dryRun", false),
                         ["target"] = TargetInfo(tile.gameObject),
                         ["before"] = before,
                         ["storageTile"] = StorageTileInfo(tile, includeOptions: true)
@@ -118,7 +119,7 @@ namespace OniMcp.Tools
                 },
                 Handler = args =>
                 {
-                    if (!ToolUtil.GetBool(args, "confirm", false))
+                    if (!ToolUtil.GetBool(args, "confirm", false) && !ToolUtil.GetBool(args, "dryRun", false))
                         return CallToolResult.Error("confirm=true is required for storage tile target batch changes");
 
                     var items = args["items"] as JArray;
@@ -137,6 +138,7 @@ namespace OniMcp.Tools
                         }
 
                         var item = MergeStorageTileDefaults(rawItem, defaults);
+                        if (ToolUtil.GetBool(args, "dryRun", false)) item["dryRun"] = true;
                         var tile = FindStorageTile(item);
                         if (tile == null)
                         {
@@ -150,6 +152,7 @@ namespace OniMcp.Tools
                         {
                             ["ok"] = error == null,
                             ["error"] = error,
+                            ["dryRun"] = ToolUtil.GetBool(item, "dryRun", false),
                             ["target"] = TargetInfo(tile.gameObject),
                             ["before"] = before,
                             ["storageTile"] = StorageTileInfo(tile, includeOptions: false)

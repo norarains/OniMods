@@ -136,7 +136,7 @@ namespace OniMcp.Tools
                 sb.AppendLine("## Planting");
                 sb.AppendLine("- Requested seed: " + (plot.requestedEntityTag.IsValid ? plot.requestedEntityTag.Name : "none") + "; request active: " + (plot.GetActiveRequest != null));
                 sb.AppendLine("- Set seed through /active/ops/farming.md: `call domain=bio bioDomain=farming action=set_planting id=" + config["id"] + " seedTag=<seed> dryRun=true`; commit with confirm=true.");
-                sb.AppendLine("- Inventory counts do not prove fetchability. Use resources/search_items for the selected seed when delivery stalls.");
+                sb.AppendLine("- Inventory counts do not prove fetchability. Query items for the selected seed when delivery stalls.");
             }
             if (priority != null && priority.IsPrioritizable())
                 sb.AppendLine("- Priority: " + priority.GetMasterPriority().priority_value + ". Edit through /active/ops/orders.md: `call domain=priority action=set_building id=" + config["id"] + " priority=7 dryRun=true`; commit with confirm=true.");
@@ -334,7 +334,7 @@ namespace OniMcp.Tools
             string component = key.Substring("Threshold.".Length).Replace(".Value", "").Replace(".ActivateAbove", "");
             JObject current = (config["thresholds"] as JArray)?.OfType<JObject>().FirstOrDefault(item => item["component"]?.ToString() == component);
             if (current == null) { error = "threshold component not found: " + component; return false; }
-            request["action"] = "set_threshold"; request["component"] = component;
+            request["action"] = "set_threshold"; request["component"] = component; request["unit"] = "native";
             request["threshold"] = current["threshold"]?.DeepClone(); request["activateAbove"] = current["activateAbove"]?.DeepClone();
             if (key.EndsWith(".Value", StringComparison.Ordinal)) return SetFloatRequest(request, "set_threshold", "threshold", value, out error);
             return SetBoolRequest(request, "set_threshold", "activateAbove", value, out error);

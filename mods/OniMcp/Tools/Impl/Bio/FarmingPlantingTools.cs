@@ -135,7 +135,7 @@ namespace OniMcp.Tools
                     if (dryRun)
                         return CallToolResult.Text(JsonConvert.SerializeObject(new { valid = true, dryRun = true, committed = false,
                             seedTag = seedTag.Name, removeOccupant, worldInventoryAmount,
-                            inventoryNote = "Inventory does not prove fetchability; inspect resources/search_items if delivery stalls.", plot = PlotInfo(plot) }, McpJsonUtil.Settings));
+                            inventoryNote = "Inventory does not prove fetchability; inspect items queries if delivery stalls.", plot = PlotInfo(plot) }, McpJsonUtil.Settings));
                     if (plot.Occupant != null && removeOccupant) plot.OrderRemoveOccupant();
                     plot.CancelActiveRequest();
                     plot.CreateOrder(seedTag, mutationTag);

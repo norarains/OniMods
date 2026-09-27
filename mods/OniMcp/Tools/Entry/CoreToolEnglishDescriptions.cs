@@ -28,7 +28,7 @@ namespace OniMcp.Tools
                     Describe(tool, DupesDescriptions());
                     break;
                 case "game_control":
-                    tool.Description = "Unified game entrypoint. Autonomous play: plan a useful batch while paused, then domain=speed action=continue seconds=15. It advances the requested real-time window or stops for a configured event, then returns paused with stopReason, observation.findings, net changes and events. responseMode=summary (default) keeps all current findings/vitals/progress; full adds repeated metadata. Findings include yellow HUD notifications, native diagnostic warnings, crop status, morale deficits and supply shortages; ignored findings stay visible. The caller decides whether to continue or act; a healthy round needs only another continue. Explicit ignoreEvents/unignoreEvents persist for this session and never hide findings; speed/stop_events reads or updates settings. Direct calls only; no batch/program/task wrapper. Also supports manual speed, game state, saves, launch, DLC, sandbox, and UI.";
+                    tool.Description = "Unified game entrypoint. Autonomous play: plan a useful batch while paused, then domain=speed action=continue seconds=15. It advances the requested real-time window or stops for a configured event, then returns paused with stopReason, observation.findings, net changes and events. responseMode=summary (default) keeps all current findings/vitals/progress; full adds repeated metadata. Findings include yellow HUD notifications, native diagnostic warnings, crop status, morale deficits and essential/research supply shortages; ignored findings stay visible. The caller decides whether to continue or act; a healthy round needs only another continue. Explicit ignoreEvents/unignoreEvents persist for this session and never hide findings; speed/stop_events reads or updates settings. Direct calls only; no batch/program/task wrapper. Also supports manual speed, game state, saves, launch, DLC, sandbox, and UI.";
                     Describe(tool, GameDescriptions());
                     break;
                 case "navigation_control":
@@ -40,15 +40,11 @@ namespace OniMcp.Tools
                     Describe(tool, OrdersDescriptions());
                     break;
                 case "read_control":
-                    tool.Description = "Unified read/query entrypoint for world data, reusable areas, buildings, resources, infrastructure, and knowledge. Use query, areaId, ids, and semantic filters; read exact cells through world_editor virtual map files.";
+                    tool.Description = "Specialized world, area, inventory, food, room and circuit diagnostics. For object facts use server_control domain=query.";
                     Describe(tool, ReadDescriptions());
                     break;
-                case "search_control":
-                    tool.Description = "Read-only search entrypoint for tools, world objects, resources, buildings, dupes and glyphs. Returns matching facts; the caller chooses any follow-up action.";
-                    Describe(tool, SearchDescriptions());
-                    break;
                 case "server_control":
-                    tool.Description = "Unified server and MCP entrypoint for diagnostics, client requests, catalog search, coverage audits, batched tool calls, and restricted agent-program execution.";
+                    tool.Description = "Read colony facts with domain=query action=select query=SELECT...; action=schema [dataset=name] discovers fields on demand. Also diagnostics, catalog, batches and client requests.";
                     Describe(tool, ServerDescriptions());
                     break;
             }
@@ -100,7 +96,7 @@ namespace OniMcp.Tools
         {
             var d = CommonDescriptions();
             d["domain"] = "Building subsystem: planning, config, production, storage, filter, tile_selection, receptacle, side_surface, space_building, space_story, special, story_facility, or rocket.";
-            d["action"] = "Building action. Planning examples: search_defs/materials/preview/placement_candidates. Exact construction is virtual-file only: edit /active/map/viewport.md with world_editor. Public build_area coordinate or anchor calls are forbidden.";
+            d["action"] = "Building action. Planning examples: materials/preview/placement_candidates. Exact construction is virtual-file only: edit /active/map/viewport.md with world_editor. Public build_area coordinate or anchor calls are forbidden.";
             d["surface"] = "Side-screen surface subtype for side_surface actions.";
             d["rocketDomain"] = "Rocket subsystem used when domain=rocket.";
             d["mode"] = "Optional mode used by selected sub-actions.";
@@ -160,26 +156,6 @@ namespace OniMcp.Tools
             d["settingId"] = "Diagnostic setting id.";
             d["enabled"] = "Enable or disable the selected setting.";
             d["applyNow"] = "Apply the setting immediately where supported.";
-            return d;
-        }
-
-        private static Dictionary<string, string> SearchDescriptions()
-        {
-            var d = CommonDescriptions();
-            d["domain"] = "Search domain: tools, world, resources, buildings, dupes, or glyphs.";
-            d["query"] = "Search text.";
-            d["target"] = "Alias for query when searching for an action target.";
-            d["search"] = "Alias for query.";
-            d["intent"] = "Optional caller-provided intent, echoed as context.";
-            d["kind"] = "Optional search subtype.";
-            d["kinds"] = "Optional search subtype list.";
-            d["category"] = "Building category filter.";
-            d["group"] = "Tool group filter.";
-            d["mode"] = "Tool mode filter.";
-            d["risk"] = "Tool risk filter.";
-            d["includeStored"] = "Include stored resource items.";
-            d["looseOnly"] = "Only return loose pickupable items.";
-            d["includeUnavailable"] = "Include unavailable or locked building definitions.";
             return d;
         }
 
@@ -300,7 +276,7 @@ namespace OniMcp.Tools
         private static Dictionary<string, string> ReadDescriptions()
         {
             var d = CommonDescriptions();
-            d["domain"] = "Read domain: world, area, buildings, resources, infrastructure, or knowledge.";
+            d["domain"] = "Read domain: state, world, area, resources or infrastructure.";
             d["action"] = "Read action for the selected domain.";
             d["kind"] = "Knowledge kind: database or guide.";
             d["category"] = "Knowledge or object category.";
@@ -329,8 +305,9 @@ namespace OniMcp.Tools
         private static Dictionary<string, string> ServerDescriptions()
         {
             var d = CommonDescriptions();
-            d["domain"] = "Server subsystem: diagnostics, client_request, catalog, batch, or program. Defaults to diagnostics.";
-            d["action"] = "Server action for the selected domain.";
+            d["domain"] = "Subsystem: query, diagnostics, catalog, batch, program, client_request, middleware.";
+            d["action"] = "query: schema/select; otherwise the selected subsystem action.";
+            d["query"] = "query/select: SELECT statement; catalog: search text.";
             d["file"] = "Log file selector: current or previous.";
             d["lines"] = "Number of log lines to return.";
             d["surface"] = "Surface audit target.";

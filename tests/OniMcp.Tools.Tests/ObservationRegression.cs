@@ -95,7 +95,28 @@ internal static class ObservationRegression
         Check(((object)ColonyObservation.Serialize(sample)["researchStations"]) != null, "station facts travel with the common observation");
         TestFootprints();
         TestSupplies();
+        TestFreshStopEvidence();
         Console.WriteLine("Observation and footprint regression checks passed: " + checks);
+    }
+
+    private static void TestFreshStopEvidence()
+    {
+        var cached = Sample();
+        cached.HudFindings.Add(HudFindingPolicy.Notification("BadMinor", "Building lacks resources"));
+        var fresh = Sample();
+        var covered = HudFindingPolicy.Notification("BadMinor", "Building lacks resources");
+        covered.StopEligible = false;
+        covered.Details["detailView"] = "building_warnings";
+        fresh.HudFindings.Add(covered);
+        int refreshes = 0;
+        var settings = new ContinueStopEvents();
+        var sample = ContinueObservationFreshness.BeforeStop(cached, settings, () => { refreshes++; return fresh; });
+        Check(refreshes == 1 && !new GameContinuePolicy().Observe(sample, settings).Stops, "fresh coverage prevents a cached generic shortage from stopping");
+        settings.Update(new[] { "hud" }, null);
+        ContinueObservationFreshness.BeforeStop(cached, settings, () => { refreshes++; return fresh; });
+        Check(refreshes == 1, "ignored findings do not trigger redundant refreshes");
+        ContinueObservationFreshness.BeforeStop(Sample(), settings, () => { refreshes++; return fresh; });
+        Check(refreshes == 1, "healthy rounds retain inexpensive cached sampling");
     }
 
     private static void TestSupplies()
@@ -114,9 +135,11 @@ internal static class ObservationRegression
         settings.Update(new[] { finding.Id }, null);
         Check(!policy.Observe(sample, settings).Stops && policy.Findings.Count == 1, "ignoring one building does not hide its shortage");
         shortage.Construction = true;
-        Check(policy.Observe(sample, settings).Stops && policy.Findings.Single().Code == "construction_material_missing", "construction shortages are separate controllable events");
-        settings.Update(new[] { "construction_material_missing" }, null);
-        Check(!policy.Observe(sample, settings).Stops, "construction event ignore applies");
+        Check(!policy.Observe(sample, settings).Stops && policy.Findings.Count == 0, "ordinary construction shortages are on-demand, not routine findings");
+        shortage.Construction = false; shortage.PrefabId = "RockCrusher";
+        Check(!policy.Observe(sample, settings).Stops && policy.Findings.Count == 0, "ordinary machine shortages remain on-demand");
+        shortage.PrefabId = "Electrolyzer";
+        policy.Observe(sample, settings);
         var old = policy.Findings.ToDictionary(f => f.Id, f => f.Signature);
         shortage.Missing["Water:kg"] = 0.5; policy.Observe(sample, settings);
         Check(ColonyObservation.Delta(old, policy.Findings.ToDictionary(f => f.Id, f => f.Signature))["changed"].Length == 0, "small delivery changes do not churn finding identities");

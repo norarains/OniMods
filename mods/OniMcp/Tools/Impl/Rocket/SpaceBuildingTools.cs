@@ -168,6 +168,11 @@ namespace OniMcp.Tools
                         var detector = go.GetSMI<ClusterCometDetector.Instance>();
                         if (detector == null)
                             return CallToolResult.Error("Target does not expose ClusterCometDetector");
+                        var craft = targetType == "rocket" ? FindClustercraft(args) : null;
+                        if (targetType == "rocket" && craft == null)
+                            return CallToolResult.Error("rocketId or rocketName must match a Clustercraft");
+                        var preview = ConfigMutation.Preview(args, TargetInfo(go), new { targetType, rocket = craft == null ? null : TargetInfo(craft.gameObject) });
+                        if (preview != null) return preview;
                         if (targetType == "meteor_shower")
                         {
                             detector.SetDetectorState(ClusterCometDetector.Instance.ClusterCometDetectorState.MeteorShower);
@@ -180,9 +185,6 @@ namespace OniMcp.Tools
                         }
                         else
                         {
-                            var craft = FindClustercraft(args);
-                            if (craft == null)
-                                return CallToolResult.Error("rocketId or rocketName must match a Clustercraft");
                             detector.SetDetectorState(ClusterCometDetector.Instance.ClusterCometDetectorState.Rocket);
                             detector.SetClustercraftTarget(craft);
                         }
@@ -194,9 +196,12 @@ namespace OniMcp.Tools
                             return CallToolResult.Error("Target does not expose CometDetector");
                         if (targetType == "ballistic_object")
                             return CallToolResult.Error("ballistic_object target is only available in DLC cluster mode");
-                        detector.SetTargetCraft(targetType == "rocket" ? FindBaseRocketTarget(args) : null);
-                        if (targetType == "rocket" && detector.GetTargetCraft() == null)
+                        var craft = targetType == "rocket" ? FindBaseRocketTarget(args) : null;
+                        if (targetType == "rocket" && craft == null)
                             return CallToolResult.Error("rocketId or rocketName must match a base-game Spacecraft");
+                        var preview = ConfigMutation.Preview(args, TargetInfo(go), new { targetType, rocketId = args["rocketId"], rocketName = args["rocketName"] });
+                        if (preview != null) return preview;
+                        detector.SetTargetCraft(craft);
                     }
 
                     return JsonResult(new Dictionary<string, object>

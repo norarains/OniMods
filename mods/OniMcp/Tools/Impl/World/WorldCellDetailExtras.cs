@@ -30,21 +30,14 @@ namespace OniMcp.Tools
             return new Dictionary<string, object>
             {
                 ["markdown"] = $"/active/map/cell_{x}_{y}.md",
-                ["nearbyPorts"] = new Dictionary<string, object>
-                {
-                    ["tool"] = "read_control",
-                    ["arguments"] = new Dictionary<string, object>
-                    {
-                        ["domain"] = "infrastructure",
-                        ["action"] = "nearby_ports",
-                        ["x"] = x,
-                        ["y"] = y,
-                        ["radius"] = 8,
-                        ["kind"] = "all",
-                        ["limit"] = 40
+                ["nearbyPorts"] = new Dictionary<string, object> {
+                    ["tool"] = "server_control",
+                    ["arguments"] = new Dictionary<string, object> {
+                        ["domain"] = "query", ["action"] = "select",
+                        ["query"] = "SELECT id,ports FROM ports WHERE near(" + x + "," + y + ",8) LIMIT 20"
                     }
                 },
-                ["tokenHint"] = "Use this cell_info first, then read markdown or nearby_ports only when more detail is needed."
+                ["tokenHint"] = "Use this cell_info first, then read markdown or a targeted ports query only when more detail is needed."
             };
         }
 

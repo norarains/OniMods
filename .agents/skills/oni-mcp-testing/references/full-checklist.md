@@ -27,13 +27,13 @@ colony_control domain=snapshot action=get      → 殖民地完整快照（替�
 ```
 read_control domain=infrastructure action=power_summary includeDetails=true   → 重点检测未接入电路的设备
 dupes_control domain=info action=status_check → 复制人导航可达性、被困风险
-building_control domain=planning action=search_defs query=厕所     → 中文查询 + 材料可用性
+server_control domain=query action=select query="SELECT prefabId, name, placement FROM building_defs WHERE name CONTAINS '厕所' LIMIT 3"
 ```
 
 检查项：
 - [ ] `read_control domain=infrastructure action=power_summary` 发现未连接设备（如 circuitId=-1）为加分项
 - [ ] `dupes_control domain=info action=status_check` 无被困风险，导航样本合理
-- [ ] `building_control domain=planning action=search_defs` 中文关键词可用，返回 `placement.anchor` 规则
+- [ ] `building_defs` 查询支持中文名，选择 placement 返回原生锚点规则
 
 ### 阶段 3: 地图易于理解性（只读，重点）
 
@@ -149,7 +149,7 @@ navigation_control action=coordinate_screenshot areaId=... focusCamera=true
 server_control domain=batch action=call_many responseMode=summary
   items:
     - { t: navigation_control, a: { action: get_view } }
-    - { t: building_control, a: { domain: planning, action: search_defs, query: 梯子, limit: 3 } }
+    - { t: server_control, a: { domain: query, action: select, query: "SELECT prefabId, name FROM building_defs WHERE name CONTAINS '梯子' LIMIT 3" } }
 ```
 
 检查项：

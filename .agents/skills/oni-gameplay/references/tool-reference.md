@@ -162,10 +162,10 @@ Cache catalog results for a loaded runtime. Short-cache roster, inventory, sched
 | Colony | snapshot, status, diagnostics, alerts, reports | diagnostic settings, management | notification actions |
 | Dupes | roster; detail, attributes, needs, status, priorities, skills | priority, skill, hat, rename, assignable | move or force action when explicitly supported |
 | Schedules | management schedule list | create, set block, assign, optimize | — |
-| Resources | inventory, food, item search, storage detail, diet status | pins, storage filters, diet policy | — |
-| Buildings | list/summary, defs, materials, candidates, config list | preview, auto-connect, enabled/toggle/copy, visual config | designation/build plan through supported planning flow |
+| Resources | inventory, food, items query, storage detail, diet status | pins, storage filters, diet policy | — |
+| Buildings | buildings/building_defs queries, materials, candidates | preview, auto-connect, enabled/toggle/copy, visual config | designation/build plan through supported planning flow |
 | Orders | priority list | priority set | dig, mop, sweep, disinfect, cancel, harvest, deconstruct, capture, empty/cut conduits |
-| Infrastructure | power summary/ports, rooms, utility maps | supported configuration | utility designation through orders/building tools |
+| Infrastructure | power summary, ports query, rooms, utility maps | supported configuration | utility designation through orders/building tools |
 | World | worlds, cells, elements, maps, thermal risk, areas | define/merge/forget areas | map mutations through orders/build plans |
 | Camera | get view | — | move, focus, overlay, screenshot |
 | Game | time, saves, DLC/state reads | supported state/DLC settings | pause, resume, speed, save/load/quit |

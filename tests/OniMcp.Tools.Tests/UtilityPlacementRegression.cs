@@ -104,8 +104,8 @@ internal static class UtilityPlacementRegression
     {
         foreach (var family in new[] {
             new[] { "Wire", "Wire", "WireRefined", "WireHighWattage", "WireRefinedHighWattage" },
-            new[] { "GasConduit", "GasConduit", "GasConduitInsulated", "GasConduitRadiant" },
-            new[] { "LiquidConduit", "LiquidConduit", "LiquidConduitInsulated", "LiquidConduitRadiant" },
+            new[] { "GasConduit", "GasConduit", "InsulatedGasConduit", "GasConduitRadiant" },
+            new[] { "LiquidConduit", "LiquidConduit", "InsulatedLiquidConduit", "LiquidConduitRadiant" },
             new[] { "LogicWire", "LogicWire", "LogicRibbon" },
             new[] { "SolidConduit", "SolidConduit" } })
         {
@@ -125,6 +125,6 @@ internal static class UtilityPlacementRegression
         foreach (string unsupported in new[] { "WireBridge", "GasConduitBridge", "PowerTransformerSmall", "Unknown", "" })
             Check(!UtilityPrefabPolicy.IsLinear(unsupported), "nonlinear object rejected: " + unsupported);
         string ignored;
-        Check(!UtilityPrefabPolicy.TrySelect("Wire", "LiquidConduitInsulated", out ignored), "power path cannot silently place liquid pipe");
+        Check(!UtilityPrefabPolicy.TrySelect("Wire", "InsulatedLiquidConduit", out ignored), "power path cannot silently place liquid pipe");
     }
 }

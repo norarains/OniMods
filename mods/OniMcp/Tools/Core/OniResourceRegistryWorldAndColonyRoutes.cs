@@ -58,13 +58,6 @@ namespace OniMcp.Tools
                                     return ReadToolResource(uri, "read_control", query, "application/json");
                                 }
 
-            if (parsed.Host == "power" && parsed.AbsolutePath == "/ports")
-                                {
-                                    var query = ParseQuery(parsed.Query);
-                                    query["domain"] = "infrastructure";
-                                    query["action"] = "power_ports";
-                                    return ReadToolResource(uri, "read_control", query, "application/json");
-                                }
 
             if (parsed.Host == "rooms" && parsed.AbsolutePath == "/list")
                                 {
@@ -237,12 +230,6 @@ namespace OniMcp.Tools
                                     return ReadToolResource(uri, "game_control", query, "application/json");
                                 }
 
-            if (parsed.Host == "buildings" && parsed.AbsolutePath == "/defs")
-                                {
-                                    var query = ParseQuery(parsed.Query);
-                                    query["action"] = "search_defs";
-                                    return ReadToolResource(uri, "building_control", query, "application/json");
-                                }
 
             if (parsed.Host == "buildings" && parsed.AbsolutePath == "/materials")
                                 {
@@ -251,12 +238,6 @@ namespace OniMcp.Tools
                                     return ReadToolResource(uri, "building_control", query, "application/json");
                                 }
 
-            if (parsed.Host == "buildings" && parsed.AbsolutePath == "/configurables")
-                                {
-                                    var query = ParseQuery(parsed.Query);
-                                    query["action"] = "state_list";
-                                    return ReadToolResource(uri, "building_control", query, "application/json");
-                                }
 
             if (parsed.Host == "buildings" && parsed.AbsolutePath == "/lights")
                                 {

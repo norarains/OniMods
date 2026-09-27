@@ -46,7 +46,7 @@ namespace OniMcp.Tools
 
     public static partial class GameControlTools
     {
-        private static IEnumerable<GameObject> BuildingReadCandidates(bool includePlanned)
+        internal static IEnumerable<GameObject> BuildingReadCandidates(bool includePlanned)
         {
             var seen = new HashSet<int>();
             foreach (var building in Components.BuildingCompletes.Items)

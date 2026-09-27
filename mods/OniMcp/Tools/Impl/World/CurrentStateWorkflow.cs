@@ -46,32 +46,18 @@ namespace OniMcp.Tools
                         },
                         new JObject
                         {
-                            ["tool"] = "read_control",
-                            ["arguments"] = new JObject
-                            {
-                                ["domain"] = "infrastructure",
-                                ["action"] = "nearby_ports",
-                                ["x"] = "target-x",
-                                ["y"] = "target-y",
-                                ["radius"] = 4,
-                                ["kind"] = "all"
-                            }
+                            ["tool"] = "server_control",
+                    ["arguments"] = new JObject { ["domain"] = "query", ["action"] = "select",
+                        ["query"] = "SELECT id,ports FROM ports WHERE in_area('module-area-id') LIMIT 20" }
                         }
                     }
                 },
                 new JObject
                 {
                     ["step"] = "nearby_ports",
-                    ["tool"] = "read_control",
-                    ["arguments"] = new JObject
-                    {
-                        ["domain"] = "infrastructure",
-                        ["action"] = "nearby_ports",
-                        ["x"] = "target-x",
-                        ["y"] = "target-y",
-                        ["radius"] = 8,
-                        ["kind"] = "all"
-                    },
+                    ["tool"] = "server_control",
+                    ["arguments"] = new JObject { ["domain"] = "query", ["action"] = "select",
+                        ["query"] = "SELECT id,ports FROM ports WHERE in_area('module-area-id') LIMIT 20" },
                     ["why"] = "Low-token local port search when cell detail says a building has missing input/output."
                 }
             };
@@ -111,7 +97,7 @@ namespace OniMcp.Tools
             {
                 ["default"] = "snapshot + file index + next calls only",
                 ["avoidByDefault"] = new JArray { "broad viewport maps", "Player.log tail", "all infrastructure ports", "full atmosphere scan" },
-                ["expandWith"] = new JArray { "includeState=true", "includeInfrastructure=true infrastructureKind=power", "includeReachability=true reachabilityRadius=12", "includeLogs=true logLimit=160" },
+                ["expandWith"] = new JArray { "includeState=true", "includeReachability=true reachabilityRadius=12", "includeLogs=true logLimit=160" },
                 ["editLoop"] = "current -> one write -> compact result -> only failed cell/detail reads"
             };
         }

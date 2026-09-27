@@ -119,7 +119,7 @@ namespace OniMcp.Tools
                     }
                     continue;
                 }
-                result.Add(supplyFinding);
+                if (supply.Essential) result.Add(supplyFinding);
             }
             foreach (string alert in sample.Alerts.OrderBy(item => item, StringComparer.Ordinal))
                 add("hud", alert.StartsWith("DuplicantThreatening:", StringComparison.Ordinal) ? "critical" : "warning",
@@ -148,7 +148,7 @@ namespace OniMcp.Tools
                 ["coverage"] = new Dictionary<string, object>
                 {
                     ["available"] = sample.Available, ["vitals"] = "all_live_dupes",
-                    ["buildingSupply"] = "visible_native_shortage_statuses_in_selected_world",
+                    ["buildingSupply"] = "essential_oxygen_sanitation_and_active_research; ordinary_building_warnings_on_demand",
                     ["hud"] = "active_notifications_and_cached_native_diagnostic_warnings",
                     ["foodAndWork"] = sample.WorldId < 0 ? "all_worlds_aggregate" : "selected_world", ["foodMaxAgeSeconds"] = 2, ["infrastructureMaxAgeSeconds"] = 2,
                     ["notChecked"] = new[] { "local_atmosphere", "navigation", "resource_fetchability", "full_utility_networks" }

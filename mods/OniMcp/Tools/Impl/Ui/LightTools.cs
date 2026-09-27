@@ -121,6 +121,8 @@ namespace OniMcp.Tools
                     var method = OniReflection.GetMethodSafe(typeof(LightColorMenu), "SetColor", false, new[] { typeof(int) });
                     if (method == null)
                         return CallToolResult.Error("LightColorMenu.SetColor not found");
+                    var preview = ConfigMutation.Preview(args, TargetInfo(go), new { colorIndex = index });
+                    if (preview != null) return preview;
                     method.Invoke(menu, new object[] { index });
 
                     return CallToolResult.Text(JsonConvert.SerializeObject(new Dictionary<string, object>

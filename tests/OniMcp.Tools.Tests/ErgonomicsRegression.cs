@@ -240,11 +240,30 @@ internal static class ErgonomicsRegression
             Name = "building_control", Mode = "execute", Risk = "dangerous",
             Handler = args => { calls++; return CallToolResult.Text("{ok:true}"); }
         };
-        result = ToolBatchTools.CallMany().Handler(JObject.Parse("{calls:[{tool:'building_control',args:{domain:'config',action:'list',id:2062,capability:'manual_delivery'}}]}"));
-        Check(!result.IsError && calls == 2, "read-only building configuration needs no mutation confirmation");
-        result = ToolBatchTools.CallMany().Handler(JObject.Parse("{calls:[{tool:'building_control',args:{domain:'config',action:'set',id:2062}}]}"));
-        Check(result.IsError && calls == 2, "configuration writes still require confirmation");
-        OniToolRegistry.Internal.Clear();
+        OniToolRegistry.Tools.TryGetValue("server_control", out var previousServer);
+        OniToolRegistry.Tools["server_control"] = new McpTool {
+            Name = "server_control", Mode = "write", Risk = "medium",
+            Handler = args => {
+                Check((string)args["domain"] == "query" && (string)args["action"] == "select"
+                    && args["confirm"] == null, "canonical query routes without invented mutation confirmation");
+                calls++; return CallToolResult.Text("{ok:true}");
+            }
+        };
+        try
+        {
+            result = ToolBatchTools.CallMany().Handler(JObject.Parse("{calls:[{tool:'server_control',args:{domain:'query',action:'select',query:'SELECT id, config FROM buildings WHERE id = 2062'}}]}"));
+            Check(!result.IsError && calls == 2, "read-only configuration query needs no mutation confirmation");
+            result = ToolBatchTools.CallMany().Handler(JObject.Parse("{calls:[{tool:'building_control',args:{domain:'config',action:'set_threshold',id:2062,threshold:300}}]}"));
+            Check(result.IsError && calls == 2, "configuration writes still require confirmation");
+            result = ToolBatchTools.CallMany().Handler(JObject.Parse("{calls:[{tool:'building_control',args:{domain:'config',action:'set_threshold',id:2062,threshold:300,confirm:true}}]}"));
+            Check(!result.IsError && calls == 3, "confirmed configuration writes retain canonical batch routing");
+        }
+        finally
+        {
+            if (previousServer == null) OniToolRegistry.Tools.Remove("server_control");
+            else OniToolRegistry.Tools["server_control"] = previousServer;
+            OniToolRegistry.Internal.Clear();
+        }
     }
 }
 

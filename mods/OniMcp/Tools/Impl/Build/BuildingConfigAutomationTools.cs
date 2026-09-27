@@ -42,6 +42,8 @@ namespace OniMcp.Tools
                     int index = Math.Max(0, ToolUtil.GetInt(args, "index") ?? 0);
                     float value = Mathf.Clamp(requested.Value, slider.GetSliderMin(index), slider.GetSliderMax(index));
                     float before = slider.GetSliderValue(index);
+                    var preview = ConfigMutation.Preview(args, TargetInfo(go), new { value, index });
+                    if (preview != null) return preview;
                     slider.SetSliderValue(value, index);
 
                     return CallToolResult.Text(JsonConvert.SerializeObject(new Dictionary<string, object>
@@ -84,6 +86,8 @@ namespace OniMcp.Tools
                         return CallToolResult.Error("flowKgPerSecond is required");
 
                     float before = valve.DesiredFlow;
+                    var preview = ConfigMutation.Preview(args, TargetInfo(go), new { flowKgPerSecond = Mathf.Clamp(flow.Value, 0f, valve.MaxFlow) });
+                    if (preview != null) return preview;
                     valve.ChangeFlow(Mathf.Clamp(flow.Value, 0f, valve.MaxFlow));
                     return CallToolResult.Text(JsonConvert.SerializeObject(new Dictionary<string, object>
                     {
@@ -125,6 +129,8 @@ namespace OniMcp.Tools
                     float beforeLimit = valve.Limit;
                     float beforeAmount = valve.Amount;
                     float? limit = ToolUtil.GetFloat(args, "limit");
+                    var preview = ConfigMutation.Preview(args, TargetInfo(go), new { limit = limit.HasValue ? Mathf.Clamp(limit.Value, 0f, valve.maxLimitKg) : valve.Limit, resetAmount = ToolUtil.GetBool(args, "resetAmount", false) });
+                    if (preview != null) return preview;
                     if (limit.HasValue)
                         valve.Limit = Mathf.Clamp(limit.Value, 0f, valve.maxLimitKg);
                     if (ToolUtil.GetBool(args, "resetAmount", false))
@@ -173,6 +179,8 @@ namespace OniMcp.Tools
                     var before = TimerInfo(timer);
                     float? onSeconds = ToolUtil.GetFloat(args, "onSeconds");
                     float? offSeconds = ToolUtil.GetFloat(args, "offSeconds");
+                    var preview = ConfigMutation.Preview(args, TargetInfo(go), new { onSeconds = onSeconds.HasValue ? Math.Max(0f, onSeconds.Value) : timer.onDuration, offSeconds = offSeconds.HasValue ? Math.Max(0f, offSeconds.Value) : timer.offDuration, displayCyclesMode = ToolUtil.GetBool(args, "displayCyclesMode", timer.displayCyclesMode), reset = ToolUtil.GetBool(args, "reset", false) });
+                    if (preview != null) return preview;
                     if (onSeconds.HasValue)
                         timer.onDuration = Math.Max(0f, onSeconds.Value);
                     if (offSeconds.HasValue)
@@ -222,6 +230,8 @@ namespace OniMcp.Tools
                         return CallToolResult.Error("bitIndex is required");
                     int bit = Mathf.Clamp(bitIndex.Value, 0, Math.Max(0, selector.GetBitDepth() - 1));
                     int before = selector.GetBitSelection();
+                    var preview = ConfigMutation.Preview(args, TargetInfo(go), new { bitIndex = bit });
+                    if (preview != null) return preview;
                     selector.SetBitSelection(bit);
                     selector.UpdateVisuals();
 
@@ -273,6 +283,8 @@ namespace OniMcp.Tools
 
                     var before = door.CurrentState;
                     var requestedBefore = door.RequestedState;
+                    var preview = ConfigMutation.Preview(args, TargetInfo(go), new { state = state.ToString() });
+                    if (preview != null) return preview;
                     door.QueueStateChange(state);
 
                     return CallToolResult.Text(JsonConvert.SerializeObject(new Dictionary<string, object>
@@ -370,6 +382,8 @@ namespace OniMcp.Tools
                         var proxy = FindAssignableProxy(args);
                         if (proxy == null)
                             return CallToolResult.Error("scope=dupe requires dupeId or dupeName matching a minion assignables proxy");
+                        var preview = ConfigMutation.Preview(args, TargetInfo(go), new { scope, clear, permission = permission.ToString(), dupe = args["dupeId"] ?? args["dupeName"] });
+                        if (preview != null) return preview;
                         if (clear)
                             access.ClearPermission(proxy);
                         else
@@ -379,6 +393,8 @@ namespace OniMcp.Tools
                     {
                         if (clear)
                             return CallToolResult.Error("clear is only supported for scope=dupe");
+                        var preview = ConfigMutation.Preview(args, TargetInfo(go), new { scope, permission = permission.ToString() });
+                        if (preview != null) return preview;
                         access.SetDefaultPermission(DefaultScopeTag(scope), permission);
                     }
 

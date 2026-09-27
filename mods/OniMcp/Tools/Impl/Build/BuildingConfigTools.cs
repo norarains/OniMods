@@ -20,19 +20,13 @@ namespace OniMcp.Tools
                 Risk = "dangerous",
                 Aliases = new List<string> { "buildings_config_control", "building_side_screen_control" },
                 Tags = new List<string> { "buildings", "config", "automation", "side-screen", "door", "access", "visual", "colors" },
-                Description = "建筑配置组合工具：action=list/list_automation/set_enabled/set_toggle/set_threshold/set_slider/set_valve_flow/set_limit_valve/set_logic_timer/set_logic_ribbon_bit/set_door_state/get_access/set_access/copy_settings/batch_set/batch_set_automation/visual",
+                Description = "建筑配置组合工具：action=set_enabled/set_toggle/set_threshold/set_slider/set_valve_flow/set_limit_valve/set_logic_timer/set_logic_ribbon_bit/set_door_state/get_access/set_access/copy_settings/visual",
                 Parameters = BuildingConfigControlParams(),
                 Handler = args =>
                 {
-                    string operation = (args["action"]?.ToString() ?? args["operation"]?.ToString() ?? "list").Trim().ToLowerInvariant();
+                    string operation = (args["action"]?.ToString() ?? args["operation"]?.ToString() ?? "").Trim().ToLowerInvariant();
                     switch (operation)
                     {
-                        case "list":
-                        case "status":
-                            return ListConfigurableBuildings().Handler(args);
-                        case "list_automation":
-                        case "automation":
-                            return ListAutomationControls().Handler(args);
                         case "set_enabled":
                         case "enabled":
                             return OrdersTools.SetBuildingEnabled().Handler(args);
@@ -71,12 +65,6 @@ namespace OniMcp.Tools
                         case "copy_settings":
                         case "copy":
                             return CopySettings().Handler(args);
-                        case "batch_set":
-                        case "batch":
-                            return ConfigBatchTools.BatchSetBuildingConfigs().Handler(args);
-                        case "batch_set_automation":
-                        case "automation_batch":
-                            return ConfigBatchTools.BatchSetAutomationControls().Handler(args);
                         case "state_list":
                         case "list_state":
                             return ForwardStateControl(args, "list");
@@ -87,7 +75,7 @@ namespace OniMcp.Tools
                         case "visual_control":
                             return ForwardVisualControl(args);
                         default:
-                            return CallToolResult.Error("action must be list, list_automation, set_enabled, set_toggle, set_threshold, set_slider, set_valve_flow, set_limit_valve, set_logic_timer, set_logic_ribbon_bit, set_door_state, get_access, set_access, copy_settings, batch_set, batch_set_automation, state_list, state_set, or visual");
+                            return CallToolResult.Error("action must be set_enabled, set_toggle, set_threshold, set_slider, set_valve_flow, set_limit_valve, set_logic_timer, set_logic_ribbon_bit, set_door_state, get_access, set_access, copy_settings, state_list, state_set, or visual");
                     }
                 }
             };
@@ -97,7 +85,7 @@ namespace OniMcp.Tools
         {
             var forwarded = args == null ? new JObject() : (JObject)args.DeepClone();
             var visualAction = forwarded["visualAction"] ?? forwarded["visual_action"] ?? forwarded["visualOperation"] ?? forwarded["visual_operation"];
-            forwarded["action"] = visualAction ?? "list";
+            forwarded["action"] = visualAction ?? "";
             forwarded.Remove("visualAction");
             forwarded.Remove("visual_action");
             forwarded.Remove("visualOperation");
@@ -110,80 +98,6 @@ namespace OniMcp.Tools
             var forwarded = args == null ? new JObject() : (JObject)args.DeepClone();
             forwarded["action"] = action;
             return StateControlTools.ControlState().Handler(forwarded);
-        }
-
-        public static McpTool ListConfigurableBuildings()
-        {
-            return new McpTool
-            {
-                Name = "buildings_config_list",
-                Group = "buildings",
-                Mode = "read",
-                Risk = "none",
-                Aliases = new List<string> { "buildings_controls_list", "building_configurables" },
-                Tags = new List<string> { "buildings", "config", "threshold", "door", "access", "automation", "side-screen" },
-                Description = "兼容入口：请使用 building_control domain=config action=list",
-                Hidden = true,
-                Parameters = RectParams(new Dictionary<string, McpToolParameter>
-                {
-                    ["capability"] = new McpToolParameter
-                    {
-                        Type = "string",
-                        Description = "过滤配置能力：any、automation、enabled、toggle、threshold、slider、direction、few_option、broadcast_receiver、radbolt_direction、capacity、checkbox、counter、time_range、light_color、door、access、manual_delivery、filterable、tree_filter、flat_filter、valve、limit_valve、timer、ribbon_bit、logic_ports，默认 any",
-                        Required = false,
-                        EnumValues = new List<string> { "any", "automation", "battery_thresholds", "enabled", "toggle", "threshold", "slider", "direction", "few_option", "broadcast_receiver", "radbolt_direction", "capacity", "checkbox", "counter", "time_range", "light_color", "door", "access", "manual_delivery", "filterable", "tree_filter", "flat_filter", "valve", "limit_valve", "timer", "ribbon_bit", "logic_ports" }
-                    },
-                    ["query"] = new McpToolParameter { Type = "string", Description = "按名称或 prefabId 关键词筛选", Required = false },
-                    ["limit"] = new McpToolParameter { Type = "integer", Description = "最多返回数量，默认 100，最大 500", Required = false }
-                }),
-                Handler = args =>
-                {
-                    if (Game.Instance == null)
-                        return CallToolResult.Error("Game not initialized");
-
-                    bool hasRect = HasRectInput(args);
-                    var rect = hasRect ? ToolUtil.GetRect(args) : null;
-                    int worldId = hasRect || ToolUtil.GetInt(args, "worldId").HasValue ? ToolUtil.ResolveWorldId(args) : -1;
-                    string capability = NormalizeCapability((args["capability"] ?? args["kind"])?.ToString());
-                    string query = args["query"]?.ToString();
-                    int? targetId = ToolUtil.GetInt(args, "id");
-                    int limit = Math.Max(1, Math.Min(ToolUtil.GetInt(args, "limit") ?? 100, 500));
-
-                    var results = new List<Dictionary<string, object>>();
-                    foreach (var building in Components.BuildingCompletes.Items)
-                    {
-                        var go = building?.gameObject;
-                        if (go == null || !ToolUtil.GameObjectMatchesWorld(go, worldId))
-                            continue;
-                        int cell = Grid.PosToCell(go);
-                        if (rect != null && !CellInRect(cell, rect, worldId))
-                            continue;
-                        if (targetId.HasValue && (go.GetComponent<KPrefabID>()?.InstanceID ?? go.GetInstanceID()) != targetId.Value)
-                            continue;
-                        if (!MatchesQuery(go, query))
-                            continue;
-
-                        var info = BuildConfigInfo(go);
-                        var capabilities = (List<string>)info["capabilities"];
-                        if (capabilities.Count == 0)
-                            continue;
-                        if (capability != "any" && !capabilities.Contains(capability))
-                            continue;
-
-                        results.Add(info);
-                        if (results.Count >= limit)
-                            break;
-                    }
-
-                    return CallToolResult.Text(JsonConvert.SerializeObject(new Dictionary<string, object>
-                    {
-                        ["returned"] = results.Count,
-                        ["worldId"] = worldId >= 0 ? (object)worldId : null,
-                        ["capability"] = capability,
-                        ["buildings"] = results
-                    }, McpJsonUtil.Settings));
-                }
-            };
         }
 
         public static McpTool SetThreshold()
@@ -200,7 +114,8 @@ namespace OniMcp.Tools
                 Hidden = true,
                 Parameters = LookupParams(new Dictionary<string, McpToolParameter>
                 {
-                    ["threshold"] = new McpToolParameter { Type = "number", Description = "阈值输入；按目标组件的 ProcessedInputValue 和范围处理", Required = true },
+                    ["threshold"] = new McpToolParameter { Type = "number", Description = "Native threshold (temperature: Kelvin); unit=C/F/K/display explicitly converts input.", Required = true },
+                    ["unit"] = new McpToolParameter { Type = "string", Description = "Threshold input unit: native (default), K, C, F, or display.", Required = false },
                     ["activateAbove"] = new McpToolParameter { Type = "boolean", Description = "true 表示高于阈值激活，false 表示低于阈值激活", Required = true },
                     ["component"] = new McpToolParameter { Type = "string", Description = "同一对象有多个阈值组件时按组件类型名筛选", Required = false }
                 }),
@@ -218,15 +133,16 @@ namespace OniMcp.Tools
                     if (!requested.HasValue)
                         return CallToolResult.Error("threshold is required");
 
-                    float processed = threshold.ProcessedInputValue(requested.Value);
-                    float min = threshold.GetRangeMinInputField();
-                    float max = threshold.GetRangeMaxInputField();
-                    if (max > min)
-                        processed = Mathf.Clamp(processed, min, max);
-                    else
-                        processed = Mathf.Clamp(processed, threshold.RangeMin, threshold.RangeMax);
+                    float processed;
+                    try { processed = ThresholdValuePolicy.ToNative(requested.Value, args["unit"]?.ToString(),
+                        threshold.GetType().Name.IndexOf("Temperature", StringComparison.OrdinalIgnoreCase) >= 0,
+                        threshold.RangeMin, threshold.RangeMax, threshold.ProcessedInputValue); }
+                    catch (ArgumentException ex) { return CallToolResult.Error(ex.Message); }
 
                     bool activateAbove = ToolUtil.GetBool(args, "activateAbove", true);
+                    var preview = ConfigMutation.Preview(args, TargetInfo(go), new {
+                        threshold = processed, unit = ThresholdValuePolicy.NativeUnit(threshold.GetType().Name), activateAbove });
+                    if (preview != null) return preview;
                     threshold.Threshold = processed;
                     threshold.ActivateAboveThreshold = activateAbove;
 
@@ -240,63 +156,6 @@ namespace OniMcp.Tools
             };
         }
 
-        public static McpTool ListAutomationControls()
-        {
-            return new McpTool
-            {
-                Name = "automation_controls_list",
-                Group = "automation",
-                Mode = "read",
-                Risk = "none",
-                Aliases = new List<string> { "logic_controls_list", "power_controls_list" },
-                Tags = new List<string> { "automation", "logic", "power", "controls", "side-screen" },
-                Description = "兼容入口：请使用 building_control domain=config action=list_automation",
-                Hidden = true,
-                Parameters = RectParams(new Dictionary<string, McpToolParameter>
-                {
-                    ["query"] = new McpToolParameter { Type = "string", Description = "按名称或 prefabId 关键词筛选", Required = false },
-                    ["limit"] = new McpToolParameter { Type = "integer", Description = "最多返回数量，默认 100，最大 500", Required = false }
-                }),
-                Handler = args =>
-                {
-                    if (Game.Instance == null)
-                        return CallToolResult.Error("Game not initialized");
-
-                    bool hasRect = HasRectInput(args);
-                    var rect = hasRect ? ToolUtil.GetRect(args) : null;
-                    int worldId = hasRect || ToolUtil.GetInt(args, "worldId").HasValue ? ToolUtil.ResolveWorldId(args) : -1;
-                    string query = args["query"]?.ToString();
-                    int? targetId = ToolUtil.GetInt(args, "id");
-                    int limit = Math.Max(1, Math.Min(ToolUtil.GetInt(args, "limit") ?? 100, 500));
-
-                    var results = new List<Dictionary<string, object>>();
-                    foreach (var building in Components.BuildingCompletes.Items)
-                    {
-                        var go = building?.gameObject;
-                        if (go == null || !ToolUtil.GameObjectMatchesWorld(go, worldId))
-                            continue;
-                        int cell = Grid.PosToCell(go);
-                        if (rect != null && !CellInRect(cell, rect, worldId))
-                            continue;
-                        if (targetId.HasValue && (go.GetComponent<KPrefabID>()?.InstanceID ?? go.GetInstanceID()) != targetId.Value)
-                            continue;
-                        if (!MatchesQuery(go, query) || !IsAutomationControl(go))
-                            continue;
-
-                        results.Add(BuildConfigInfo(go));
-                        if (results.Count >= limit)
-                            break;
-                    }
-
-                    return CallToolResult.Text(JsonConvert.SerializeObject(new Dictionary<string, object>
-                    {
-                        ["returned"] = results.Count,
-                        ["worldId"] = worldId >= 0 ? (object)worldId : null,
-                        ["controls"] = results
-                    }, McpJsonUtil.Settings));
-                }
-            };
-        }
 
     }
 }

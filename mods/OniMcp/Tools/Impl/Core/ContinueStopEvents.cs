@@ -12,7 +12,7 @@ namespace OniMcp.Tools
             "health", "starving", "stress", "body_temperature", "dupe_missing", "food_low",
             "printing_pod_ready", "skill_points_available", "advanced_research_skill_missing",
             "research_unpowered", "research_material_missing", "research_inoperable",
-            "building_material_missing", "construction_material_missing",
+            "building_material_missing",
             "worker_idle", "hud", "research_queue_empty", "orders_finished",
             "no_observed_progress", "orders_not_progressing"
         };

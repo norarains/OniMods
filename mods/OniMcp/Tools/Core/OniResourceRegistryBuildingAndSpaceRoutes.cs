@@ -158,12 +158,6 @@ namespace OniMcp.Tools
                                     return ReadToolResource(uri, "building_control", query, "application/json");
                                 }
 
-            if (parsed.Host == "automation" && parsed.AbsolutePath == "/controls")
-                                {
-                                    var query = ParseQuery(parsed.Query);
-                                    query["action"] = "list_automation";
-                                    return ReadToolResource(uri, "building_control", query, "application/json");
-                                }
 
             if (parsed.Host == "automation" && parsed.AbsolutePath == "/automatable")
                                 {

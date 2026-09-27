@@ -30,8 +30,10 @@ def main() -> None:
     assert "UtilityPrefabPolicy.IsLinear(prefabId)" in exact
     policy = (ROOT / "mods/OniMcp/Tools/Shared/UtilityPrefabPolicy.cs").read_text()
     for prefab in ("LogicWire", "Wire", "WireRefined", "WireHighWattage", "WireRefinedHighWattage",
-                   "LiquidConduit", "LiquidConduitInsulated", "GasConduit", "GasConduitInsulated", "SolidConduit"):
+                   "LiquidConduit", "InsulatedLiquidConduit", "GasConduit", "InsulatedGasConduit", "SolidConduit"):
         assert f'["{prefab}"]' in policy
+    for invalid in ("LiquidConduitInsulated", "GasConduitInsulated"):
+        assert f'["{invalid}"]' not in policy
     for forbidden in ("Sensor", "Bridge", "Endpoint", "IndexOf", "Contains"):
         assert forbidden not in exact
 

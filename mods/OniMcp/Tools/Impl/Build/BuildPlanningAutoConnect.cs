@@ -115,7 +115,7 @@ namespace OniMcp.Tools
 
             if (best == null || bestScore <= 0)
             {
-                error = $"No built power endpoint instance matched '{query}'. Use read_control domain=buildings action=list query={query} to inspect existing targets, or provide explicit fromX/fromY/toX/toY.";
+                error = $"No built power endpoint instance matched '{query}'. Use server_control domain=query action=select query=SELECT id,prefabId,position FROM buildings to inspect existing targets, or provide explicit fromX/fromY/toX/toY.";
                 return false;
             }
 

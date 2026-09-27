@@ -9,6 +9,11 @@
     <StartupObject>BenchmarkMetadataRegressionEntry</StartupObject>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Query/QueryArguments.cs" Link="Source/QueryArguments.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Query/FactQuery*.cs" Link="Source/%(Filename)%(Extension)" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Core/ContinueObservationFreshness.cs" Link="Source/ContinueObservationFreshness.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Build/ThresholdValuePolicy.cs" Link="Source/ThresholdValuePolicy.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Build/ConfigMutation.cs" Link="Source/ConfigMutation.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Management/ResearchTargetQueue.cs" Link="Source/ResearchTargetQueue.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Management/ResearchTools.cs" Link="Source/ResearchTools.cs" />
     <Compile Include="../../mods/OniMcp/Patches/ConstructionPriorityIntent.cs" Link="Source/ConstructionPriorityIntent.cs" />

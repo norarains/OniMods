@@ -17,109 +17,6 @@ namespace OniMcp.Tools
         private static readonly ObjectLayer[] LogicLayers = { ObjectLayer.LogicWire, ObjectLayer.LogicWireTile, ObjectLayer.ReplacementLogicWire };
         private static readonly ObjectLayer[] RailLayers = { ObjectLayer.SolidConduit, ObjectLayer.SolidConduitTile, ObjectLayer.ReplacementSolidConduit };
 
-        public static CallToolResult ReadPorts(JObject args)
-        {
-            if (Game.Instance == null)
-                return CallToolResult.Error("Game not initialized");
-
-            args = args ?? new JObject();
-            string action = (args["action"]?.ToString() ?? string.Empty).Trim().ToLowerInvariant();
-            string kind = NormalizeKind(args["kind"]?.ToString() ?? args["type"]?.ToString());
-            string query = args["query"]?.ToString();
-            int? id = ToolUtil.GetInt(args, "id");
-            bool includeBlueprints = ToolUtil.GetBool(args, "includeBlueprints", true);
-            bool hasRect = HasRectInput(args);
-            bool hasPointRadius = IsNearbyAction(action) && HasPointInput(args);
-            var rect = hasRect ? ToolUtil.GetRect(args) : hasPointRadius ? PointRect(args) : null;
-            int worldId = hasRect || hasPointRadius || ToolUtil.GetInt(args, "worldId").HasValue ? ToolUtil.ResolveWorldId(args) : -1;
-            int limit = Math.Max(1, Math.Min(ToolUtil.GetInt(args, "limit") ?? 120, 500));
-
-            var results = new List<Dictionary<string, object>>();
-            var seen = new HashSet<string>();
-
-            foreach (var building in Components.BuildingCompletes.Items)
-            {
-                AddBuildingPorts(results, seen, building?.gameObject, false, kind, query, rect, worldId, limit, id);
-                if (results.Count >= limit)
-                    break;
-            }
-
-            if (includeBlueprints && results.Count < limit)
-            {
-                foreach (var constructable in FindConstructables(worldId))
-                {
-                    AddBuildingPorts(results, seen, constructable?.gameObject, true, kind, query, rect, worldId, limit, id);
-                    if (results.Count >= limit)
-                        break;
-                }
-            }
-
-            var summary = Summarize(results);
-            return CallToolResult.Text(JsonConvert.SerializeObject(new Dictionary<string, object>
-            {
-                ["worldId"] = worldId,
-                ["kind"] = kind,
-                ["query"] = string.IsNullOrWhiteSpace(query) ? null : query,
-                ["point"] = hasPointRadius ? CellObject(Grid.XYToCell(ToolUtil.GetInt(args, "x") ?? 0, ToolUtil.GetInt(args, "y") ?? 0)) : null,
-                ["rect"] = rect,
-                ["returned"] = results.Count,
-                ["summary"] = summary,
-                ["tokenHint"] = "Use nearby_ports with x/y/radius for local wiring. Each port has cell, role, layer, hasLine, connected, and line.dirs/to/glyph.",
-                ["ports"] = results
-            }, McpJsonUtil.Settings));
-        }
-
-        private static void AddBuildingPorts(
-            List<Dictionary<string, object>> results,
-            HashSet<string> seen,
-            GameObject go,
-            bool blueprint,
-            string kind,
-            string query,
-            Dictionary<string, int> rect,
-            int worldId,
-            int limit, int? id)
-        {
-            if (go == null || results.Count >= limit)
-                return;
-            if (!ToolUtil.GameObjectMatchesWorld(go, worldId))
-                return;
-
-            if (id.HasValue && go.GetComponent<KPrefabID>()?.InstanceID != id.Value) return;
-            int anchorCell = Grid.PosToCell(go);
-            if (rect != null && !CellInRect(anchorCell, rect, worldId))
-                return;
-            if (!MatchesQuery(go, query))
-                return;
-
-            var building = go.GetComponent<Building>();
-            var def = building?.Def ?? ResolveBuildingDef(go);
-            if (def == null)
-                return;
-
-            var ports = BuildPorts(go, building, def, kind).ToList();
-            if (blueprint)
-                foreach (var port in ports) { port["connected"] = null; port["source"] = "blueprint_definition"; }
-            if (ports.Count == 0)
-                return;
-
-            string key = go.GetInstanceID() + ":" + anchorCell + ":" + blueprint;
-            if (!seen.Add(key))
-                return;
-
-            results.Add(new Dictionary<string, object>
-            {
-                ["name"] = ToolUtil.CleanName(go.GetProperName()),
-                ["prefabId"] = def.PrefabID,
-                ["id"] = go.GetComponent<KPrefabID>()?.InstanceID,
-                ["blueprint"] = blueprint,
-                ["anchor"] = CellObject(anchorCell),
-                ["判定点"] = CellObject(anchorCell),
-                ["ports"] = ports,
-                ["summary"] = PortSummary(ports)
-            });
-        }
-
         private static IEnumerable<Dictionary<string, object>> BuildPorts(GameObject go, Building building, BuildingDef def, string kind)
         {
             if (Wants(kind, "power"))
@@ -336,10 +233,6 @@ namespace OniMcp.Tools
                 || args["x1"] != null || args["y1"] != null || args["x2"] != null || args["y2"] != null;
         }
 
-        private static bool IsNearbyAction(string action)
-        {
-            return action == "nearby_ports" || action == "nearby" || action == "ports_nearby";
-        }
 
         private static bool HasPointInput(JObject args)
         {

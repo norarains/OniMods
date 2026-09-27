@@ -38,7 +38,6 @@ namespace OniMcp.Tools
                 ["ok"] = true,
                 ["kind"] = "current_state",
                 ["snapshot"] = TryParseJson(text) ?? text,
-                ["infrastructure"] = ReadInfrastructureIfRequested(args),
                 ["reachability"] = ReadReachabilityIfRequested(args),
                 ["logErrors"] = ReadLogErrorsIfRequested(args)
 
@@ -56,7 +55,7 @@ namespace OniMcp.Tools
                 response["infrastructureWorkflow"] = BuildInfrastructureWorkflow();
                 response["stabilityWorkflow"] = BuildStabilityWorkflow();
                 response["tokenBudget"] = TokenBudget();
-                response["tokenHint"] = "First call agents. Default avoids broad map scans; pass includeInfrastructure/includeLogs only when needed.";
+                response["tokenHint"] = "First call agents. Default avoids broad map scans; use queries for ports; includeLogs only when needed.";
                 response["recommendedSecondCall"] = StarterRoomTemplateCall();
                 response["starterPreflight"] = StarterPreflight();
                 response["starterDecisionTree"] = StarterDecisionTree();
@@ -78,26 +77,6 @@ namespace OniMcp.Tools
             {
                 return null;
             }
-        }
-
-        private static JToken ReadInfrastructureIfRequested(JObject args)
-        {
-            if (!ToolUtil.GetBool(args, "includeInfrastructure", false))
-                return null;
-
-            var portArgs = new JObject
-            {
-                ["domain"] = "infrastructure",
-                ["action"] = "ports",
-                ["kind"] = args["infrastructureKind"]?.ToString() ?? "all",
-                ["limit"] = ToolUtil.GetInt(args, "infrastructureLimit") ?? 40
-            };
-
-            CallToolResult result = InfrastructurePortReadTools.ReadPorts(portArgs);
-            string text = result.Content?.FirstOrDefault()?.Text ?? string.Empty;
-            if (result.IsError)
-                return new JObject { ["ok"] = false, ["error"] = text };
-            return TryParseJson(text) ?? text;
         }
 
         private static JToken ReadLogErrorsIfRequested(JObject args)
@@ -292,7 +271,7 @@ private static JArray ManagementQuickEdits()
                 DetailHint("zoom", "world_editor command=zoom x1=... y1=... x2=... y2=... views=default,power,temperature", "Local multi-view map; syncs live camera/view for stream."),
                 DetailHint("screenshot", "world_editor command=screenshot views=default,power,temperature waitFrames=2", "Capture current viewport across overlays; use as visual proof after map/connection edits."),
                 DetailHint("cell", "/active/map/cell_X_Y.md", "Exact cell: temperature suitability, objects, ports, lines, pickup stacks, native cell facts."),
-                DetailHint("ports", "read_control domain=infrastructure action=nearby_ports x=... y=... radius=8 kind=all", "Local power/liquid/gas/logic/rail ports without broad scans."),
+                DetailHint("ports", "server_control domain=query action=select query=\"SELECT id, ports FROM ports WHERE near(0,0,8) LIMIT 10\"", "Local power/liquid/gas/logic/rail ports without broad scans."),
                 DetailHint("reachability", "read_control domain=state action=current includeReachability=true reachabilityRadius=12", "Compact duplicant movement range before rescue, dig, construction planning; use standalone reachable_area only for repeated checks."),
                 DetailHint("ops", "world_editor command=read path=/active/ops/tools.md", "Grep-friendly operation file/tool index before issuing natural orders."),
                 DetailHint("edit", "/active/ops/orders.md, /active/ops/dupes.md, or /active/map/viewport.md SEARCH/REPLACE", "Execute typed orders, duplicant moves, or map-token edits after inspecting local detail.")

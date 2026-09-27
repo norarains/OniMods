@@ -8,7 +8,7 @@ namespace OniMcp.Tools
         internal static JObject Read()
         {
             var batch = new JArray();
-            foreach (string name in new[] { "colony_control", "dupes_control", "read_control", "search_control" })
+            foreach (string name in new[] { "colony_control", "dupes_control", "read_control" })
                 if (ToolBatchTools.TryGetBatchOperation(name, out _))
                     batch.Add(name);
             bool editMarks = OniToolRegistry.TryGetTool("game_control", out var game)
@@ -32,6 +32,7 @@ namespace OniMcp.Tools
                     ["directOnly"] = true,
                     ["policy"] = "Advances until duration_elapsed or an enabled event; returns facts, no recommendation. ignoreEvents/unignoreEvents persist per session, including across finding resolution and save loads. Ignored findings remain visible; summary omits unchanged ignored finding events. Enabled events in the final sample take precedence over a simultaneous deadline. No implicit acknowledgement or review horizon."
                 },
+                ["query"] = "server_control domain=query action=select query=SELECT...; schema [dataset=name] for discovery",
                 ["stateRead"] = "world_editor command=read path=/active/index.md includeState=true",
                 ["symbolsRead"] = "world_editor command=symbols queries=[...]",
                 ["help"] = "includeHelp=true; responseMode=full preserves edit diagnostics"

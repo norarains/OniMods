@@ -25,7 +25,6 @@ FULL_PUBLIC_TOOLS = DEFAULT_PUBLIC_TOOLS | {
     "colony_control",
     "dupes_control",
     "read_control",
-    "search_control",
 }
 
 

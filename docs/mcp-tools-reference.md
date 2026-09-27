@@ -107,7 +107,7 @@ a virtual folder and exposes map views as files:
 - `world_editor command=ls path=/`
 - `world_editor command=read path=/world/map/text.txt`
 - `world_editor command=screenshot views=[power]`
-- `world_editor command=search domain=buildings query="wire"`
+- `server_control domain=query action=select query="SELECT id, prefabId, position FROM buildings WHERE prefabId CONTAINS 'Wire' LIMIT 10"`
 - `world_editor command=read path=/active/buildings/plans.oni`
 - `world_editor command=read path=/active/infrastructure/power.oni`
 
@@ -121,7 +121,7 @@ operations and are not callable as MCP tools.
 新工具面按搜索/动作优先设计:
 
 - 优先使用 `query`、`target`、`search`、`name`、`id`、`areaId`。
-- For dedicated search, use `world_editor command=search` or the typed `/active/ops/search.md` workflow. The underlying `search_control` operation is internal and is not a direct MCP tool.
+- For colony facts use the query contract below; world_editor search remains for terrain and spatial planning.
 - Public aggregate tools do not accept raw `x/y`, `x1/y1/x2/y2`, `dx/dy`, `points`, or `anchors`. For exact orders, read `/active/ops/tools.md` and edit `/active/ops/orders.md`; use only currently public typed files/tools and ignore hidden `coordinate_control` and `/active/ops/coordinate.md` compatibility entries.
 - 面向任务的返回应尽量包含 `reachable`、`executable`、失败原因、缺失条件和建议下一步。
 - 需要定义区域并取得 `areaId` 时，通过 `world_editor` 的 typed `/active/ops/read.md` 工作流完成；底层 `read_control` 是 internal operation，不应作为 MCP 工具直接调用。
@@ -146,7 +146,6 @@ operations and are not callable as MCP tools.
 
 | action | 用途 |
 |--------|------|
-| `search_defs` | 搜索可建建筑定义 |
 | `materials` | 查询建筑可用材料和库存 |
 | `preview` | 预检一个蓝图锚点，返回可执行性和材料需求 |
 | `placement_candidates` | 在区域或目标附近搜索可放置位置 |
@@ -280,3 +279,17 @@ Prefer extending aggregate entrypoints in `Tools/Entry/` for new public capabili
 5. 优先传语义定位参数。
 6. 对危险动作传 `confirm: true`。
 7. 执行后读取资源或区域快照验证状态。
+
+## Selective colony queries
+
+`server_control domain=query action=select query="SELECT ..."` reads one paused main-thread sample. `action=schema` lists datasets/grammar; add `dataset=buildings` for only its fields, types, units and cost. Supported datasets: building_defs, buildings, items, dupes, orders, ports, building_warnings. SELECT supports exact comparisons, CONTAINS, AND/OR, IS NULL, COUNT/SUM, one GROUP BY or ORDER BY key, LIMIT and OFFSET. Predicates has_status(nativeId), in_area(handle), near(x,y,radiusCells) use native status IDs or geometric anchor positions, never implied reachability. String-array CONTAINS tests membership; string CONTAINS tests a substring.
+
+Results contain columns/rows, scanned count, elapsedMs, cycle/frame, scope and explicit truncation/nextOffset. Re-page only while the save and relevant state remain unchanged; offset is not a persistent cursor. Instance IDs belong to the loaded save. Queries default to visible objects across worlds; include worldId when needed. Limits: 50,000 scanned rows, 250ms, 200 output rows and 48,000 output characters. Budget failures return errors, never partial totals. null means unknown/not applicable; SUM is null if any selected input is unknown, with unknownInputs counts. Native mass is not fetchability. cellReachable is an explicitly requested exact-cell navigation check, not worker skill or chore eligibility. No joins, arbitrary code or mutations.
+
+Warnings are on demand through building_warnings or `/active/buildings/warnings.md`, backed by the same query reader. The view accepts a SELECT on that dataset, or worldId/id/areaId selectors with LIMIT/OFFSET equivalents limit/offset. Mixing SELECT with separate selectors is rejected; an area handle supplies its world unless worldId is explicit. Intended blockage is ordinary native state; reads do not acknowledge, silence or repair it. Continue keeps colony alerts and safety observations separate from this detailed view.
+
+The migration removes the duplicate search aggregate, building list/summary, build-definition search, item-instance search, configuration lists, port-list routes and their duplicate resource/file aliases. Existing virtual instance files remain because they support canonical editable lines; their indexes locate those files. Specialized power/room/navigation/food/inventory/dupe diagnostics remain for circuit topology, room criteria, movement, preservation/category/storage summaries and skill learnability beyond the query fields. Semantic world search remains for terrain sequences and spatial planning; native mutations retain their preflight/confirmation contracts. Reuse native readers internally rather than restoring advertised aliases.
+
+Configuration previews never call setters, including with confirm=true. Threshold numbers default to native units (temperature K) in both API reads/writes and virtual files. Pass unit=C, F, K or display explicitly for conversion; returned unit identifies the stored number. Other configuration units remain native slider/flow/capacity units.
+
+Configuration changes batch through `server_control domain=batch action=call_many` using canonical `building_control` calls. Preview each child with `dryRun=true`; the outer dry run validates routing only. The obsolete config batch route and its unregistered leaf-tool names are removed.

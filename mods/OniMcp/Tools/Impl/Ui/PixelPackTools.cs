@@ -178,10 +178,9 @@ namespace OniMcp.Tools
                     var pack = FindTarget(args);
                     if (pack == null)
                         return CallToolResult.Error("Target Pixel Pack not found");
-                    EnsureColorSettings(pack);
 
                     int? panelIndex = ToolUtil.GetInt(args, "panelIndex");
-                    if (!panelIndex.HasValue || panelIndex.Value < 0 || panelIndex.Value >= pack.colorSettings.Count)
+                    if (!panelIndex.HasValue || panelIndex.Value < 0 || panelIndex.Value >= 4)
                         return CallToolResult.Error("panelIndex must be in range 0-3");
 
                     string state = (args["state"]?.ToString() ?? "").Trim().ToLowerInvariant();
@@ -193,6 +192,9 @@ namespace OniMcp.Tools
                     if (!TryReadColor(args, out color, out colorError))
                         return CallToolResult.Error(colorError);
 
+                    var preview = ConfigMutation.Preview(args, TargetInfo(pack.gameObject), new { panelIndex, state, color = ColorToDictionary(color) });
+                    if (preview != null) return preview;
+                    EnsureColorSettings(pack);
                     var before = PixelPackInfo(pack);
                     var pair = pack.colorSettings[panelIndex.Value];
                     if (state == "active")
@@ -233,12 +235,14 @@ namespace OniMcp.Tools
                     var pack = FindTarget(args);
                     if (pack == null)
                         return CallToolResult.Error("Target Pixel Pack not found");
-                    EnsureColorSettings(pack);
 
                     string operation = (args["operation"]?.ToString() ?? "").Trim().ToLowerInvariant();
                     if (operation != "active_to_standby" && operation != "standby_to_active" && operation != "swap")
                         return CallToolResult.Error("operation must be active_to_standby, standby_to_active, or swap");
 
+                    var preview = ConfigMutation.Preview(args, TargetInfo(pack.gameObject), new { operation });
+                    if (preview != null) return preview;
+                    EnsureColorSettings(pack);
                     var before = PixelPackInfo(pack);
                     for (int i = 0; i < pack.colorSettings.Count; i++)
                     {
@@ -270,10 +274,9 @@ namespace OniMcp.Tools
 
         private static Dictionary<string, object> PixelPackInfo(PixelPack pack)
         {
-            EnsureColorSettings(pack);
             var result = TargetInfo(pack.gameObject);
             result["logicValue"] = pack.logicValue;
-            result["panels"] = pack.colorSettings.Select((pair, index) => new Dictionary<string, object>
+            result["panels"] = (pack.colorSettings ?? new List<PixelPack.ColorPair>()).Select((pair, index) => new Dictionary<string, object>
             {
                 ["index"] = index,
                 ["active"] = ColorToDictionary(pair.activeColor),

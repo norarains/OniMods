@@ -1,55 +1,34 @@
 ---
 name: oni-mcp-play-loop
-description: Use for autonomous ONI play or continuing a colony through MCP. Plan useful batches while paused, then repeat bounded continue calls with compact safety/progress checks; return to careful planning only for concrete triggers.
+description: Autonomous ONI play through MCP. Batch useful work while paused, then repeat bounded continue calls with brief safety checks.
 ---
 
 # ONI play loop
 
-Use the shared [control contract](../oni-gameplay/SKILL.md) and cached [capabilities](../oni-gameplay/references/capabilities.md). Read the world-editor reference only when editing.
+Use the shared [control contract](../oni-gameplay/SKILL.md) and cached capabilities. Read the world-editor reference only when editing.
 
-## Planning round
+## Plan while paused
 
-1. Pause. Use one compact safety snapshot or the previous `continue` result; do not fetch both routinely. Inspect only the domains needed for the next objective. Read edit marks only when `capabilities.editMarks=true`.
-2. Apply the colony-wide modular architecture rule in [gameplay control](../oni-gameplay/SKILL.md#colony-architecture): explicit responsibilities, boundaries, interfaces, dependencies, capacities and failure containment, with staged maintenance and integration checks. Plan a coherent batch that supplies available working duplicants with useful, reachable work for several run windows. Consider material budgets, access, prerequisites, priorities, research and recurring life-support work together. Respect meals, rest and personal needs; do not create pointless errands to increase a busy count. Avoid repeated one-tile planning when the whole safe section is already understood.
-3. Inspect exact cells for liquid-adjacent work, navigation hazards or irreversible edits. Run supported semantic validators, review material/hazard/partial-failure evidence, and commit in a fresh call. Outer batch `dryRun=true` validates schema/routing only; run normal batches with child `dryRun=true` for actual game validation. Do not preview and commit dependent edits in the same batch.
-4. Verify orders/settings from returned postconditions; use one targeted read only when the response lacks that evidence. Planned orders are not completed construction. Independent writes may be batched; dependent stages require updated evidence. Read `workAccess` separately from placement validity: current adjacent-cell access does not prove eventual completion, and pending ladders do not provide current access. Then start the fast loop. Every window refreshes tracked orders automatically.
+Use the previous continue observation or one compact snapshot. Inspect only facts needed for the objective. Apply modular design across the colony and plan enough useful, reachable work for available workers over several windows. Account for material budgets, access, prerequisites, research and life support together. Respect meals/rest; do not invent chores to raise the busy count.
 
-## Fast round
+Preview hazardous or exact edits, review material/access/side-effect evidence, execute in a fresh call and verify. Planned orders are not completed construction. Pending access infrastructure is not currently usable. Re-read between dependent stages; batch independent actions.
 
-When cached capabilities advertise `boundedContinue`, call directly:
+## Fast rounds
 
-```text
-game_control domain=speed action=continue seconds=15 task="Advance planned work and check safety"
-```
+Call directly: `game_control domain=speed action=continue seconds=15`. Use 10–20 real seconds for stable batches, 3–6 for an inspected delicate operation. Optional speed=1..3; otherwise preserve speed. No batch/program/task wrapper.
 
-`speed=1..3` is optional; otherwise the selected speed is preserved. Windows are 1–20 real seconds; use 10–20 for stable work and 3–6 for an inspected delicate operation. Call directly, without batch/program/task wrappers.
+The call advances until its deadline or an enabled event, then returns paused with stopReason, observation, changes and events. duration_elapsed means the full window finished; event may occur before any time advances. The caller decides the next action. A healthy round needs only another continue: briefly check vitals, findings and useful progress, without another pause/snapshot/map/discovery call or rewritten plan. Stay paused and investigate only concrete concerns, depleted work or a planning milestone.
 
-Schema version 3 returns facts: `stopReason`, `isPaused`, elapsed time, `observation`, `changes`, `events`, and ignore-setting metadata. Default `responseMode=summary` retains every current finding and vital; `full` includes repeated coverage, healthy stations, ignore lists and all ignored events. There is no recommended action. `duration_elapsed` means the requested window finished; `event` means an enabled event stopped it, including a condition already present before time advanced. An enabled event in the final paused sample takes precedence over a simultaneous deadline. Other reasons identify interruptions or failures. Each call completes with the game paused; no protocol operation waits for a follow-up decision.
+Schema3 summary retains current findings/vitals/progress; full adds coverage and repeated metadata. An enabled event in the final paused sample takes precedence over the deadline. events describes conditions detected during the window, including transient ones; observation.findings describes current conditions; changes is the net added/resolved/changed difference since the previous returned result. These are not competing issue lists or server recommendations. No call waits for a subsequent planning decision.
 
-- If the returned facts show healthy, useful work, immediately repeat continue within the user's scope. Make a short sanity check of findings, vitals and progress. No extra pause, snapshot, map, dupe scan, discovery or rewritten plan for a routine window.
-- If facts require attention, stay paused and plan carefully. Investigate only the implicated domain, refill useful work, or handle research/Printing Pod/skill choices. Ordinary idle status does not justify a terrain scan.
-- If pause is unconfirmed, monitoring is unavailable, or a transport error occurs, establish state with one targeted read/pause. Never replay an uncertain advance automatically.
+## Stop settings and evidence
 
-The default stop-event list is advertised in `capabilities.boundedContinue.defaultStopEvents`. To inspect or change the caller's persistent settings without advancing:
+Read settings with speed/stop_events. Explicit ignoreEvents/unignoreEvents accept default event codes or exact finding IDs; they persist for this MCP session across windows, resolution and save loads. Ignoring only changes interruption: findings remain visible. Summary omits unchanged ignored event repetitions. Never ignore urgent safety to maintain pace or silently acknowledge a condition after inspecting it.
 
-```json
-{"domain":"speed","action":"stop_events","ignoreEvents":["printing_pod_ready"],"task":"Keep the pending Printing Pod choice visible without interrupting this work"}
-```
+Keep routine building warnings on demand through the shared query interface. Colony HUD alerts, native diagnostic warnings and essential safety remain in continue. Native cached diagnostics have unknown age; do not invent freshness. Covered HUD notifications use their specific finding for stopping. Informational power trends differ from overloads.
 
-Use `unignoreEvents:["printing_pod_ready"]` to restore its stop. Both arrays also work on `continue`, accept event codes or exact finding IDs, and persist for the current MCP session across windows, finding resolution/reappearance, and save loads. A new MCP session starts with defaults. Ignoring affects interruption only: the condition remains in `observation.findings` and returned ignored events carry `ignored:true`. Summary omits unchanged ignored finding events; current findings are never omitted. Do not ignore urgent safety conditions merely to maintain pace. Do not implicitly acknowledge findings after a read or planning round.
+Activity changes and removed orders do not prove completed work; use workProgressObserved, research progress and independent checks at milestones. registrationPending blueprints need a later paused verification before retries. Food totals include potentially remote loose food; storage does not prove fetchability. Rest/personal needs do not consume productive-work stall timers. No routine atmosphere scans: inspect local gases only for dupe symptoms or a concrete plan.
 
-Native diagnostic warnings are cached, with unknown age explicitly null. Covered HUD shortage/Printing Pod notifications remain visible but use the specific finding for stopping; cached idle diagnostics use the worker-idle grace period. Power-consumption changes alone are informational; overloads remain stopping warnings. Use crop target/status and dupe morale/stress facts to narrow any follow-up.
+Vitally important coverage is all live duplicants; food/work is selected-world. Ordinary continue does not prove navigation, fetchability or full utility networks. powerNetworkPending is unknown connection state, not a proven outage. Capability discovery advertises the actual default stop list and coverage.
 
-`observation.findings` is the shared current-condition list used by snapshots and diagnostics. `changes.added/resolved/changed` is the net difference from the previous returned continue observation; these sets are disjoint. The first result compares with an empty baseline. `events` records detected event types during this window, including transient conditions absent at the end. Neither is a second current-issues list.
-
-`activityChanges` records movement/chore transitions; `ordersRemoved` includes completed or cancelled orders. Neither proves construction finished. Use `workProgressObserved`, research changes and targeted verification at meaningful milestones. A blueprint with `registrationPending=true` exists but its footprint has not yet been verified; inspect again on a subsequent paused read after native OnSpawn registration before retrying placement.
-
-Stored food is not a guarantee of fetchability; loose food may be remote. Rest and personal-needs periods do not consume productive-work stall timers. Completed terrain clearance counts as progress; removed orders alone may be cancellations.
-
-The server samples vitals every 0.5 real seconds, food/research infrastructure at most two seconds old, and pauses at the deadline even if the client disappears. It has no implicit 300-second review stop. The agent owns planning pace. Coverage includes all-dupe vitals, selected-world food/work (stored versus loose food, construction, digs and deconstruction), stamina, missing dig skills, HUD alerts, infrastructure counts, Printing Pod, skill points, active research-station state, and visible native building/construction shortages. `building_material_missing` and `construction_material_missing` are default stop events with exact-target ignores; ignoring never hides their findings. Delivery waits alone are not shortages. `powerNetworkPending=true` means circuit state is refreshing, not a proven outage. The first window returns full coverage; subsequent summaries use `coverage.profile=colony_v1` with `available`. This profile does not check local atmosphere, navigation, resource fetchability or full utility networks; station storage/connection facts do not establish material fetchability or safe routes. Query local atmosphere when dupe symptoms or a specific plan require it; do not add routine region oxygen/CO₂ scans.
-
-For an older server without `boundedContinue`, use the fallback: arrange a pause in a local try/finally before resuming for 8–15 real seconds, pause, then one compact snapshot. Do not assume continue exists or emulate waiting inside a synchronous server program.
-
-If a window stops with `external_pause`, the player has taken control: remain paused until the user explicitly hands control back. Do not automatically call continue again. Keep map inspection passive (syncView=false, focusCamera=false) and use explicit bounds/worldId while sharing the game with the player.
-
-Leave the game paused when the requested play scope ends. Report milestones, blockers and final pause state briefly. Do not add duplicants without explicit permission or use cheats. During an established livestream, service stream health/comments before continuing; unrelated credentials do not block gameplay.
+On external_pause the player has control: wait for an explicit handoff. On transport errors or unconfirmed pause, establish state with one targeted pause/read; never blindly replay time advancement. Leave paused when scope ends. Stream health/comments take priority during an established livestream.

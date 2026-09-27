@@ -76,7 +76,7 @@ namespace OniMcp.Tools
                 }),
                 Handler = args =>
                 {
-                    if (!ToolUtil.GetBool(args, "confirm", false))
+                    if (!ToolUtil.GetBool(args, "confirm", false) && !ToolUtil.GetBool(args, "dryRun", false))
                         return CallToolResult.Error("confirm=true is required for Automatable changes");
 
                     var go = FindTarget(args);
@@ -84,7 +84,10 @@ namespace OniMcp.Tools
                         return CallToolResult.Error("Target Automatable not found");
 
                     var automatable = go.GetComponent<Automatable>();
+                    if (automatable == null) return CallToolResult.Error("Target does not expose Automatable");
                     var before = AutomatableInfo(go);
+                    var preview = ConfigMutation.Preview(args, TargetInfo(go), new { allowManual = ToolUtil.GetBool(args, "allowManual", !ToolUtil.GetBool(args, "automationOnly", automatable.GetAutomationOnly())) });
+                    if (preview != null) return preview;
                     ApplyAutomatable(automatable, args);
 
                     return JsonResult(new Dictionary<string, object>
@@ -118,7 +121,7 @@ namespace OniMcp.Tools
                 },
                 Handler = args =>
                 {
-                    if (!ToolUtil.GetBool(args, "confirm", false))
+                    if (!ToolUtil.GetBool(args, "confirm", false) && !ToolUtil.GetBool(args, "dryRun", false))
                         return CallToolResult.Error("confirm=true is required for Automatable batch changes");
 
                     var items = args["items"] as JArray;
@@ -136,19 +139,21 @@ namespace OniMcp.Tools
                             continue;
                         }
                         var item = MergeDefaults(rawItem, defaults);
+                        bool preview = ToolUtil.GetBool(args, "dryRun", false) || ToolUtil.GetBool(item, "dryRun", false);
 
                         var go = FindTarget(item);
-                        if (go == null)
+                        if (go == null || go.GetComponent<Automatable>() == null)
                         {
                             results.Add(new Dictionary<string, object> { ["ok"] = false, ["error"] = "Target Automatable not found", ["input"] = item });
                             continue;
                         }
 
                         var before = AutomatableInfo(go);
-                        ApplyAutomatable(go.GetComponent<Automatable>(), item);
+                        if (!preview) ApplyAutomatable(go.GetComponent<Automatable>(), item);
                         results.Add(new Dictionary<string, object>
                         {
                             ["ok"] = true,
+                            ["dryRun"] = preview,
                             ["target"] = TargetInfo(go),
                             ["before"] = before,
                             ["automatable"] = AutomatableInfo(go)
@@ -235,7 +240,7 @@ namespace OniMcp.Tools
                 }),
                 Handler = args =>
                 {
-                    if (!ToolUtil.GetBool(args, "confirm", false))
+                    if (!ToolUtil.GetBool(args, "confirm", false) && !ToolUtil.GetBool(args, "dryRun", false))
                         return CallToolResult.Error("confirm=true is required for critter sensor changes");
 
                     var go = FindTarget(args);
@@ -243,7 +248,10 @@ namespace OniMcp.Tools
                         return CallToolResult.Error("Target LogicCritterCountSensor not found");
 
                     var sensor = go.GetComponent<LogicCritterCountSensor>();
+                    if (sensor == null) return CallToolResult.Error("Target does not expose LogicCritterCountSensor");
                     var before = CritterSensorInfo(go);
+                    var preview = ConfigMutation.Preview(args, TargetInfo(go), new { countCritters = ToolUtil.GetBool(args, "countCritters", sensor.countCritters), countEggs = ToolUtil.GetBool(args, "countEggs", sensor.countEggs) });
+                    if (preview != null) return preview;
                     ApplyCritterSensor(sensor, args);
 
                     return JsonResult(new Dictionary<string, object>
@@ -277,7 +285,7 @@ namespace OniMcp.Tools
                 },
                 Handler = args =>
                 {
-                    if (!ToolUtil.GetBool(args, "confirm", false))
+                    if (!ToolUtil.GetBool(args, "confirm", false) && !ToolUtil.GetBool(args, "dryRun", false))
                         return CallToolResult.Error("confirm=true is required for critter sensor batch changes");
 
                     var items = args["items"] as JArray;
@@ -295,19 +303,21 @@ namespace OniMcp.Tools
                             continue;
                         }
                         var item = MergeDefaults(rawItem, defaults);
+                        bool preview = ToolUtil.GetBool(args, "dryRun", false) || ToolUtil.GetBool(item, "dryRun", false);
 
                         var go = FindTarget(item);
-                        if (go == null)
+                        if (go == null || go.GetComponent<LogicCritterCountSensor>() == null)
                         {
                             results.Add(new Dictionary<string, object> { ["ok"] = false, ["error"] = "Target LogicCritterCountSensor not found", ["input"] = item });
                             continue;
                         }
 
                         var before = CritterSensorInfo(go);
-                        ApplyCritterSensor(go.GetComponent<LogicCritterCountSensor>(), item);
+                        if (!preview) ApplyCritterSensor(go.GetComponent<LogicCritterCountSensor>(), item);
                         results.Add(new Dictionary<string, object>
                         {
                             ["ok"] = true,
+                            ["dryRun"] = preview,
                             ["target"] = TargetInfo(go),
                             ["before"] = before,
                             ["sensor"] = CritterSensorInfo(go)

@@ -68,8 +68,8 @@ namespace OniMcp.Tools
             {
                 AddBlocker(blockers, "critical", "food", $"Food stock {Math.Round(foodKcal, 1)} kcal below {Math.Round(foodNeed, 1)} kcal threshold for {dupes} dupes.");
                 nextCalls.Add("read_control domain=resources action=food limit=10");
-                nextCalls.Add("read_control domain=resources action=search_items query=FieldRation includeStored=false limit=20");
-                nextCalls.Add("read_control domain=resources action=search_items query=Muckroot includeStored=false limit=20");
+                nextCalls.Add("server_control domain=query action=select query=SELECT id,position,caloriesKcal FROM items WHERE prefabId='FieldRation' AND stored=false LIMIT 20");
+                nextCalls.Add("server_control domain=query action=select query=SELECT id,position,caloriesKcal FROM items WHERE prefabId='Muckroot' AND stored=false LIMIT 20");
                 nextCalls.Add("colony_control domain=bio kind=farming action=list_harvestables readyOnly=true limit=20");
                 if (harvestIds.Count > 0)
                     nextCalls.Add("for each harvestAction.ids: colony_control domain=bio kind=farming action=set_harvestable id=<id> readyOnly=true");

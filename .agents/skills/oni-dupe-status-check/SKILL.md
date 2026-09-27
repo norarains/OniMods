@@ -7,7 +7,7 @@ description: 当用户要求检查 ONI 复制人状态、怀疑复制人卡住/�
 
 ## Capability gate
 
-Read [capability discovery](../oni-gameplay/references/capabilities.md) before using tool examples. Only call names in `capabilities.publicTools` directly. Examples naming `colony_control`, `dupes_control`, `read_control`, or `search_control` are internal operations: use the documented batch route only when listed in `capabilities.batchOperations`. Skip edit-mark reads unless `capabilities.editMarks=true`. Cache discovery for the session.
+Use cached [capabilities](../oni-gameplay/references/capabilities.md): call only publicTools directly and route supported internal operations through server_control batch. Read colony facts through the query contract in the [control skill](../oni-gameplay/SKILL.md#read-facts).
 
 
 ## 目的
@@ -85,7 +85,7 @@ read_control domain=world action=area_snapshot x1=<scanRect[0]> y1=<scanRect[1]>
 1. 如果用户要求思考或规划，先暂停。
 2. 检查被标记的 `scanRect`。
 3. 优先通过挖掘/建造支撑打开可达路径，不要盲目移动复制人。
-4. 用 `building_control domain=planning action=search_defs/materials/placement_candidates/preview` 检查支撑方案；获得明确授权后才以单 anchor `build_area` dry-run，再 confirm 执行。
+4. 用 `building_control domain=planning action=materials/placement_candidates/preview` 检查支撑方案；获得明确授权后才以单 anchor `build_area` dry-run，再 confirm 执行。
 5. 动作完成后用 `dupes_control domain=info action=status_check` 验证。
 
 除非 `dupes_control domain=info action=status_check targetX/targetY` 或 `dupes_control domain=command action=move_to` 的可达性校验确认目标可达，否则不要把复制人移动到该格子。

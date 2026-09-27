@@ -9,49 +9,6 @@ namespace OniMcp.Tools
 {
     public static partial class BuildPlanningTools
     {
-        public static McpTool SearchBuildables()
-        {
-            return new McpTool
-            {
-                Name = "buildings_search_defs",
-                Group = "buildings",
-                Mode = "read",
-                Risk = "none",
-                Hidden = true,
-                Description = "兼容入口：请使用 building_control domain=planning action=search_defs",
-                Parameters = new Dictionary<string, McpToolParameter>
-                {
-                    ["query"] = new McpToolParameter { Type = "string", Description = "建筑 ID 或名称关键词", Required = false },
-                    ["category"] = new McpToolParameter { Type = "string", Description = "建造菜单分类/类别关键词，如 oxygen、plumbing、rocketry；大小写不敏感", Required = false },
-                    ["includeUnavailable"] = new McpToolParameter { Type = "boolean", Description = "是否包含当前未可用/未解锁的建筑定义，默认 false", Required = false },
-                    ["limit"] = new McpToolParameter { Type = "integer", Description = "最多返回数量，默认 30，最大 100", Required = false }
-                },
-                Handler = args =>
-                {
-                    string query = args["query"]?.ToString();
-                    string category = args["category"]?.ToString();
-                    bool includeUnavailable = ToolUtil.GetBool(args, "includeUnavailable", ToolUtil.GetBool(args, "includeLocked", false));
-                    int limit = Math.Max(1, Math.Min(ToolUtil.GetInt(args, "limit") ?? 30, 100));
-                    var defs = Assets.BuildingDefs
-                        .Where(def => def != null && (includeUnavailable || IsUnlockedAndAvailable(def)))
-                        .Where(def => string.IsNullOrWhiteSpace(category) || MatchesCategory(def, category))
-                        .Where(def => string.IsNullOrWhiteSpace(query) || Matches(def, query))
-                        .OrderBy(def => def.PrefabID)
-                        .Take(limit)
-                        .Select(BuildingDefToDictionary)
-                        .ToList();
-
-                    return CallToolResult.Text(JsonConvert.SerializeObject(new Dictionary<string, object>
-                    {
-                        ["query"] = string.IsNullOrWhiteSpace(query) ? null : query,
-                        ["category"] = string.IsNullOrWhiteSpace(category) ? null : category,
-                        ["includeUnavailable"] = includeUnavailable,
-                        ["returned"] = defs.Count,
-                        ["buildings"] = defs
-                    }, McpJsonUtil.Settings));
-                }
-            };
-        }
         public static McpTool ParseBuildPlan()
         {
             return new McpTool

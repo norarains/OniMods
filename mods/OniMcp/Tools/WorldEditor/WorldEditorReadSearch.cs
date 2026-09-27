@@ -75,14 +75,11 @@ namespace OniMcp.Tools
                     return ReadEditableTemplate(path, "Use exactly: connect (x1,y1) -> (x2,y2) [-> (x3,y3) ...]. This file builds LogicWire.");
                 if (relative == "infrastructure/solid_conveyor.oni")
                     return ReadEditableTemplate(path, "Use exactly: connect (x1,y1) -> (x2,y2) [-> (x3,y3) ...]. This file builds SolidConduit.");
-                if (relative == "buildings/index.oni")
-                    return ReadTools.ControlRead().Handler(Child(args, "buildings", "list"));
+                if (relative == "buildings/warnings.md") return ColonyQuery.ReadWarnings(CopyPayload(args));
                 if (relative == "buildings/index.md")
                     return CallToolResult.Text(ReadBuildingIndexMarkdown(args));
                 if (IsBuildingDetailMarkdown(relative))
                     return CallToolResult.Text(ReadBuildingDetailMarkdown(relative));
-                if (relative == "buildings/catalog.oni")
-                    return Search(args, "buildings");
                 if (relative == "buildings/plans.oni")
                     return ReadEditableTemplate(path, "Add or change desired buildings by replacing text in this file.");
                 if (relative == "orders/orders.oni")
@@ -231,7 +228,13 @@ namespace OniMcp.Tools
             string query = Text(args, "query", "target", "search");
             if (!string.IsNullOrWhiteSpace(query))
                 forwarded["query"] = query;
-            return SearchControlTools.ControlSearch().Handler(forwarded);
+            switch (forwarded["domain"]?.ToString())
+            {
+                case "tools": return ToolCatalogTools.SearchTools().Handler(forwarded);
+                case "world": return WorldSearchTools.SearchWorld().Handler(forwarded);
+                case "glyphs": return SearchGlyphs(forwarded);
+                default: return CallToolResult.Error("Use server_control domain=query for buildings, definitions, items and dupes; action=schema discovers fields.");
+            }
         }
 
         private static CallToolResult ReadEditableTemplate(string path, string note)

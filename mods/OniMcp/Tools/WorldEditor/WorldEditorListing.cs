@@ -107,9 +107,8 @@ namespace OniMcp.Tools
                 else if (relative == "buildings/")
                 {
                     add("index.md", "file", "Completed building parameter file index.");
+                    add("warnings.md", "file", "On-demand native building warnings; query accepts SELECT FROM building_warnings.");
                     add("instances/", "dir", "Stable per-building editable parameter files.");
-                    add("index.oni", "file", "Built buildings.");
-                    add("catalog.oni", "file", "Buildable catalog search.");
                     add("plans.oni", "file", "Desired building plan. SEARCH/REPLACE creates blueprints.");
                 }
                 else if (relative == "buildings/instances/")
@@ -156,7 +155,6 @@ namespace OniMcp.Tools
                 add("game.md", "file", "Editable operations for game_control.");
                 add("colony.md", "file", "Editable operations for colony_control.");
                 add("read.md", "file", "Editable operations for read_control.");
-                add("search.md", "file", "Editable operations for search_control.");
                 add("build.md", "file", "Editable operations for building_control.");
                 add("orders.md", "file", "Editable operations for orders_control.");
                 add("dupes.md", "file", "Editable operations for dupes_control.");

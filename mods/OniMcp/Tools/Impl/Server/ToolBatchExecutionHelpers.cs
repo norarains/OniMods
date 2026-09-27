@@ -178,6 +178,8 @@ namespace OniMcp.Tools
             string domain = (arguments?["domain"]?.ToString() ?? string.Empty).Trim().ToLowerInvariant();
             string action = (arguments?["action"]?.ToString() ?? string.Empty).Trim().ToLowerInvariant();
 
+            if (name == "server_control" && domain == "query") return action == "schema" || action == "select";
+
             if (string.Equals(name, "orders_control", StringComparison.OrdinalIgnoreCase))
                 return (domain == "priority" || string.IsNullOrEmpty(domain)) && action == "list";
 
@@ -203,10 +205,9 @@ namespace OniMcp.Tools
                     || (new[] { "side_surface", "surface", "generic_surface" }.Contains(domain)
                         && new[] { "list", "status", "list_rewards", "list_geysers" }.Contains(action))
                     || (new[] { "config", "configuration", "side_screen" }.Contains(domain)
-                    && new[] { "list", "status", "list_automation", "automation", "get_access", "state_list" }.Contains(action))
+                    && new[] { "get_access", "state_list" }.Contains(action))
                     || domain == "planning" && (
                     action == "parse_plan" || action == "parse_sequence" || action == "parse"
-                    || action == "search_defs" || action == "search" || action == "defs"
                     || action == "materials" || action == "preview"
                     || action == "placement_candidates" || action == "candidates" || action == "anchors");
 

@@ -44,7 +44,7 @@ namespace OniMcp.Tools
             return BuildingCategories(def).Any(value => Contains(value, q));
         }
 
-        private static Dictionary<string, object> BuildingDefToDictionary(BuildingDef def)
+        internal static Dictionary<string, object> BuildingDefToDictionary(BuildingDef def)
         {
             int worldId = ClusterManager.Instance?.activeWorldId ?? -1;
             var availableMaterials = AvailableMaterials(def, worldId, includeUnavailable: false).ToList();
@@ -84,7 +84,7 @@ namespace OniMcp.Tools
             };
         }
 
-private static bool IsUnlockedAndAvailable(BuildingDef def)
+internal static bool IsUnlockedAndAvailable(BuildingDef def)
 {
 if (def == null)
 return false;
@@ -98,7 +98,7 @@ return false;
 }
 }
 
-private static bool IsTechUnlocked(BuildingDef def)
+internal static bool IsTechUnlocked(BuildingDef def)
 {
 if (def == null)
 return false;
@@ -166,7 +166,7 @@ private static object AutoMaterialValue(BuildingDef def, int worldId)
             return material != null ? null : "no_currently_available_material";
         }
 
-        private static List<string> BuildingCategories(BuildingDef def)
+        internal static List<string> BuildingCategories(BuildingDef def)
         {
             var categories = new List<string>();
             AddCategory(categories, ReadMemberString(def, "Category"));

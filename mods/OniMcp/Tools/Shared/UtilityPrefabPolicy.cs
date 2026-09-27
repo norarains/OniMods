@@ -9,8 +9,8 @@ namespace OniMcp.Tools
         {
             ["Wire"] = "Wire", ["WireRefined"] = "Wire",
             ["WireHighWattage"] = "Wire", ["WireRefinedHighWattage"] = "Wire",
-            ["GasConduit"] = "GasConduit", ["GasConduitInsulated"] = "GasConduit", ["GasConduitRadiant"] = "GasConduit",
-            ["LiquidConduit"] = "LiquidConduit", ["LiquidConduitInsulated"] = "LiquidConduit", ["LiquidConduitRadiant"] = "LiquidConduit",
+            ["GasConduit"] = "GasConduit", ["InsulatedGasConduit"] = "GasConduit", ["GasConduitRadiant"] = "GasConduit",
+            ["LiquidConduit"] = "LiquidConduit", ["InsulatedLiquidConduit"] = "LiquidConduit", ["LiquidConduitRadiant"] = "LiquidConduit",
             ["SolidConduit"] = "SolidConduit", ["LogicWire"] = "LogicWire", ["LogicRibbon"] = "LogicWire"
         };
 

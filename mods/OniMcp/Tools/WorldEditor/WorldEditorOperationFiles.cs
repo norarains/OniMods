@@ -17,7 +17,6 @@ namespace OniMcp.Tools
             ["ops/game.md"] = "game_control",
             ["ops/colony.md"] = "colony_control",
             ["ops/read.md"] = "read_control",
-            ["ops/search.md"] = "search_control",
             ["ops/build.md"] = "building_control",
             ["ops/orders.md"] = "orders_control",
             ["ops/dupes.md"] = "dupes_control",
@@ -424,8 +423,6 @@ namespace OniMcp.Tools
                 yield return "call domain=snapshot action=get profile=minimal";
             else if (relative == "ops/read.md")
                 yield return "call domain=world action=search pattern=\"氧气\" limit=3";
-            else if (relative == "ops/search.md")
-                yield return "call domain=buildings query=\"ladder\"";
             else if (relative == "ops/build.md")
                 yield return "call domain=planning action=parse_plan plan=\"用砂岩造砖块靠近氧气\"";
             else if (relative == "ops/orders.md")
@@ -457,7 +454,7 @@ namespace OniMcp.Tools
             else if (relative == "ops/power.md")
                 yield return "call tool=read_control domain=infrastructure action=power_summary";
             else if (relative == "ops/automation.md")
-                yield return "call tool=building_control domain=config action=list target=\"sensor\"";
+                yield return "call tool=building_control domain=config action=set_threshold id=<sensorId> threshold=280.15 unit=K dryRun=true";
             else if (relative == "ops/farming.md")
                 {
                 yield return "call domain=bio bioDomain=farming action=list_planting limit=10";
@@ -467,13 +464,13 @@ namespace OniMcp.Tools
             else if (relative == "ops/ranching.md")
                 yield return "call tool=read_control domain=world action=search pattern=\"小动物\" limit=5";
             else if (relative == "ops/rockets.md")
-                yield return "call tool=search_control domain=tools query=\"rocket\"";
+                yield return "call tool=server_control domain=catalog action=search query=\"rocket\"";
             else if (relative == "ops/resources.md")
                 yield return "call tool=read_control domain=resources action=inventory";
             else if (relative == "ops/ui.md")
                 yield return "call tool=navigation_control domain=camera action=get_view";
             else if (relative == "ops/medical.md")
-                yield return "call tool=search_control domain=tools query=\"medical\"";
+                yield return "call tool=server_control domain=catalog action=search query=\"medical\"";
             else if (relative == "ops/rooms.md")
                 yield return "call tool=read_control domain=infrastructure action=rooms";
             else if (relative == "ops/sandbox.md")

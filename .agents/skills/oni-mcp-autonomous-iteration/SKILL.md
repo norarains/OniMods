@@ -7,7 +7,7 @@ description: Use when iterating on the ONI MCP server so an agent can build with
 
 ## Capability gate
 
-Read [capability discovery](../oni-gameplay/references/capabilities.md) before using tool examples. Only call names in `capabilities.publicTools` directly. Examples naming `colony_control`, `dupes_control`, `read_control`, or `search_control` are internal operations: use the documented batch route only when listed in `capabilities.batchOperations`. Skip edit-mark reads unless `capabilities.editMarks=true`. Cache discovery for the session.
+Use cached [capabilities](../oni-gameplay/references/capabilities.md): call only publicTools directly and route supported internal operations through server_control batch. Read colony facts through the query contract in the [control skill](../oni-gameplay/SKILL.md#read-facts).
 
 
 Use this workflow for end-to-end ONI MCP server improvement, especially when the goal is to make test agents control Oxygen Not Included with minimal manual steering.

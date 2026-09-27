@@ -64,7 +64,12 @@ def verify_world_editor_building_files(root: Path) -> None:
     skill = (root / ".agents" / "skills" / "oni-gameplay" / "SKILL.md").read_text(encoding="utf-8")
     reference = (root / ".agents" / "skills" / "oni-gameplay" / "references" / "world-editor.md").read_text(encoding="utf-8")
     reference_zh = (root / ".agents" / "skills" / "oni-gameplay" / "references" / "world-editor.zh.md").read_text(encoding="utf-8")
-    for text, label in ((skill, "skill"), (reference, "English reference"), (reference_zh, "Chinese reference")):
+    require(skill, "references/world-editor.md", "on-demand virtual-file protocol reference")
+    require(skill, "/active/buildings/warnings.md", "on-demand building warning view")
+    require(files["WorldEditorReadSearch.cs"], 'relative == "buildings/warnings.md"', "warning view read route")
+    require(files["WorldEditorReadSearch.cs"], "ColonyQuery.ReadWarnings(CopyPayload(args))", "warning view uses shared query reader")
+    require(files["WorldEditorListing.cs"], 'add("warnings.md", "file"', "warning view discovery")
+    for text, label in ((reference, "English reference"), (reference_zh, "Chinese reference")):
         require(text, "/active/buildings/index.md", f"{label} building parameter index")
         require(text, "/active/buildings/instances/", f"{label} building instance files")
 

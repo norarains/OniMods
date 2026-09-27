@@ -54,17 +54,19 @@ namespace OniMcp.Tools
                     var alarm = go.GetComponent<LogicAlarm>();
                     var before = LogicAlarmInfo(alarm);
 
-                    if (args["name"] != null)
-                        alarm.notificationName = Truncate(args["name"].ToString(), 30);
-                    if (args["tooltip"] != null)
-                        alarm.notificationTooltip = Truncate(args["tooltip"].ToString(), 90);
-                    if (args["type"] != null)
-                    {
-                        NotificationType type;
-                        if (!TryParseNotificationType(args["type"].ToString(), out type))
-                            return CallToolResult.Error("type must be bad, neutral, or duplicant_threatening");
-                        alarm.notificationType = type;
-                    }
+                    NotificationType type = alarm.notificationType;
+                    if (args["type"] != null && !TryParseNotificationType(args["type"].ToString(), out type))
+                        return CallToolResult.Error("type must be bad, neutral, or duplicant_threatening");
+                    var preview = ConfigMutation.Preview(args, TargetInfo(go), new {
+                        name = args["name"] == null ? alarm.notificationName : Truncate(args["name"].ToString(), 30),
+                        tooltip = args["tooltip"] == null ? alarm.notificationTooltip : Truncate(args["tooltip"].ToString(), 90),
+                        type = type.ToString(), pauseOnNotify = ToolUtil.GetBool(args, "pauseOnNotify", alarm.pauseOnNotify),
+                        zoomOnNotify = ToolUtil.GetBool(args, "zoomOnNotify", alarm.zoomOnNotify)
+                    });
+                    if (preview != null) return preview;
+                    if (args["name"] != null) alarm.notificationName = Truncate(args["name"].ToString(), 30);
+                    if (args["tooltip"] != null) alarm.notificationTooltip = Truncate(args["tooltip"].ToString(), 90);
+                    alarm.notificationType = type;
                     if (args["pauseOnNotify"] != null)
                         alarm.pauseOnNotify = ToolUtil.GetBool(args, "pauseOnNotify", alarm.pauseOnNotify);
                     if (args["zoomOnNotify"] != null)
@@ -193,6 +195,8 @@ namespace OniMcp.Tools
                     var heater = go.GetComponent<SpaceHeater>();
                     bool enabled = ToolUtil.GetBool(args, "enabled", heater.UserSliderSetting > 0f);
                     var before = TurboHeaterInfo(heater);
+                    var preview = ConfigMutation.Preview(args, TargetInfo(go), new { enabled });
+                    if (preview != null) return preview;
                     heater.SetUserSpecifiedPowerConsumptionValue(enabled ? heater.maxPower : heater.minPower);
 
                     return JsonResult(new Dictionary<string, object>

@@ -94,13 +94,15 @@ namespace OniMcp.Tools
                 }),
                 Handler = args =>
                 {
-                    if (!ToolUtil.GetBool(args, "confirm", false))
+                    if (!ToolUtil.GetBool(args, "confirm", false) && !ToolUtil.GetBool(args, "dryRun", false))
                         return CallToolResult.Error("confirm=true is required");
                     var go = FindMutantSeedTarget(args);
                     if (go == null)
                         return CallToolResult.Error("Target mutant seed control not found");
                     bool accept = ToolUtil.GetBool(args, "accept", true);
                     var before = MutantSeedInfo(go);
+                    var preview = ConfigMutation.Preview(args, TargetInfo(go), new { accept });
+                    if (preview != null) return preview;
                     string error = SetMutantSeedAccept(go, accept);
                     if (error != null)
                         return CallToolResult.Error(error);
@@ -197,13 +199,15 @@ namespace OniMcp.Tools
                 }),
                 Handler = args =>
                 {
-                    if (!ToolUtil.GetBool(args, "confirm", false))
+                    if (!ToolUtil.GetBool(args, "confirm", false) && !ToolUtil.GetBool(args, "dryRun", false))
                         return CallToolResult.Error("confirm=true is required");
                     var go = FindRocketUsageTarget(args);
                     var smi = go?.GetSMI<RocketUsageRestriction.StatesInstance>();
                     if (smi == null)
                         return CallToolResult.Error("Target rocket usage control not found");
                     var before = RocketUsageInfo(smi);
+                    var preview = ConfigMutation.Preview(args, TargetInfo(go), new { controlled = ToolUtil.GetBool(args, "controlled", true) });
+                    if (preview != null) return preview;
                     smi.isControlled = ToolUtil.GetBool(args, "controlled", true);
                     smi.GoToRestrictionState();
                     return JsonResult(new Dictionary<string, object>

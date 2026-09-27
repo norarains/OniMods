@@ -12,8 +12,6 @@ from verify_building_blueprint_safety import verify_building_blueprint_safety
 from verify_glyph_lookup_contract import verify_glyph_lookup_contract
 from verify_world_editor_building_files import verify_world_editor_building_files
 from verify_world_editor_sandbox_policy import verify_world_editor_sandbox_policy
-
-
 EXPECTED_DEFAULT_PUBLIC = {
     "benchmark",
     "building_control",
@@ -23,17 +21,13 @@ EXPECTED_DEFAULT_PUBLIC = {
     "server_control",
     "world_editor",
 }
-
 EXPECTED_REGISTERED = EXPECTED_DEFAULT_PUBLIC
-
 EXPECTED_INTERNAL = {
     "colony_control",
     "coordinate_control",
     "dupes_control",
     "read_control",
-    "search_control",
 }
-
 EXPECTED_ALIASES = {
     "benchmark": (),
     "building_control": ("buildings_control", "building_system_control"),
@@ -43,13 +37,11 @@ EXPECTED_ALIASES = {
     "server_control": ("mcp_server_control", "server_diagnostics_control", "mcp_client_request_control", "tools_catalog_control", "tools_call_many", "agent_program_execute"),
     "world_editor": ("oni_editor", "map_editor", "save_editor"),
 }
-
 EXPECTED_OPERATION_FILES = {
     "ops/any.md": "",
     "ops/game.md": "game_control",
     "ops/colony.md": "colony_control",
     "ops/read.md": "read_control",
-    "ops/search.md": "search_control",
     "ops/build.md": "building_control",
     "ops/orders.md": "orders_control",
     "ops/dupes.md": "dupes_control",
@@ -70,18 +62,15 @@ EXPECTED_OPERATION_FILES = {
     "ops/rooms.md": "",
     "ops/sandbox.md": "",
 }
-
 ALLOWED_NON_TOOL_CONTROL_REFERENCES = {
     "global_control",  # Surface-audit category, not a tool dependency.
 }
-
 REMOVED_POINTER_FILES = (
     "mods/OniMcp/Tools/Impl/Build/BuildPlanningPointerActions.cs",
     "mods/OniMcp/Tools/Impl/Navigation/AgentPointerModels.cs",
     "mods/OniMcp/Tools/Impl/Navigation/AgentPointerRegistry.cs",
     "mods/OniMcp/Tools/Impl/Navigation/AgentPointerRegistryMaintenance.cs",
 )
-
 PUBLIC_CONTRACT_FILES = (
     "README.md",
     "README_ZH.md",
@@ -99,7 +88,6 @@ PUBLIC_CONTRACT_FILES = (
     "mods/OniMcp/Tools/Impl/Build/BuildPlanningTools.cs",
     "mods/OniMcp/Tools/Impl/Server/AgentProgramTools.cs",
 )
-
 REMOVED_POINTER_PATTERNS = {
     "agent_pointer leaf": re.compile(r"\bagent_pointer(?:_[a-z0-9_]+)?\b", re.IGNORECASE),
     "agent pointer": re.compile(r"\bagent pointer\b", re.IGNORECASE),
@@ -119,13 +107,11 @@ REMOVED_POINTER_PATTERNS = {
         re.IGNORECASE,
     ),
 }
-
 DISABLED_KNOWLEDGE_PATTERNS = {
     "disabled read knowledge domain": re.compile(r"read_control\s+domain=(?:knowledge|database|guide)\b", re.IGNORECASE),
     "removed database_query": re.compile(r"\bdatabase_query\b", re.IGNORECASE),
     "removed guide_mechanics_query": re.compile(r"\bguide_mechanics_query\b", re.IGNORECASE),
 }
-
 
 def extract_block(text: str, marker: str) -> str:
     marker_index = text.find(marker)
@@ -137,7 +123,6 @@ def extract_block(text: str, marker: str) -> str:
     end = matching_delimiter(text, start, "{", "}")
     return text[start + 1 : end]
 
-
 def extract_calls(text: str, call_name: str) -> list[str]:
     calls: list[str] = []
     for match in re.finditer(rf"\b{re.escape(call_name)}\s*\(", text):
@@ -145,7 +130,6 @@ def extract_calls(text: str, call_name: str) -> list[str]:
         end = matching_delimiter(text, start, "(", ")")
         calls.append(text[start + 1 : end])
     return calls
-
 
 def class_bodies(
     type_name: str, sources: dict[Path, str]
@@ -161,7 +145,6 @@ def class_bodies(
             end = matching_delimiter(source, start, "{", "}")
             results.append((path, source[start + 1 : end], source))
     return results
-
 
 def resolve_factory(
     type_name: str,
@@ -228,7 +211,6 @@ def resolve_factory(
             )
         fail(f"{path}: cannot resolve factory {type_name}.{method_name}")
     return None
-
 
 def assert_dispatch_path(registry: str, method_marker: str) -> None:
     block = extract_block(registry, method_marker)
@@ -305,6 +287,26 @@ def main() -> None:
     verify_glyph_lookup_contract(root, sources)
     verify_world_editor_building_files(root)
     verify_world_editor_sandbox_policy(root)
+    # Removed readers must stay removed rather than accumulating alias/schema copies.
+    removed_sources = (
+        "Entry/SearchControlTools.cs", "Impl/Core/GameBuildingReadTools.cs",
+        "Impl/Colony/InventoryItemSearchInfo.cs", "Impl/Build/ConfigBatchTools.cs",
+    )
+    for relative in removed_sources:
+        if (tools_root / relative).exists():
+            fail(f"consolidated query source still exists: {relative}")
+    for path, source in sources.items():
+        if re.search(r"\b(?:SearchControlTools|GetBuildings|SearchBuildables|ListConfigurableBuildings|ListAutomationControls|ConfigBatchTools|search_control|search_defs|search_items)\b", source):
+            fail(f"{path.relative_to(root)} retains a removed object-read contract")
+    server = sources[tools_root / "Impl/Server/ServerTools.cs"]
+    if 'if (domain == "query") return ColonyQuery.Handle(args);' not in server:
+        fail("server_control must expose the shared colony query handler")
+    if '["dataset"] = new McpToolParameter' not in server:
+        fail("query dataset schema discovery must be advertised")
+    query = sources[tools_root / "Impl/Query/ColonyQuery.cs"] + sources[tools_root / "Impl/Query/QueryArguments.cs"]
+    for contract in ("Unsupported query argument:", "SpeedControlScreen.Instance.IsPaused", "FactQueryExecutor.Execute(plan, dataset)", "warnings.md queries must select FROM building_warnings"):
+        if contract not in query:
+            fail(f"missing query safety contract: {contract}")
     registry = sources[registry_path]
     catalog = sources[tools_root / "Impl" / "Build" / "BuildPlanningCatalog.cs"]
     materials = sources[tools_root / "Impl" / "Build" / "BuildPlanningMaterials.cs"]
@@ -313,7 +315,7 @@ def main() -> None:
         "",
         "DebugHandler.InstantBuildMode || (Game.Instance != null && Game.Instance.SandboxModeActive)",
     )
-    catalog_unlock = re.sub(r"\s+", "", extract_block(catalog, "private static bool IsTechUnlocked"))
+    catalog_unlock = re.sub(r"\s+", "", extract_block(catalog, "static bool IsTechUnlocked"))
     materials_context = re.sub(r"\s+", "", extract_block(materials, "private static bool IsFreeBuildContext"))
     if free_build_guard not in catalog_unlock or free_build_guard not in materials_context:
         fail("catalog and material availability must share the instant-build/sandbox bypass")

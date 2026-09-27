@@ -163,14 +163,6 @@ namespace OniMcp.Tools
                                     },
                 new McpResourceTemplateInfo
                                     {
-                                        UriTemplate = "oni://automation/controls{?areaId,x1,y1,x2,y2,worldId,query,limit}",
-                                        Name = "building_control",
-                                        Title = "自动化控件",
-                                        Description = "按区域和关键词读取逻辑/电力相关玩家可配置控件；等价于 building_control action=list_automation。",
-                                        MimeType = "application/json"
-                                    },
-                new McpResourceTemplateInfo
-                                    {
                                         UriTemplate = "oni://automation/automatable{?areaId,x1,y1,x2,y2,worldId,query,limit}",
                                         Name = "building_control",
                                         Title = "自动化专用搬运",

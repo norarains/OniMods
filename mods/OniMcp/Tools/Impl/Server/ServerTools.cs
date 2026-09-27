@@ -26,13 +26,14 @@ namespace OniMcp.Tools
                 Description = "服务器/MCP 组合入口：domain=diagnostics action=status/capabilities/logs_tail；domain=client_request action=create_sampling/create_elicitation；domain=catalog action=manifest/search/guide/coverage/static_audit/surface_audit；domain=batch action=call_many 批量调用工具；domain=program action=execute 执行受限流程 DSL",
                 Parameters = new Dictionary<string, McpToolParameter>
                 {
-                    ["domain"] = new McpToolParameter { Type = "string", Description = "diagnostics、client_request、catalog、batch、program 或 middleware，默认 diagnostics", Required = false, EnumValues = new List<string> { "diagnostics", "client_request", "catalog", "batch", "program", "middleware" } },
+                    ["domain"] = new McpToolParameter { Type = "string", Description = "diagnostics、client_request、catalog、batch、program 或 middleware，默认 diagnostics", Required = false, EnumValues = new List<string> { "diagnostics", "client_request", "catalog", "batch", "program", "middleware", "query" } },
                     ["action"] = new McpToolParameter { Type = "string", Description = "diagnostics: status/capabilities/logs_tail；client_request: create_sampling/create_elicitation；catalog: manifest/search/guide/coverage/static_audit/surface_audit；batch: call_many；program: execute；middleware: queue/status/clear", Required = true },
                     ["file"] = new McpToolParameter { Type = "string", Description = "diagnostics logs_tail：current 或 previous", Required = false },
                     ["lines"] = new McpToolParameter { Type = "integer", Description = "diagnostics logs_tail：返回末尾行数，默认 120，最大 1000", Required = false },
                     ["filter"] = new McpToolParameter { Type = "string", Description = "diagnostics logs_tail：可选关键词过滤", Required = false },
                     ["surface"] = new McpToolParameter { Type = "string", Description = "catalog surface_audit：side_screen/user_menu/management/tool_menu/ui_menu/global_control/notification", Required = false, EnumValues = new List<string> { "side_screen", "user_menu", "management", "tool_menu", "ui_menu", "global_control", "notification" } },
-                    ["query"] = new McpToolParameter { Type = "string", Description = "catalog manifest/search/coverage/surface_audit 的关键词或目标意图", Required = false },
+                    ["dataset"] = new McpToolParameter { Type = "string", Description = "query/schema: dataset name; omit to list datasets and grammar." },
+                    ["query"] = new McpToolParameter { Type = "string", Description = "query/select: read-only SELECT statement; catalog: search text", Required = false },
                     ["goal"] = new McpToolParameter { Type = "string", Description = "catalog guide 的玩家目标或操作意图", Required = false },
                     ["group"] = new McpToolParameter { Type = "string", Description = "catalog manifest/search/coverage 的工具或操作分组过滤", Required = false },
                     ["mode"] = new McpToolParameter { Type = "string", Description = "catalog manifest/search 过滤 read/write/execute/any", Required = false },
@@ -73,6 +74,7 @@ namespace OniMcp.Tools
                 Handler = args =>
                 {
                     string domain = (args["domain"]?.ToString() ?? "diagnostics").Trim().ToLowerInvariant();
+                    if (domain == "query") return ColonyQuery.Handle(args);
                     if (domain == "diagnostics" || domain == "diagnostic" || domain == "server")
                         return DiagnosticsControl().Handler(args);
                     if (domain == "client_request" || domain == "client" || domain == "request")

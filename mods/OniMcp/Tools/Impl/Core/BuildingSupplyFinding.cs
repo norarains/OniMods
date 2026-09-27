@@ -23,6 +23,12 @@ namespace OniMcp.Tools
         };
         internal static bool IsShortage(string id) => id != null && ShortageStatuses.Contains(id);
 
+        // Keep essential service interruptions; ordinary machine/construction status is queried on demand.
+        internal bool Essential => !Construction && new[] {
+            "Electrolyzer", "OxygenDiffuser", "MineralDeoxidizer", "RustDeoxidizer", "AlgaeHabitat",
+            "Outhouse", "FlushToilet", "WashBasin", "HandSanitizer"
+        }.Contains(PrefabId);
+
         internal ColonyFinding ToFinding()
         {
             string code = Construction ? "construction_material_missing" : "building_material_missing";

@@ -51,14 +51,6 @@ namespace OniMcp.Tools
                                     },
                 new McpResourceTemplateInfo
                                     {
-                                        UriTemplate = "oni://power/ports{?worldId,areaId,x1,y1,x2,y2,query,limit}",
-                                        Name = "read_control",
-                                        Title = "电力接口",
-                                        Description = "通过 read_control domain=infrastructure action=power_ports 读取指定区域内建筑的电力接口格；支持按世界 ID、区域和关键词过滤。",
-                                        MimeType = "application/json"
-                                    },
-                new McpResourceTemplateInfo
-                                    {
                                         UriTemplate = "oni://rooms/list{?worldId,type,includeBuildings,includeCriteria,limit}",
                                         Name = "read_control",
                                         Title = "房间列表",
@@ -219,26 +211,10 @@ namespace OniMcp.Tools
                                     },
                 new McpResourceTemplateInfo
                                     {
-                                        UriTemplate = "oni://buildings/defs{?query,category,includeUnavailable,limit}",
-                                        Name = "building_control",
-                                        Title = "可建造建筑定义",
-                                        Description = "按关键词、分类和可用性搜索可建造建筑定义；用于建造菜单、材料/外观选择和蓝图规划。",
-                                        MimeType = "application/json"
-                                    },
-                new McpResourceTemplateInfo
-                                    {
                                         UriTemplate = "oni://buildings/materials{?prefabId,worldId,includeUnavailable,limit}",
                                         Name = "building_control",
                                         Title = "可用建造材料",
                                         Description = "读取指定建筑在当前/指定世界的合法材料候选和库存；默认只返回可用材料，首项即 material=auto 会选择的材料。",
-                                        MimeType = "application/json"
-                                    },
-                new McpResourceTemplateInfo
-                                    {
-                                        UriTemplate = "oni://buildings/configurables{?areaId,x1,y1,x2,y2,worldId,capability,query,limit}",
-                                        Name = "building_control",
-                                        Title = "可配置建筑",
-                                        Description = "按区域、能力和关键词读取支持玩家侧屏配置的建筑；等价于 building_control action=list。",
                                         MimeType = "application/json"
                                     },
                 new McpResourceTemplateInfo

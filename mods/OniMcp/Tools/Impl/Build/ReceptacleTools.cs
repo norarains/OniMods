@@ -81,7 +81,7 @@ namespace OniMcp.Tools
                     if (action == "batch")
                         return BatchControlReceptacles().Handler(args);
 
-                    if (!ToolUtil.GetBool(args, "confirm", false))
+                    if (!ToolUtil.GetBool(args, "confirm", false) && !ToolUtil.GetBool(args, "dryRun", false))
                         return CallToolResult.Error("confirm=true is required for receptacle changes");
 
                     var receptacle = FindReceptacle(args);
@@ -95,6 +95,7 @@ namespace OniMcp.Tools
 
                     return JsonResult(new Dictionary<string, object>
                     {
+                        ["dryRun"] = ToolUtil.GetBool(args, "dryRun", false),
                         ["target"] = TargetInfo(receptacle.gameObject),
                         ["before"] = before,
                         ["receptacle"] = ReceptacleInfo(receptacle, includeOptions: true)
@@ -124,7 +125,7 @@ namespace OniMcp.Tools
                 },
                 Handler = args =>
                 {
-                    if (!ToolUtil.GetBool(args, "confirm", false))
+                    if (!ToolUtil.GetBool(args, "confirm", false) && !ToolUtil.GetBool(args, "dryRun", false))
                         return CallToolResult.Error("confirm=true is required for receptacle batch changes");
 
                     var items = args["items"] as JArray;
@@ -143,6 +144,7 @@ namespace OniMcp.Tools
                         }
 
                         var item = MergeReceptacleDefaults(rawItem, defaults);
+                        if (ToolUtil.GetBool(args, "dryRun", false)) item["dryRun"] = true;
                         var receptacle = FindReceptacle(item);
                         if (receptacle == null)
                         {
@@ -156,6 +158,7 @@ namespace OniMcp.Tools
                         {
                             ["ok"] = error == null,
                             ["error"] = error,
+                            ["dryRun"] = ToolUtil.GetBool(item, "dryRun", false),
                             ["target"] = TargetInfo(receptacle.gameObject),
                             ["before"] = before,
                             ["receptacle"] = ReceptacleInfo(receptacle, includeOptions: false)

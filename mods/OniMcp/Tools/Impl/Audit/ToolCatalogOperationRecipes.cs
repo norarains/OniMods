@@ -8,7 +8,7 @@ namespace OniMcp.Tools
     public static partial class ToolCatalogTools
     {
         private static readonly string[] DiscoverableBatchOperations = {
-            "colony_control", "dupes_control", "read_control", "search_control"
+            "colony_control", "dupes_control", "read_control"
         };
 
         private static List<Dictionary<string, object>> SearchBatchOperations(string query, string group,

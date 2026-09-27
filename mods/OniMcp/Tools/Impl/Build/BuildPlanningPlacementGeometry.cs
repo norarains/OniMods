@@ -28,7 +28,7 @@ namespace OniMcp.Tools
             return Grid.CellToPosCBC(origin, def.SceneLayer);
         }
 
-        private static Dictionary<string, object> BuildDefPlacementToDictionary(BuildingDef def)
+        internal static Dictionary<string, object> BuildDefPlacementToDictionary(BuildingDef def)
         {
             int width = Math.Max(1, def.WidthInCells);
             int height = Math.Max(1, def.HeightInCells);

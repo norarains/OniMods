@@ -54,7 +54,7 @@ internal static class LiveAuditRegression
         Check(policy.Observe(sample).Stops && policy.Findings.Single().Id == id, "empty station keeps the refill identity and stops");
         var settings = new ContinueStopEvents(); settings.Update(new[] { id }, null);
         Check(!policy.Observe(sample, settings).Stops && policy.Findings.Count == 1, "exact station ignore survives empty/refill transition");
-        sample.ResearchStations.Clear(); supply.Statuses.Clear(); supply.Statuses.Add("LiquidPipeEmpty");
+        sample.ResearchStations.Clear(); supply.PrefabId = "Electrolyzer"; supply.Statuses.Clear(); supply.Statuses.Add("LiquidPipeEmpty");
         var timing = new SupplyStatusTiming(); timing.Apply(sample.BuildingSupplies, 100);
         Check(!policy.Observe(sample).Stops && policy.Findings.Count == 1 && !policy.Findings[0].StopEligible, "new native supply status visible while confirming");
         timing.Apply(sample.BuildingSupplies, 100);

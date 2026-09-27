@@ -168,6 +168,8 @@ namespace OniMcp.Tools
         private void Observe(bool refreshFood = false)
         {
             latest = monitor.Read(clock.Elapsed.TotalSeconds, refreshFood);
+            if (!refreshFood)
+                latest = ContinueObservationFreshness.BeforeStop(latest, stopSettings, () => monitor.Read(clock.Elapsed.TotalSeconds, true));
             events = policy.Observe(latest, stopSettings);
             CaptureEvents();
             activity += events.Activity;

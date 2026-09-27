@@ -182,19 +182,14 @@ namespace OniMcp.Tools
 
         private static Dictionary<string, object> MaterialSearchAction(string query)
         {
-            return new Dictionary<string, object>
-            {
+            return new Dictionary<string, object> {
                 ["kind"] = "material_search",
-                ["action"] = new Dictionary<string, object>
-                {
-                    ["tool"] = "read_control",
-                    ["arguments"] = new Dictionary<string, object>
-                    {
-                        ["domain"] = "resources",
-                        ["action"] = "search_items",
-                        ["query"] = query,
-                        ["includeStored"] = false,
-                        ["limit"] = 20
+                ["action"] = new Dictionary<string, object> {
+                    ["tool"] = "server_control",
+                    ["arguments"] = new Dictionary<string, object> {
+                        ["domain"] = "query", ["action"] = "select",
+                        ["query"] = "SELECT id,prefabId,position,massKg FROM items WHERE stored=false AND (prefabId CONTAINS '"
+                            + (query ?? "").Replace("'", "''") + "' OR name CONTAINS '" + (query ?? "").Replace("'", "''") + "') LIMIT 20"
                     }
                 }
             };

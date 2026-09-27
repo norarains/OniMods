@@ -94,8 +94,8 @@ namespace OniMcp.Tools
                     action,
                     "Open build category " + suffix + ", discover available buildings/materials/facades, then plan and place through building_control",
                     NormalizeBuildCategory(suffix),
-                    new[] { "game_control domain=ui uiDomain=action", "building_control domain=planning action=search_defs", "building_control domain=planning action=materials", "building_control domain=planning action=placement_candidates", "building_control domain=planning action=build_area" },
-                    new[] { "game_control domain=ui uiDomain=action", "building_control domain=planning action=search_defs", "building_control domain=planning action=materials", "building_control domain=planning action=placement_candidates", "building_control domain=planning action=build_area" });
+                    new[] { "game_control domain=ui uiDomain=action", "server_control domain=query action=schema dataset=building_defs", "building_control domain=planning action=materials", "building_control domain=planning action=placement_candidates", "building_control domain=planning action=build_area" },
+                    new[] { "game_control domain=ui uiDomain=action", "server_control domain=query action=schema dataset=building_defs", "building_control domain=planning action=materials", "building_control domain=planning action=placement_candidates", "building_control domain=planning action=build_area" });
             }
 
             yield return Covered(
@@ -104,8 +104,8 @@ namespace OniMcp.Tools
                 "BuildMenuKeyA-Z",
                 "Trigger whitelisted build-menu item hotkeys after a build category is open; resolve prefab, material, facade, and lower-left anchors through building_control planning",
                 "build_menu_keys",
-                new[] { "game_control domain=ui uiDomain=action", "building_control domain=planning action=search_defs", "building_control domain=planning action=materials", "building_control domain=planning action=placement_candidates", "building_control domain=planning action=build_area" },
-                new[] { "game_control domain=ui uiDomain=action", "building_control domain=planning action=search_defs", "building_control domain=planning action=materials", "building_control domain=planning action=placement_candidates", "building_control domain=planning action=build_area" });
+                new[] { "game_control domain=ui uiDomain=action", "server_control domain=query action=schema dataset=building_defs", "building_control domain=planning action=materials", "building_control domain=planning action=placement_candidates", "building_control domain=planning action=build_area" },
+                new[] { "game_control domain=ui uiDomain=action", "server_control domain=query action=schema dataset=building_defs", "building_control domain=planning action=materials", "building_control domain=planning action=placement_candidates", "building_control domain=planning action=build_area" });
 
             yield return Covered(
                 0,

@@ -82,6 +82,8 @@ namespace OniMcp.Tools
                     var before = ClusterLocationSensorInfo(sensor);
                     if (target == "space")
                     {
+                        var preview = ConfigMutation.Preview(args, TargetInfo(go), new { target, enabled });
+                        if (preview != null) return preview;
                         sensor.SetSpaceEnabled(enabled);
                     }
                     else if (target == "location")
@@ -90,6 +92,8 @@ namespace OniMcp.Tools
                         int? r = ToolUtil.GetInt(args, "r");
                         if (!q.HasValue || !r.HasValue)
                             return CallToolResult.Error("q and r are required when target=location");
+                        var preview = ConfigMutation.Preview(args, TargetInfo(go), new { target, q, r, enabled });
+                        if (preview != null) return preview;
                         sensor.SetLocationEnabled(new AxialI(r.Value, q.Value), enabled);
                     }
                     else
@@ -180,7 +184,10 @@ namespace OniMcp.Tools
                     if (!mass.HasValue)
                         return CallToolResult.Error("massKg is required");
                     var before = RailGunInfo(railGun);
-                    railGun.launchMass = Mathf.Clamp(mass.Value, railGun.MinLaunchMass, railGun.MaxLaunchMass);
+                    float next = Mathf.Clamp(mass.Value, railGun.MinLaunchMass, railGun.MaxLaunchMass);
+                    var preview = ConfigMutation.Preview(args, TargetInfo(go), new { massKg = next });
+                    if (preview != null) return preview;
+                    railGun.launchMass = next;
                     railGun.Trigger((int)GameHashes.RailGunLaunchMassChanged);
 
                     return JsonResult(new Dictionary<string, object>

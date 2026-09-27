@@ -29,7 +29,11 @@ namespace OniMcp.Tools
                     }
                 }
                 string covered = CoveredNotification(notification, sample);
-                if (covered != null) { finding.StopEligible = false; finding.Details["coveredBy"] = covered; }
+                if (covered != null)
+                {
+                    finding.StopEligible = false;
+                    finding.Details[covered == "building_warnings" ? "detailView" : "coveredBy"] = covered;
+                }
                 notifications.Add(finding);
             }
             sample.HudFindings.AddRange(HudFindingPolicy.CoalesceNotifications(notifications));
@@ -76,6 +80,7 @@ namespace OniMcp.Tools
                     && notification.titleText == entry.item.notificationText)
                 {
                     bool research = sample.ResearchStations.Any(item => item.Id == id && item.Required);
+                    if (!research && !supply.Essential) return "building_warnings";
                     string code = research ? "research_material_missing"
                         : supply.Construction ? "construction_material_missing" : "building_material_missing";
                     return code + ":" + supply.WorldId + ":" + id;

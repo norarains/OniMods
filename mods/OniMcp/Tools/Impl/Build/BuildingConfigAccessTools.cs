@@ -79,7 +79,7 @@ namespace OniMcp.Tools
 
                         var rect = ToolUtil.GetRect(args);
                         int cells = (rect["x2"] - rect["x1"] + 1) * (rect["y2"] - rect["y1"] + 1);
-                        if (cells > 100 && !ToolUtil.GetBool(args, "confirm", false))
+                        if (cells > 100 && !ToolUtil.GetBool(args, "confirm", false) && !ToolUtil.GetBool(args, "dryRun", false))
                             return CallToolResult.Error("confirm=true is required when copying settings across more than 100 cells");
 
                         int worldId = ToolUtil.ResolveWorldId(args);
@@ -99,6 +99,10 @@ namespace OniMcp.Tools
                         }
                     }
 
+                    var preview = ConfigMutation.Preview(args, TargetInfo(source), new {
+                        targets = targets.Where(item => item != null && item.gameObject != source).Select(item => TargetInfo(item.gameObject)).ToArray(),
+                        compatibility = "Native copy compatibility is checked during execution." });
+                    if (preview != null) return preview;
                     int applied = 0;
                     int skipped = 0;
                     var results = new List<Dictionary<string, object>>();
@@ -140,7 +144,9 @@ namespace OniMcp.Tools
                 ["id"] = new McpToolParameter { Type = "integer", Description = "目标对象 InstanceID", Required = false },
                 ["x"] = new McpToolParameter { Type = "integer", Description = "目标格子 X", Required = false },
                 ["y"] = new McpToolParameter { Type = "integer", Description = "目标格子 Y", Required = false },
-                ["worldId"] = new McpToolParameter { Type = "integer", Description = "目标世界 ID；按坐标查找时默认当前激活世界", Required = false }
+                ["worldId"] = new McpToolParameter { Type = "integer", Description = "目标世界 ID；按坐标查找时默认当前激活世界", Required = false },
+                ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Validate and preview without mutation, even with confirm=true." },
+                ["confirm"] = new McpToolParameter { Type = "boolean", Description = "Required for configuration writes." }
             };
             foreach (var item in extra)
                 parameters[item.Key] = item.Value;
@@ -153,17 +159,14 @@ namespace OniMcp.Tools
             {
                 ["lowThreshold"] = new McpToolParameter { Type = "number", Description = "Smart battery green threshold (percent)", Required = false },
                 ["highThreshold"] = new McpToolParameter { Type = "number", Description = "Smart battery red threshold (percent)", Required = false },
-                ["action"] = new McpToolParameter { Type = "string", Description = "list/list_automation/set_enabled/set_toggle/set_threshold/set_slider/set_valve_flow/set_limit_valve/set_logic_timer/set_logic_ribbon_bit/set_door_state/get_access/set_access/copy_settings/batch_set/batch_set_automation/state_list/state_set/visual；兼容 operation", Required = false },
+                ["action"] = new McpToolParameter { Type = "string", Description = "set_enabled/set_toggle/set_threshold/set_slider/set_valve_flow/set_limit_valve/set_logic_timer/set_logic_ribbon_bit/set_door_state/get_access/set_access/copy_settings/state_list/state_set/visual；兼容 operation", Required = false },
                 ["operation"] = new McpToolParameter { Type = "string", Description = "兼容旧参数；优先使用 action", Required = false },
-                ["items"] = new McpToolParameter { Type = "array", Description = "action=batch_set/batch_set_automation 的批量操作数组", Required = false },
-                ["defaults"] = new McpToolParameter { Type = "object", Description = "action=batch_set/batch_set_automation 合并到每个子项的默认参数", Required = false },
-                ["capability"] = new McpToolParameter { Type = "string", Description = "action=list 时过滤配置能力", Required = false },
-                ["query"] = new McpToolParameter { Type = "string", Description = "action=list/list_automation 时按名称或 prefabId 筛选", Required = false },
-                ["limit"] = new McpToolParameter { Type = "number", Description = "action=list/list_automation 时为返回上限；action=set_limit_valve 时为目标通过上限", Required = false },
+                ["limit"] = new McpToolParameter { Type = "number", Description = "action=set_limit_valve 时为目标通过上限", Required = false },
                 ["enabled"] = new McpToolParameter { Type = "boolean", Description = "action=set_enabled 时 true 启用建筑，false 禁用建筑", Required = false },
                 ["on"] = new McpToolParameter { Type = "boolean", Description = "action=set_toggle 时 true 打开玩家手动开关，false 关闭", Required = false },
                 ["component"] = new McpToolParameter { Type = "string", Description = "阈值/slider 目标组件类型名筛选", Required = false },
-                ["threshold"] = new McpToolParameter { Type = "number", Description = "action=set_threshold 阈值", Required = false },
+                ["threshold"] = new McpToolParameter { Type = "number", Description = "Native threshold (temperature: Kelvin); optional unit=C/F/K/display.", Required = false },
+                ["unit"] = new McpToolParameter { Type = "string", Description = "Threshold input unit: native (default), K, C, F, or display.", Required = false },
                 ["activateAbove"] = new McpToolParameter { Type = "boolean", Description = "action=set_threshold 高于阈值激活", Required = false },
                 ["value"] = new McpToolParameter { Type = "number", Description = "action=set_slider 目标 slider 值；action=state_set kind=checkbox 时为 boolean", Required = false },
                 ["index"] = new McpToolParameter { Type = "integer", Description = "action=set_slider slider 索引", Required = false },
@@ -410,6 +413,7 @@ namespace OniMcp.Tools
                 ["title"] = threshold.Title.ToString(),
                 ["valueName"] = threshold.ThresholdValueName.ToString(),
                 ["threshold"] = ToolUtil.SafeFloat(threshold.Threshold),
+                ["unit"] = ThresholdValuePolicy.NativeUnit(threshold.GetType().Name),
                 ["currentValue"] = ToolUtil.SafeFloat(threshold.CurrentValue),
                 ["formattedThreshold"] = threshold.Format(threshold.Threshold, true),
                 ["formattedCurrentValue"] = threshold.Format(threshold.CurrentValue, true),
@@ -418,7 +422,7 @@ namespace OniMcp.Tools
                 ["rangeMax"] = ToolUtil.SafeFloat(threshold.RangeMax),
                 ["inputMin"] = ToolUtil.SafeFloat(threshold.GetRangeMinInputField()),
                 ["inputMax"] = ToolUtil.SafeFloat(threshold.GetRangeMaxInputField()),
-                ["units"] = threshold.ThresholdValueUnits().ToString()
+                ["displayUnits"] = threshold.ThresholdValueUnits().ToString()
             };
         }
 

@@ -54,7 +54,6 @@ namespace OniMcp.Tools
             sb.AppendLine("## Progressive Options");
             sb.AppendLine("- Default: low-token status and next calls only.");
             sb.AppendLine("- `includeState=true`: append current colony JSON snapshot.");
-            sb.AppendLine("- `includeInfrastructure=true infrastructureKind=all|power|liquid|gas|logic|rail`: append compact ports/lines.");
             sb.AppendLine("- Infrastructure files expose low-token `glyph/dirs/links/to`, bridges, ports, and producer/consumer roles.");
             sb.AppendLine("- `includeLogs=true logLimit=160`: append recent suspicious Player.log lines.");
             sb.AppendLine("- `/active/diagnostics/logs.md`: focused log stability audit without large world state.");

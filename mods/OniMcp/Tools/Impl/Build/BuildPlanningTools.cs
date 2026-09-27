@@ -22,14 +22,13 @@ namespace OniMcp.Tools
                 ["action"] = new McpToolParameter
                 {
                     Type = "string",
-                    Description = "操作：parse_plan/search_defs/materials/preview/placement_candidates/auto_connect/repair_line/build_area/room_template",
+                    Description = "操作：parse_plan/materials/preview/placement_candidates/auto_connect/repair_line/build_area/room_template",
                     Required = true,
-                    EnumValues = new List<string> { "parse_plan", "search_defs", "materials", "preview", "placement_candidates", "auto_connect", "repair_line", "connect_line", "build_area", "room_template" }
+                    EnumValues = new List<string> { "parse_plan", "materials", "preview", "placement_candidates", "auto_connect", "repair_line", "connect_line", "build_area", "room_template" }
                 }
             };
 
             MergeParameters(parameters, ParseBuildPlan().Parameters);
-            MergeParameters(parameters, SearchBuildables().Parameters);
             MergeParameters(parameters, ListBuildMaterials().Parameters);
             MergeParameters(parameters, PreviewBuild().Parameters);
             MergeParameters(parameters, FindPlacementCandidates().Parameters);
@@ -75,7 +74,7 @@ namespace OniMcp.Tools
                 Risk = "medium",
                 Aliases = new List<string> { "buildings_planning_control", "build_control" },
                 Tags = new List<string> { "buildings", "materials", "preview", "placement", "utility", "建造", "材料", "预检", "候选" },
- Description = "建造规划组合工具：action=search_defs/materials/preview/placement_candidates/auto_connect/build_area/room_template",
+ Description = "建造规划组合工具：action=materials/preview/placement_candidates/auto_connect/build_area/room_template",
                 Parameters = BuildPlanningControlParams(),
                 Handler = args =>
                 {
@@ -88,10 +87,6 @@ namespace OniMcp.Tools
                     case "parse":
                     case "plan_text":
                         return ParseBuildPlan().Handler(forwardArgs);
-                    case "search_defs":
-                        case "search":
-                        case "defs":
-                            return SearchBuildables().Handler(forwardArgs);
                         case "materials":
                         case "list_materials":
                             return ListBuildMaterials().Handler(forwardArgs);
@@ -123,7 +118,7 @@ namespace OniMcp.Tools
  case "quick_room":
  return RoomTemplatePlan().Handler(forwardArgs);
                     default:
-                        return CallToolResult.Error("action must be parse_plan, search_defs, materials, preview, placement_candidates, auto_connect, repair_line, build_area, or room_template");
+                        return CallToolResult.Error("action must be parse_plan, materials, preview, placement_candidates, auto_connect, repair_line, build_area, or room_template");
                     }
                 }
             };

@@ -134,7 +134,7 @@ Default public surface: compact aggregate tools:
 
 Internal virtual-file operations are not direct MCP tools:
 
-- `colony_control`, `dupes_control`, `read_control`, and `search_control` are available through validated virtual-file routing or the batch route advertised in `capabilities.batchOperations`. `coordinate_control` remains internal to virtual-file routing and is not batch-callable.
+- `colony_control`, `dupes_control`, and `read_control` are available through validated virtual-file routing or the batch route advertised in `capabilities.batchOperations`. `coordinate_control` remains internal to virtual-file routing and is not batch-callable.
 - Do not send those names as `tools/call params.name`. Use `world_editor`, structured resources, or one of the public aggregate tools above.
 - Exact orders read `/active/ops/tools.md` and edit the matching typed operation file. Raw-coordinate compatibility entries remain internal and are not a public client surface.
 
@@ -144,7 +144,7 @@ New integrations should discover the public aggregate entrypoints from `tools/li
 
 新工具面采用搜索/动作优先:
 
-- Use `world_editor command=search` for world/building discovery and `server_control domain=catalog action=search` for tool discovery. Internal `search_control` is a virtual-file implementation detail, not a direct client tool.
+- Read object facts with `server_control domain=query action=select`; discover fields with action=schema. Terrain pattern searches remain in world_editor; tool discovery uses server_control catalog.
 - 优先传 `query`、`target`、`search`、`name`、`id`、`areaId`。
 - Public tools do not accept raw `x/y`, `x1/y1/x2/y2`, `dx/dy`, `points`, or `anchors`. Exact orders read `/active/ops/tools.md` and edit `/active/ops/orders.md`; select only current public typed files/tools and ignore hidden `coordinate_control` and `/active/ops/coordinate.md` compatibility entries.
 - 写入和执行动作应支持 `dryRun` 或 `confirm`。

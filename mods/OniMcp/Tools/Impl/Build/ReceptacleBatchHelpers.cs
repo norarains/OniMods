@@ -9,6 +9,7 @@ namespace OniMcp.Tools
     {
         private static string ApplyReceptacleAction(SingleEntityReceptacle receptacle, JObject args)
         {
+            bool dryRun = ToolUtil.GetBool(args, "dryRun", false);
             string action = (args["action"]?.ToString() ?? "").Trim().ToLowerInvariant();
             switch (action)
             {
@@ -25,30 +26,30 @@ namespace OniMcp.Tools
                         return "entityTag is not valid for this receptacle";
                     if (receptacle.Occupant != null)
                         return "Receptacle already has an occupant; use action=remove_occupant first";
-                    if (receptacle.GetActiveRequest != null && ToolUtil.GetBool(args, "replaceExistingRequest", true))
-                        receptacle.CancelActiveRequest();
-                    if (receptacle.GetActiveRequest != null)
+                    if (receptacle.GetActiveRequest != null && !ToolUtil.GetBool(args, "replaceExistingRequest", true))
                         return "Receptacle already has an active request";
                     var additional = string.IsNullOrWhiteSpace(args["additionalTag"]?.ToString())
                         ? AdditionalTagForPrefab(prefab)
                         : TagManager.Create(args["additionalTag"].ToString().Trim());
+                    if (dryRun) return null;
+                    if (receptacle.GetActiveRequest != null) receptacle.CancelActiveRequest();
                     receptacle.CreateOrder(tag, additional);
                     return null;
                 }
                 case "cancel_request":
-                    receptacle.CancelActiveRequest();
+                    if (!dryRun) receptacle.CancelActiveRequest();
                     return null;
                 case "remove_occupant":
                     if (receptacle.Occupant == null)
                         return "Receptacle has no occupant";
-                    receptacle.OrderRemoveOccupant();
+                    if (!dryRun) receptacle.OrderRemoveOccupant();
                     return null;
                 case "cancel_remove":
                 {
                     var uprootable = receptacle.Occupant == null ? null : receptacle.Occupant.GetComponent<Uprootable>();
                     if (uprootable == null || !uprootable.IsMarkedForUproot)
                         return "Receptacle occupant is not marked for removal";
-                    uprootable.ForceCancelUproot();
+                    if (!dryRun) uprootable.ForceCancelUproot();
                     return null;
                 }
                 default:
@@ -60,7 +61,7 @@ namespace OniMcp.Tools
         {
             if (ToolUtil.GetBool(args, "clear", false))
             {
-                tile.SetTargetItem(StorageTile.INVALID_TAG);
+                if (!ToolUtil.GetBool(args, "dryRun", false)) tile.SetTargetItem(StorageTile.INVALID_TAG);
                 return null;
             }
 
@@ -70,7 +71,7 @@ namespace OniMcp.Tools
             var tag = TagManager.Create(tagName.Trim());
             if (!StorageTileOptions(tile).Any(item => item.Tag == tag))
                 return "itemTag is not a valid option for this StorageTile";
-            tile.SetTargetItem(tag);
+            if (!ToolUtil.GetBool(args, "dryRun", false)) tile.SetTargetItem(tag);
             return null;
         }
 

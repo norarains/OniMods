@@ -49,6 +49,8 @@ namespace OniMcp.Tools
             float next = Mathf.Clamp(requested.Value, capacity.MinCapacity, capacity.MaxCapacity);
             if (capacity.WholeValues)
                 next = Mathf.Round(next);
+            var preview = ConfigMutation.Preview(args, TargetInfo(go), new { capacity = next });
+            if (preview != null) return preview;
             capacity.UserMaxCapacity = next;
 
             return CallToolResult.Text(JsonConvert.SerializeObject(new Dictionary<string, object>
@@ -69,6 +71,8 @@ namespace OniMcp.Tools
 
             bool before = checkbox.GetCheckboxValue();
             bool value = ToolUtil.GetBool(args, "value", before);
+            var preview = ConfigMutation.Preview(args, TargetInfo(go), new { value });
+            if (preview != null) return preview;
             checkbox.SetCheckboxValue(value);
 
             return CallToolResult.Text(JsonConvert.SerializeObject(new Dictionary<string, object>
@@ -89,6 +93,8 @@ namespace OniMcp.Tools
 
             var before = CounterInfo(counter);
             int? maxCount = ToolUtil.GetInt(args, "maxCount");
+            var preview = ConfigMutation.Preview(args, TargetInfo(go), new { maxCount = maxCount.HasValue ? Mathf.Clamp(maxCount.Value, 1, 10) : counter.maxCount, advancedMode = ToolUtil.GetBool(args, "advancedMode", counter.advancedMode), reset = ToolUtil.GetBool(args, "reset", false) });
+            if (preview != null) return preview;
             if (maxCount.HasValue)
             {
                 counter.maxCount = Mathf.Clamp(maxCount.Value, 1, 10);
@@ -127,6 +133,8 @@ namespace OniMcp.Tools
             float? duration = ToolUtil.GetFloat(args, "duration");
             if (!start.HasValue && !duration.HasValue)
                 return CallToolResult.Error("start or duration is required");
+            var preview = ConfigMutation.Preview(args, TargetInfo(go), new { start = start.HasValue ? Mathf.Clamp01(start.Value) : sensor.startTime, duration = duration.HasValue ? Mathf.Clamp01(duration.Value) : sensor.duration });
+            if (preview != null) return preview;
             if (start.HasValue)
                 sensor.startTime = Mathf.Clamp01(start.Value);
             if (duration.HasValue)

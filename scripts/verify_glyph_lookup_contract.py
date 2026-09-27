@@ -29,15 +29,14 @@ def verify_glyph_lookup_contract(
     lifecycle_path = root / "mods" / "OniMcp" / "Patches" / "AutoDisinfectPolicy.cs"
     world_editor_path = tools / "WorldEditor" / "WorldEditorTools.cs"
     query_path = tools / "WorldEditor" / "WorldEditorQueryTools.cs"
-    search_path = tools / "Entry" / "SearchControlTools.cs"
-    for path in (lookup_path, glyph_query_path, symbols_path, lifecycle_path, world_editor_path, query_path, search_path):
+    for path in (lookup_path, glyph_query_path, symbols_path, lifecycle_path, world_editor_path, query_path):
         if not path.is_file():
             fail(f"required glyph source file not found: {path.relative_to(root)}")
 
     if sources is None:
         selected = {
             path: path.read_text(encoding="utf-8")
-            for path in (lookup_path, glyph_query_path, symbols_path, lifecycle_path, world_editor_path, query_path, search_path)
+            for path in (lookup_path, glyph_query_path, symbols_path, lifecycle_path, world_editor_path, query_path)
         }
     else:
         selected = dict(sources)
@@ -51,20 +50,16 @@ def verify_glyph_lookup_contract(
     lifecycle = selected[lifecycle_path]
     world_editor = selected[world_editor_path]
     query_tools = selected[query_path]
-    search = selected[search_path]
 
     for parameter in ("queries", "direction", "matchMode", "view", "perQueryLimit"):
         require(world_editor, f'["{parameter}"] = new McpToolParameter', f"world_editor {parameter} schema")
-        require(search, f'["{parameter}"] = new McpToolParameter', f"search_control {parameter} schema")
     for value in ("auto", "code_to_meaning", "meaning_to_code", "exact", "contains"):
         require(lookup, f'"{value}"', f"glyph lookup mode {value}")
 
     require(query_tools, "return SearchGlyphs(args);", "world_editor symbols shared lookup")
-    require(search, 'case "glyphs":', "search_control glyphs route")
-    require(search, 'case "symbols":', "search_control symbols alias")
-    require(search, 'case "codes":', "search_control codes alias")
-    require(search, "WorldEditorTools.SearchGlyphs(args)", "shared glyph lookup dispatch")
-    require(search, 'if (domain == "glyphs")\n                        return searchResult;', "glyph search bypasses coordinate action wrapper")
+    require(world_editor, 'case "symbols":', "public authoritative symbol route")
+    if (tools / "Entry" / "SearchControlTools.cs").exists():
+        fail("removed search_control must not duplicate the authoritative symbols route")
     require(lookup, "authoritative_glyph_mapping", "glyph-specific result contract")
     require(lookup, "Do not guess", "glyph no-guess next action")
     require(glyph_query, '? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase', "case-sensitive codes and case-insensitive names")

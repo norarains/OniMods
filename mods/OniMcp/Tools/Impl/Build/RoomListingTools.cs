@@ -22,8 +22,7 @@ namespace OniMcp.Tools
         {
             return RectParams(new Dictionary<string, McpToolParameter>
             {
-                ["action"] = new McpToolParameter { Type = "string", Description = "读取类型：power_summary 电力摘要；power_ports 建筑电力接口；rooms 房间列表", Required = true, EnumValues = new List<string> { "power_summary", "power_ports", "rooms" } },
-                ["query"] = new McpToolParameter { Type = "string", Description = "action=power_ports 时按名称或 prefabId 关键词筛选", Required = false },
+                ["action"] = new McpToolParameter { Type = "string", Description = "读取类型：power_summary 电力摘要；rooms 房间列表", Required = true, EnumValues = new List<string> { "power_summary", "rooms" } },
                 ["type"] = new McpToolParameter { Type = "string", Description = "action=rooms 时按房间类型 id/name 过滤，例如 Barracks、GreatHall、PowerPlant", Required = false },
                 ["includeDetails"] = new McpToolParameter { Type = "boolean", Description = "action=power_summary 时是否返回发电机/电池/消费者明细，默认 false", Required = false },
                 ["includeBuildings"] = new McpToolParameter { Type = "boolean", Description = "action=rooms 时是否返回房间内建筑明细，默认 false", Required = false },
