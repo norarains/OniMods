@@ -76,6 +76,7 @@ namespace OniMcp.Tools
                     ["priority"] = new McpToolParameter { Type = "integer", Description = "Work priority 1-9", Required = false },
                     ["clearAll"] = new McpToolParameter { Type = "boolean", Description = "Clear production queue before validated batch changes", Required = false },
                     ["mode"] = new McpToolParameter { Type = "string", Description = "Queue set/add/remove/infinite/clear or storage replace/add/remove", Required = false },
+                    ["destinationId"] = new McpToolParameter { Type = "integer", Description = "user_menu toggle_move_pickupable: destination instance ID; queues delivery without a mouse picker", Required = false },
                     ["actionKey"] = new McpToolParameter { Type = "string", Description = "Native user_menu action key for press", Required = false },
                     ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "For actions with preflight support, true returns only the planned work.", Required = false },
                     ["autoLayout"] = new McpToolParameter { Type = "boolean", Description = "For planning room_template, automatically choose a layout candidate when area/x/query is absent.", Required = false },

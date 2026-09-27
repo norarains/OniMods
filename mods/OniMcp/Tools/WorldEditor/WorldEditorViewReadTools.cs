@@ -23,24 +23,15 @@ namespace OniMcp.Tools
             if (!TryResolveZoomView(requestedView, out view))
                 return "# " + path + "\n\nUnknown view: " + requestedView;
 
+            bool hasBounds = TryReadMapFocusBounds(args, out int xMin, out int yMin, out int xMax, out int yMax, out string focusError);
+            if (hasBounds && !string.IsNullOrWhiteSpace(focusError))
+                return "# " + path + "\n\n" + focusError;
+            if (!hasBounds && !TryGetCameraBounds(out xMin, out xMax, out yMin, out yMax))
+                return "# " + path + "\n\nCamera not initialized; provide explicit map bounds.";
+
             string syncNote = string.Empty;
-            if (ToolUtil.GetBool(args, "syncView", true))
-            {
-                if (TryReadMapFocusBounds(args, out int fxMin, out int fyMin, out int fxMax, out int fyMax, out string focusError))
-                {
-                    if (!string.IsNullOrWhiteSpace(focusError))
-                        return "# " + path + "\n\n" + focusError;
-
-                    syncNote = SyncZoomCameraAndView(args, fxMin, fyMin, fxMax, fyMax, new List<ZoomView> { view });
-                }
-                else
-                {
-                    ApplyZoomOverlayMode(view.Mode, ToolUtil.GetBool(args, "allowSound", false));
-                }
-            }
-
-            if (!TryGetCameraBounds(out int xMin, out int xMax, out int yMin, out int yMax))
-                return "# " + path + "\n\nCamera not initialized.";
+            if (ToolUtil.GetBool(args, "syncView", false))
+                syncNote = SyncZoomCameraAndView(args, xMin, yMin, xMax, yMax, new List<ZoomView> { view });
 
             bool compact = ShouldCompactMap(args);
             string map = GetMapMd("[视图: " + view.Name + "] Camera Viewport Map (X: "
@@ -82,8 +73,6 @@ namespace OniMcp.Tools
         private static bool TryGetCameraBounds(out int xMin, out int xMax, out int yMin, out int yMax)
         {
             xMin = xMax = yMin = yMax = 0;
-            if (TryGetSynchronizedViewportBounds(out xMin, out yMin, out xMax, out yMax))
-                return true;
             if (Camera.main == null)
                 return false;
 

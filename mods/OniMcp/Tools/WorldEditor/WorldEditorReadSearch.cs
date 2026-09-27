@@ -198,11 +198,6 @@ namespace OniMcp.Tools
                 mode = ModeForInfrastructurePath(relative);
                 viewName = GetOverlayViewName(mode);
             }
-            else if (relative.StartsWith("map/layers/", StringComparison.Ordinal))
-            {
-                mode = OverlayScreen.Instance != null ? OverlayScreen.Instance.mode : OverlayModes.None.ID;
-                viewName = GetOverlayViewName(mode);
-            }
             else
             {
                 string requestedView = FirstZoomText(args, "view", "activeView", "displayView");

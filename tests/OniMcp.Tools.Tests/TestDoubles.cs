@@ -14,6 +14,7 @@ namespace OniMcp.Tools
         public string Group { get; set; }
         public string Mode { get; set; }
         public string Risk { get; set; }
+        public bool Hidden { get; set; }
         public string Description { get; set; }
         public List<string> Aliases { get; set; }
         public List<string> Tags { get; set; }
@@ -67,6 +68,8 @@ namespace OniMcp.Tools
             return args[name] != null && bool.TryParse(args[name].ToString(), out value) ? value : fallback;
         }
 
+        public static bool VisibleCellAllowed(int cell, bool visible) => Grid.IsValidCell(cell);
+        public static int ResolveWorldId(JObject args) => GetInt(args, "worldId") ?? 0;
         public static int? GetInt(JObject args, string name) => args[name]?.Value<int?>();
         public static float SafeFloat(float value) => float.IsNaN(value) || float.IsInfinity(value) ? 0f : value;
     }

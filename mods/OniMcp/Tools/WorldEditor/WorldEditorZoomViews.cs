@@ -10,12 +10,6 @@ namespace OniMcp.Tools
 {
     public static partial class WorldEditorTools
     {
-        private static bool _hasSynchronizedViewportBounds;
-        private static int _synchronizedViewportXMin;
-        private static int _synchronizedViewportYMin;
-        private static int _synchronizedViewportXMax;
-        private static int _synchronizedViewportYMax;
-
         private static CallToolResult Zoom(JObject args)
         {
             if (!TryReadZoomBounds(args, out int xMin, out int yMin, out int xMax, out int yMax, out string error))
@@ -26,7 +20,7 @@ namespace OniMcp.Tools
                 views = ResolveZoomViews(DefaultZoomViews()).ToList();
 
             string syncNote = SyncZoomCameraAndView(args, xMin, yMin, xMax, yMax, views);
-            bool syncEachView = ToolUtil.GetBool(args, "syncView", true);
+            bool syncEachView = ToolUtil.GetBool(args, "syncView", false);
             string text = ReadZoomMarkdown(xMin, yMin, xMax, yMax, views.Select(view => view.Name), syncNote,
                 ShouldCompactMap(args), syncEachView, ToolUtil.GetBool(args, "allowSound", false), WorldEditorResponsePolicy.IncludeHelp(args));
             return CallToolResult.Text(text);
@@ -92,7 +86,7 @@ namespace OniMcp.Tools
 
         private static string SyncZoomCameraAndView(JObject args, int xMin, int yMin, int xMax, int yMax, List<ZoomView> views)
         {
-            if (!ToolUtil.GetBool(args, "syncView", true))
+            if (!ToolUtil.GetBool(args, "syncView", false))
                 return "未同步(syncView=false)";
 
             string viewName = FirstZoomText(args, "activeView", "displayView", "view");
@@ -100,7 +94,7 @@ namespace OniMcp.Tools
             if (string.IsNullOrWhiteSpace(viewName) || !TryResolveZoomView(viewName, out activeView))
                 activeView = views.Count > 0 ? views[0] : new ZoomView { Name = "default", Mode = OverlayModes.None.ID };
 
-            bool focusCamera = ToolUtil.GetBool(args, "focusCamera", true);
+            bool focusCamera = ToolUtil.GetBool(args, "focusCamera", false);
             float zoom = 0f;
             if (focusCamera)
                 zoom = SyncZoomCamera(args, xMin, yMin, xMax, yMax);
@@ -125,26 +119,9 @@ namespace OniMcp.Tools
                 ?? ToolUtil.GetFloat(args, "zoom")
                 ?? CalculateZoomForBounds(args, xMin, yMin, xMax, yMax);
             camera.SnapTo(new Vector3(centerX, centerY, -100f), zoom);
-            _hasSynchronizedViewportBounds = true;
-            _synchronizedViewportXMin = xMin;
-            _synchronizedViewportYMin = yMin;
-            _synchronizedViewportXMax = xMax;
-            _synchronizedViewportYMax = yMax;
             return zoom;
         }
 
-        private static bool TryGetSynchronizedViewportBounds(out int xMin, out int yMin, out int xMax, out int yMax)
-        {
-            xMin = yMin = xMax = yMax = 0;
-            if (!_hasSynchronizedViewportBounds)
-                return false;
-
-            xMin = _synchronizedViewportXMin;
-            yMin = _synchronizedViewportYMin;
-            xMax = _synchronizedViewportXMax;
-            yMax = _synchronizedViewportYMax;
-            return true;
-        }
 
         private static float CalculateZoomForBounds(JObject args, int xMin, int yMin, int xMax, int yMax)
         {

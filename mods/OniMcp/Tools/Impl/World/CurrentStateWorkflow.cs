@@ -310,8 +310,8 @@ namespace OniMcp.Tools
                 ["command"] = "zoom",
                 ["views"] = "default,power,temperature",
                 ["compact"] = true,
-                ["syncView"] = true,
-                ["focusCamera"] = true
+                ["syncView"] = false,
+                ["focusCamera"] = false
             };
 
             var camera = Camera.main;

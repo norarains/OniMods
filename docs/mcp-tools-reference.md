@@ -39,13 +39,34 @@ HUD 缺料通知的每个原生目标都已被具体 finding 覆盖时，仅具�
 
 智能电池使用 `building_control domain=config action=set_battery_thresholds id=… lowThreshold=20 highThreshold=80 dryRun=true`；提交使用 `confirm=true`。配置读取及建筑实例文件均显示阈值、电量；实例文件可编辑 `Battery.LowThreshold` 和 `Battery.HighThreshold`。电力摘要中的 `generatorStoredEnergyEmpty` 指发电机内部储能为空，不能据此判断燃料是否耗尽。
 
+## 与玩家共享 UI 的边界
+
+正常的建造、接线/接管、订单、配置和有明确范围的结构化读取直接操作游戏数据，不激活鼠标工具，不依赖玩家选中了哪个建筑。`nativePathPlacement` 和 `allowNativeBuildTool` 的旧参数不能再启用 UI 建造路径。用户可以同时平移/缩放、切覆盖层和点击建筑查看。
+
+`world_editor read/zoom` 默认 `syncView=false focusCamera=false`。地图默认使用 `view=default`，不跟随玩家覆盖层；基础设施文件使用其固定层。明确的地图范围独立于相机；`viewport` 则有意读取当前可见范围。需要展示时显式设置 `syncView=true`；移动相机还需 `focusCamera=true`。规划/编辑使用明确范围和 `worldId`，避免用户移动镜头或切换星球改变目标上下文。
+
+保留的 UI 依赖及需要独占的范围：
+
+| 操作 | UI 依赖 | 玩家操作边界 |
+| --- | --- | --- |
+| `navigation_control` 相机、覆盖层、聚焦/跟随、切换世界；显式地图同步 | 操作本来就是改变视图 | 该调用期间不要同时改相同视图 |
+| 屏幕截图、坐标截图、覆盖层截图（`world_editor command=screenshot` / `navigation_control`） | Unity 渲染和当前 UI；截图可能跨帧等待 | 等待截图完成再移动、切覆盖层或打开面板 |
+| `game_control domain=ui` 打开页面/热键；通知 `click`；关联实体 `select` | 原生面板、选择、聚焦或回调 | 调用期间交出 UI；热键可能留下交互工具，需要完成或取消 |
+| 打印舱 `open_immigrants`、选择新人和现有 care-package `claim` | 原生 UI 生成选择；领取后关闭选择页以防重复领取 | 奖励选择/领取期间不要同时操作打印舱。列表本身不会打开页面 |
+| 原生侧屏 `kind=button action=press`、剧情/日志阅读、殖民地总结、星图面板 | 原生回调可能打开模态 UI；通用按钮返回 `uiEffect=native_callback_may_open_ui` | 先查按钮和预检，可能打开 UI 的操作需交出 UI |
+| 用户菜单 `follow_navigator` / `toggle_navigation_paths` | 相机跟随 / 导航可视化 | 不与玩家相同视图操作并行 |
+
+`toggle_move_pickupable` 现在必须提供 `destinationId`（目的格上的对象实例 ID），直接下达搬运差事，不打开鼠标选点工具。已有不同目的地的搬运需先取消；不能隐式覆盖。普通配置并不因为来源是侧屏按钮就要求打开侧屏。
+
+HUD 通知和 UI 状态读取仍需要游戏的 UI 实例，但不会接管输入；这不是无窗口服务器。暂停、速度、存档/读档属于共享游戏状态：手动改订单/配置、读档、切星球或接管时间前应交接。`continue` 观察到手动暂停返回 `external_pause` 时，agent 必须保持暂停，等用户明确交回控制，不自动再次继续。
+
 ## 定位与执行原则
 
 Authoritative model:
 
 - Saves are directories. `latest/` is the fixed alias for the current/latest save.
 - `cd latest` enters a save; `cd` or `cd ~` exits back to `/`, representing the main menu/root.
-- Save contents are structured world files such as `map/terrain.oni`, `buildings/plans.oni`, `infrastructure/power.oni`, and `views/power.png`.
+- Save contents are structured world files such as `map/terrain.oni`, `buildings/plans.oni`, `infrastructure/power.oni`, and `screenshots/index.md`.
 - There are no action patch files. World changes use `world_editor command=edit`; prefer one SEARCH/REPLACE block. Multiple blocks require outer `allowPartial=true` and cannot be transactionally rolled back.
 - Reading the same file again is the observation step after an edit.
 
@@ -64,7 +85,7 @@ a virtual folder and exposes map views as files:
 
 - `world_editor command=ls path=/`
 - `world_editor command=read path=/world/map/text.txt`
-- `world_editor command=read path=/world/views/power.png`
+- `world_editor command=screenshot views=[power]`
 - `world_editor command=search domain=buildings query="wire"`
 - `world_editor command=read path=/active/buildings/plans.oni`
 - `world_editor command=read path=/active/infrastructure/power.oni`

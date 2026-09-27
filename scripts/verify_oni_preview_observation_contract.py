@@ -66,7 +66,7 @@ assert 'GetStatusItemGroup()' in supply and 'BuildingSupplyFinding.IsShortage(st
 assert 'GetRemainingMinimum()' in supply and 'VisibleCellAllowed(cell, true)' in supply
 power = (ROOT / 'Impl/Build/BuildPlanningPowerConnect.cs').read_text()
 assert 'sourceCell == inputCell && UtilityConnectionRead.HasLine' in power
-for field in ('autoDigObstructions', 'autoUprootObstructions', 'nativePathPlacement'):
+for field in ('autoDigObstructions', 'autoUprootObstructions'):
     assert f'["{field}"] = false' in power
 assert 'result["partial"] = placed' in power and 'result["safeToRetry"] = !placed' in power
 ports = (ROOT / 'Impl/Build/InfrastructureConduitPorts.cs').read_text()

@@ -196,7 +196,6 @@ int cell = Grid.XYToCell(x, y);
                     executionDetails);
             }
 
-            Dictionary<string, object> fallbackPlacement = null;
             Dictionary<string, object> instantCompletion = null;
             bool completedImmediately = IsAuthorizedVirtualFileInstantBuild(args);
             int originCell = PlacementOriginCell(def, x, y, orientation);
@@ -215,16 +214,11 @@ int cell = Grid.XYToCell(x, y);
                 go = replacementTarget != null
                     ? def.TryReplaceTile(null, pos, orientation, materialResult.Elements, facadeResult.TryPlaceId)
                     : def.TryPlace(null, pos, orientation, materialResult.Elements, facadeResult.TryPlaceId);
-                if (go == null && autoDig != null)
-                    go = TryPlaceWithBuildTool(def, originCell, orientation, materialResult.Elements,
-                        facadeResult.ResponseId, placement, args, out fallbackPlacement);
                 if (go == null)
                 {
                     var failureDetails = BuildPlacementFailureDetails(placement, materialResult);
                     if (autoDig != null)
                         failureDetails["autoDig"] = autoDig;
-                    if (fallbackPlacement != null)
-                        failureDetails["fallbackPlacement"] = fallbackPlacement;
                     return ErrorResult(prefabId, x, y, "Placement failed", failureDetails);
                 }
                 SetPriority(go, ToolUtil.GetInt(args, "priority") ?? 5);
@@ -255,7 +249,6 @@ int cell = Grid.XYToCell(x, y);
                 ["actualPlacement"] = actualPlacement,
                 ["actualAnchor"] = ActualAnchorArray(actualPlacement),
                 ["placementCheck"] = placementCheck,
-                ["fallbackPlacement"] = fallbackPlacement,
                 ["support"] = supportResult.ToDictionary(),
                 ["material"] = materialResult.Elements.Select(tag => tag.Name).ToList(),
                 ["materialSelection"] = materialResult.ToDictionary(),

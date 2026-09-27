@@ -145,8 +145,8 @@ namespace OniMcp.Tools
                 ["command"] = "zoom",
                 ["views"] = "default,power,oxygen,temperature",
                 ["compact"] = true,
-                ["syncView"] = true,
-                ["focusCamera"] = true,
+                ["syncView"] = false,
+                ["focusCamera"] = false,
                 ["x1"] = anchor.X,
                 ["y1"] = anchor.Y,
                 ["x2"] = anchor.X + anchor.Width - 1,
@@ -308,8 +308,8 @@ namespace OniMcp.Tools
                     ["y2"] = anchor.Y + anchor.Height - 1,
                     ["views"] = "default,power,oxygen,temperature",
                     ["compact"] = true,
-                    ["syncView"] = true,
-                    ["focusCamera"] = true
+                    ["syncView"] = false,
+                    ["focusCamera"] = false
                 },
                 ["why"] = kind == "starter"
                     ? "Confirm toilet lab shells, doors, oxygen, heat, power anchors, and camera framing in one synced view."

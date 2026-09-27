@@ -111,6 +111,12 @@ Batch only unknown or ambiguous names/glyphs in one `world_editor command=symbol
 - Screenshots are asynchronous. Honor `readyAfterFrames` before fetching the HTTP URL. Prefer `coordinate_screenshot` when later reasoning references cells.
 - Structured maps, not screenshots, are authoritative for digging, building, piping, wiring, and deconstruction coordinates.
 
+## Shared player UI
+
+Normal construction, orders and configuration must not activate interactive mouse tools. Map reads/zoom default to `syncView=false focusCamera=false`; keep them passive for gameplay. Use explicit bounds and `worldId` so player panning/overlays cannot redirect a plan. A viewport read intentionally follows the camera.
+
+The player may inspect buildings, pan, zoom and switch overlays during ordinary MCP work. Hand over the UI for screenshots (including pending capture frames), explicit camera/panel/hotkey/notification-click actions, Printing Pod reward selection/claim, and native buttons that report UI effects. Do not open panels just to read or configure data. Pickupable delivery requires `destinationId`; never start a mouse destination picker. Coordinate manual world edits, asteroid/save changes and speed control with the player. On `external_pause`, keep paused until the user explicitly hands control back. See [UI boundary contract](../../../docs/mcp-tools-reference.md#与玩家共享-ui-的边界) for remaining dependencies.
+
 ## Build and order discipline
 
 For construction:

@@ -236,7 +236,7 @@ private static JArray ManagementQuickEdits()
                 },
                 ["bounds"] = new JObject { ["x1"] = x1, ["y1"] = y1, ["x2"] = x2, ["y2"] = y2 },
                 ["readVisible"] = "world_editor command=read path=/active/map/viewport.md compact=true view=default",
-                ["readPowerVisible"] = "world_editor command=read path=/active/infrastructure/power.md compact=true syncView=true",
+                ["readPowerVisible"] = "world_editor command=read path=/active/infrastructure/power.md compact=true syncView=false",
                 ["captureVisible"] = "world_editor command=screenshot views=default,power,temperature waitFrames=2",
                 ["zoomHere"] = "world_editor command=zoom x1=" + x1 + " y1=" + y1 + " x2=" + x2 + " y2=" + y2 + " views=default,power,temperature compact=true"
             };
@@ -276,9 +276,9 @@ private static JArray ManagementQuickEdits()
             int x2 = Mathf.Clamp(cx + halfWidth, 0, Grid.WidthInCells - 1);
             int y1 = Mathf.Clamp(cy - halfHeight, 0, Grid.HeightInCells - 1);
             int y2 = Mathf.Clamp(cy + halfHeight, 0, Grid.HeightInCells - 1);
-            var args = new JObject { ["command"] = "zoom", ["x1"] = x1, ["y1"] = y1, ["x2"] = x2, ["y2"] = y2, ["views"] = views, ["compact"] = true, ["syncView"] = true, ["focusCamera"] = true, ["focusMode"] = focusMode };
+            var args = new JObject { ["command"] = "zoom", ["x1"] = x1, ["y1"] = y1, ["x2"] = x2, ["y2"] = y2, ["views"] = views, ["compact"] = true, ["syncView"] = false, ["focusCamera"] = false, ["focusMode"] = focusMode };
             string call = "world_editor command=zoom x1=" + x1 + " y1=" + y1 + " x2=" + x2 + " y2=" + y2
-                + " views=" + views + " compact=true syncView=true focusMode=" + focusMode;
+                + " views=" + views + " compact=true syncView=false focusMode=" + focusMode;
             string why = focusMode == "overview" ? "Zoom out to anchor global layout before planning edits." : "Zoom in to inspect local cells, overlays, anchors, and stream-visible detail.";
             return new JObject { ["direction"] = direction, ["tool"] = "world_editor", ["arguments"] = args, ["call"] = call, ["why"] = why };
         }

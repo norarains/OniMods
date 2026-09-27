@@ -189,7 +189,7 @@ namespace OniMcp.Tools
                 string command = arguments?["command"]?.ToString()?.Trim().ToLowerInvariant();
                 // zoom/read can synchronize a camera unless explicitly disabled.
                 return command == "symbols" || command == "pwd" || command == "ls"
-                    || ((command == "read" || command == "zoom") && !ToolUtil.GetBool(arguments, "syncView", true));
+                    || ((command == "read" || command == "zoom") && !ToolUtil.GetBool(arguments, "syncView", false));
             }
 
             if (string.Equals(name, "building_control", StringComparison.OrdinalIgnoreCase))

@@ -83,7 +83,6 @@ namespace OniMcp.Tools
                 // Utility routing must never silently excavate a wall chosen by Manhattan routing.
                 ["autoDigObstructions"] = false,
                 ["autoUprootObstructions"] = false,
-                ["nativePathPlacement"] = false,
                 ["priority"] = ToolUtil.GetInt(args, "priority") ?? 5,
                 ["points"] = new JArray(path.Select(point => new JArray(point.x, point.y)))
             };

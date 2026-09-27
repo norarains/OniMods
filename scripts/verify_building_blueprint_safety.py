@@ -33,7 +33,7 @@ def verify_building_blueprint_safety(
 ) -> None:
     build_root = root / "mods" / "OniMcp" / "Tools" / "Impl" / "Build"
     paths = {
-        "native": build_root / "BuildPlanningNativeUtilityPath.cs",
+        "runtime": build_root / "BuildPlanningRuntimePlacement.cs",
         "placement": build_root / "BuildPlanningUtilityConnect.cs",
         "plan_one": build_root / "BuildPlanningPlanOne.cs",
         "materials": build_root / "BuildPlanningMaterials.cs",
@@ -47,26 +47,12 @@ def verify_building_blueprint_safety(
     else:
         selected = sources
 
-    native_method = extract_block(
-        selected[paths["native"]],
-        "private static Dictionary<string, object> TryPlaceUtilityPathNative",
-    )
-    free_build_marker = "if (IsFreeBuildContext())"
-    require_order(
-        native_method,
-        (free_build_marker, "SelectElements", "SelectUtilityBuildTool"),
-        "free-build fallback must precede material selection and native utility tools",
-    )
-    free_build_branch = extract_block(native_method, free_build_marker)
-    for token in (
-        'result["attempted"] = false;',
-        'result["placementMode"] = "blueprint_cell_fallback";',
-        'result["shouldFallback"] = true;',
-    ):
-        if token not in free_build_branch:
-            fail(f"free-build utility fallback missing: {token}")
-    if 'result["reason"]' not in free_build_branch:
-        fail("free-build utility fallback must explain why native placement was skipped")
+    # Neither ordinary buildings nor utility paths may activate the player's tools.
+    for text in selected.values():
+        for forbidden in ("TryPlaceUtilityPathNative", "TryPlaceWithBuildTool", "OnLeftClickDown",
+                          "OnLeftClickUp", "OnDragTool", "OnMouseMove", "BuildTool.Instance.Activate"):
+            if forbidden in text:
+                fail("UI-dependent construction path is forbidden: " + forbidden)
 
     auto_connect = extract_block(
         selected[paths["placement"]],
@@ -75,13 +61,10 @@ def verify_building_blueprint_safety(
     require_order(
         auto_connect,
         (
-            "TryPlaceUtilityPathNative",
-            'GetBool(nativePath, "success")',
-            'GetBool(nativePath, "shouldFallback")',
             "foreach (var point in path)",
             "TryPlanOne(def.PrefabID, point.x, point.y",
         ),
-        "utility auto-connect must continue from native fallback into per-cell planning",
+        "utility auto-connect must use per-cell blueprint planning",
     )
     path_loop = extract_block(auto_connect, "foreach (var point in path)")
     if "TryPlanOne(def.PrefabID, point.x, point.y" not in path_loop:
@@ -153,7 +136,7 @@ def verify_building_blueprint_safety(
 def main() -> None:
     root = Path(__file__).resolve().parents[1]
     verify_building_blueprint_safety(root)
-    print("OK: free-build utility paths fall back to per-cell blueprint placement")
+    print("OK: utility paths use UI-independent per-cell blueprint placement")
 
 
 if __name__ == "__main__":

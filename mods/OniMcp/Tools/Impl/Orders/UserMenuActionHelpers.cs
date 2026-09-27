@@ -38,6 +38,7 @@ namespace OniMcp.Tools
                     ["x2"] = new McpToolParameter { Type = "integer", Description = "list 时筛选矩形终点 X", Required = false },
                     ["y2"] = new McpToolParameter { Type = "integer", Description = "list 时筛选矩形终点 Y", Required = false },
                     ["worldId"] = new McpToolParameter { Type = "integer", Description = "世界 ID，默认当前或目标格所在世界", Required = false },
+                    ["destinationId"] = new McpToolParameter { Type = "integer", Description = "generic toggle_move_pickupable: destination instance ID", Required = false },
                     ["actionKey"] = new McpToolParameter { Type = "string", Description = "要执行的动作 key；批量项可用 actionKey 或 a", Required = false },
                     ["enabled"] = new McpToolParameter { Type = "boolean", Description = "maintenance set_transit_tube_wax / set_hive_harvest 的目标状态", Required = false },
                     ["slotId"] = new McpToolParameter { Type = "string", Description = "maintenance unequip_dupe_equipment 的装备槽 ID", Required = false },
@@ -164,6 +165,8 @@ namespace OniMcp.Tools
                 ["title"] = spec.Title,
                 ["category"] = spec.Category,
                 ["componentType"] = spec.ComponentType.Name,
+                ["uiEffect"] = spec.ActionKey == "follow_navigator" ? "camera_follow"
+                    : spec.ActionKey == "toggle_navigation_paths" ? "navigation_visualization" : "none",
                 ["method"] = spec.MethodName
             };
         }

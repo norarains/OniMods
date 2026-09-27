@@ -59,7 +59,7 @@ Description = "state=current/current_state/overview; world=cell_info/cell_detail
                 ["format"] = new McpToolParameter { Type = "string", Description = "Requested output format, e.g. json, markdown, edit, raw.", Required = false },
                 ["view"] = new McpToolParameter { Type = "string", Description = "Requested map/infrastructure view such as power, temperature, oxygen, liquid_conduits.", Required = false },
                 ["compact"] = new McpToolParameter { Type = "boolean", Description = "Use compact token-saving map/table output when supported.", Required = false },
-                ["syncView"] = new McpToolParameter { Type = "boolean", Description = "When reading map views, also switch the in-game overlay for livestream visibility.", Required = false },
+                ["syncView"] = new McpToolParameter { Type = "boolean", Description = "Opt in to changing the player overlay during map reads; default false.", Required = false },
                 ["includeItems"] = new McpToolParameter { Type = "boolean", Description = "Include pickupables/dropped items when supported.", Required = false },
                 ["includeBuildings"] = new McpToolParameter { Type = "boolean", Description = "Include building anchors/details when supported.", Required = false },
                 ["includeDupes"] = new McpToolParameter { Type = "boolean", Description = "Include duplicants when supported.", Required = false },

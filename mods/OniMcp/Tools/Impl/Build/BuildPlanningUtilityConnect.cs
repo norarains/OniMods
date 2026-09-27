@@ -41,8 +41,7 @@ namespace OniMcp.Tools
                     ["maxCells"] = new McpToolParameter { Type = "integer", Description = "最多处理路径格数，默认 200，最大 500", Required = false },
                     ["autoDigObstructions"] = new McpToolParameter { Type = "boolean", Description = "默认 true，遇到自然固体自动标记挖掘", Required = false },
                     ["autoUprootObstructions"] = new McpToolParameter { Type = "boolean", Description = "默认 true，遇到可铲植物自动标记铲除", Required = false },
-                    ["maxAutoDigCells"] = new McpToolParameter { Type = "integer", Description = "最多自动标记挖掘/铲除格，默认 100，最大 500", Required = false },
-                    ["nativePathPlacement"] = new McpToolParameter { Type = "boolean", Description = "Default true. Use ONI's native utility drag placement for the whole path before falling back to per-cell placement.", Required = false }
+                    ["maxAutoDigCells"] = new McpToolParameter { Type = "integer", Description = "最多自动标记挖掘/铲除格，默认 100，最大 500", Required = false }
                 },
                 Handler = args =>
                 {
@@ -95,20 +94,6 @@ return CallToolResult.Error("utility_auto_connect only supports linear utility p
                             ["valid"] = false, ["planned"] = 0, ["failed"] = 1, ["reasonCode"] = "insufficient_path_material",
                             ["materialSelection"] = pathMaterial.ToDictionary()
                         }, McpJsonUtil.Settings));
-                    if (!dryRun && ToolUtil.GetBool(args, "nativePathPlacement", true))
-                    {
-                        var nativePath = TryPlaceUtilityPathNative(def, path, args);
-                        if (EqualsIgnoreCase(nativePath.TryGetValue("reasonCode", out object reasonCode) ? reasonCode?.ToString() : null, "utility_path_conflict"))
-                            return CallToolResult.Error(JsonConvert.SerializeObject(nativePath, McpJsonUtil.Settings));
-                        if (GetBool(nativePath, "success") && GetBool(nativePath, "complete"))
-                            return CallToolResult.Text(JsonConvert.SerializeObject(nativePath, McpJsonUtil.Settings));
-                        if (!GetBool(nativePath, "shouldFallback"))
-                            return CallToolResult.Error(JsonConvert.SerializeObject(nativePath, McpJsonUtil.Settings));
-                    }
-                    var fallbackSafety = ValidateUtilityPathSafety(def, path, worldId);
-                    if (!fallbackSafety.Valid)
-                        return CallToolResult.Error(JsonConvert.SerializeObject(
-                            UtilityPathConflictResult(def, path, fallbackSafety, "cell_fallback_pre_commit"), McpJsonUtil.Settings));
                     var results = new List<Dictionary<string, object>>();
                     var errors = new List<Dictionary<string, object>>();
                     var plannedSupportCells = new HashSet<int>();
@@ -152,7 +137,7 @@ return CallToolResult.Error("utility_auto_connect only supports linear utility p
                         ["prefabId"] = def.PrefabID,
                         ["dryRun"] = dryRun,
                         ["committed"] = !dryRun && (planned > 0 || reused > 0 || autoMarked > 0),
-                        ["placementMode"] = dryRun ? "dry_run_validation" : "cell_by_cell_fallback",
+                        ["placementMode"] = dryRun ? "dry_run_validation" : "cell_by_cell",
                         ["materialSelection"] = pathMaterial.ToDictionary(),
                         ["pathMode"] = "continuous_manhattan_path",
                 ["pathCells"] = path.Count,

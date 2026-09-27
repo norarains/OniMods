@@ -247,14 +247,16 @@ namespace UnityEngine
 {
     public sealed class GameObject
     {
+        internal int Cell;
         internal readonly Dictionary<Type, object> Components = new Dictionary<Type, object>();
         public T GetComponent<T>() where T : class => Components.Values.OfType<T>().FirstOrDefault();
     }
 }
-internal sealed class BuildingDef { internal ObjectLayer ReplacementLayer { get; set; } = global::ObjectLayer.NumLayers; internal int ObjectLayer { get; set; } internal int WidthInCells { get; set; } internal int HeightInCells { get; set; } internal UnityEngine.GameObject BuildingComplete { get; set; } }
+internal sealed class BuildingDef { internal string PrefabID { get; set; } internal ObjectLayer ReplacementLayer { get; set; } = global::ObjectLayer.NumLayers; internal int ObjectLayer { get; set; } internal int WidthInCells { get; set; } internal int HeightInCells { get; set; } internal UnityEngine.GameObject BuildingComplete { get; set; } }
 internal static class Grid
 {
     internal const int WidthInCells = 1024, HeightInCells = 8;
+    internal static int PosToCell(UnityEngine.GameObject go) => go.Cell;
     internal static int CellColumn(int cell) => cell % WidthInCells;
     internal static int CellRow(int cell) => cell / WidthInCells;
     internal static int XYToCell(int x, int y) => y * WidthInCells + x;

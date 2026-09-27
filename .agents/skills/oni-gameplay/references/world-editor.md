@@ -58,7 +58,7 @@ Normal world-editor construction always uses `instantBuild=false`, creating ordi
 
 Follow the [shared glyph policy](../SKILL.md#authoritative-glyphs): use the current versioned runtime legend, cache mappings for the runtime/overlay, and batch only unknown or ambiguous symbols. Cell records provide prefab/InstanceID when a plant label needs exact targeting. No redundant lookup or announcement is required.
 
-Default `zoom` returns only `views=default`; opt into oxygen, temperature, or other overlays when needed. Use `syncView=false` for reads that should not move the camera. Building indexes default to the active world, hide POI props, and page 30 rows; use `query`, `category`, `includePoi=true`, `offset`, and `limit` to narrow or expand them.
+Default `zoom` returns only `views=default`; opt into oxygen, temperature, or other overlays when needed. Reads default to `syncView=false focusCamera=false` and never change the player view. Opt in with `syncView=true`; camera movement additionally requires `focusCamera=true`. Explicit map bounds do not need the camera, while viewport reads follow the current camera. Building indexes default to the active world, hide POI props, and page 30 rows; use `query`, `category`, `includePoi=true`, `offset`, and `limit` to narrow or expand them.
 
 Compact edit responses may store equal material reports once at `shared.<list>.materialSelection`; anchor-specific failures remain in the list. `responseMode=full` preserves all diagnostic copies. Research management dry-run validates its target; other management previews explicitly say `validationLevel=syntax_only` and need the relevant target read before execution.
 

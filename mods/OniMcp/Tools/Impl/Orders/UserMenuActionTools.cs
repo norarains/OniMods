@@ -16,7 +16,7 @@ namespace OniMcp.Tools
             Spec<CancellableMove>("cancel_move_delivery", "Cancel grouped pickupable move delivery", "CancelAll", "orders"),
             Spec<Clearable>("toggle_clear", "Mark/cancel sweep-to-storage", "OnClickClear", "orders"),
             Spec<Clearable>("cancel_clear", "Cancel sweep-to-storage", "OnClickCancel", "orders"),
-            Spec<Movable>("toggle_move_pickupable", "Move/cancel pickupable move", "OnClickMove", "orders"),
+            Spec<Movable>("toggle_move_pickupable", "Queue pickupable delivery to destinationId", "MoveToLocation", "orders"),
             Spec<Movable>("cancel_move_pickupable", "Cancel pickupable move", "OnClickCancel", "orders"),
             Spec<Navigator>("toggle_navigation_paths", "Show/hide navigation paths for selected navigator", "OnDrawPaths", "navigation"),
             Spec<Navigator>("follow_navigator", "Toggle camera follow for selected navigator", "OnFollowCam", "navigation"),
@@ -109,6 +109,7 @@ namespace OniMcp.Tools
                 Description = "兼容入口：请优先使用 building_control domain=side_surface surface=user_menu action=press。执行已映射对象 UserMenu 按钮操作。用于非侧屏按钮；需先用 action=list 查询 actionKey，且 confirm=true",
                 Parameters = LookupParams(new Dictionary<string, McpToolParameter>
                 {
+                    ["destinationId"] = new McpToolParameter { Type = "integer", Description = "toggle_move_pickupable: exact instance ID whose cell is the delivery destination; does not activate a mouse tool", Required = false },
                     ["actionKey"] = new McpToolParameter { Type = "string", Description = "要执行的 actionKey，例如 toggle_compost、toggle_dump、allow_auto_repair", Required = true },
                     ["priority"] = new McpToolParameter { Type = "integer", Description = "Work priority 1–9; batch item overrides defaults, which override outer priority", Required = false },
                     ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Validate without invoking native buttons", Required = false },
@@ -131,7 +132,7 @@ namespace OniMcp.Tools
 
                     var before = TargetActionsInfo(go, "");
                     var targetInfo = TargetInfo(go);
-                    string error = dryRun ? null : InvokeSpec(go, spec);
+                    string error = ExecuteMenuAction(go, spec, args, dryRun);
                     if (error != null)
                         return CallToolResult.Error(error);
 
@@ -187,6 +188,9 @@ namespace OniMcp.Tools
                         var target = FindTarget(candidate);
                         if (target == null || FindSpec(target, candidate["actionKey"]?.ToString()) == null)
                             return CallToolResult.Error("Target or actionKey unavailable; no actions executed");
+                        string validationError = ExecuteMenuAction(target, FindSpec(target, candidate["actionKey"]?.ToString()), candidate, true);
+                        if (validationError != null)
+                            return CallToolResult.Error(validationError + "; no actions executed");
                     }
                     var results = new List<Dictionary<string, object>>();
                     foreach (var token in items)
@@ -211,7 +215,7 @@ namespace OniMcp.Tools
                             continue;
                         }
                         var targetInfo = TargetInfo(go);
-                        string error = dryRun ? null : InvokeSpec(go, spec);
+                        string error = ExecuteMenuAction(go, spec, item, dryRun);
                         results.Add(new Dictionary<string, object>
                         {
                             ["ok"] = error == null,
@@ -260,6 +264,7 @@ namespace OniMcp.Tools
                     ["x2"] = new McpToolParameter { Type = "integer", Description = "action=list 时筛选矩形终点 X", Required = false },
                     ["y2"] = new McpToolParameter { Type = "integer", Description = "action=list 时筛选矩形终点 Y", Required = false },
                     ["worldId"] = new McpToolParameter { Type = "integer", Description = "世界 ID，默认当前或目标格所在世界", Required = false },
+                    ["destinationId"] = new McpToolParameter { Type = "integer", Description = "toggle_move_pickupable: exact instance ID whose cell is the delivery destination; does not activate a mouse tool", Required = false },
                     ["actionKey"] = new McpToolParameter { Type = "string", Description = "action=press 时要执行的 actionKey；批量项可用 actionKey 或 a", Required = false },
                     ["items"] = new McpToolParameter { Type = "array", Description = "action=batch 时数组；每项支持 id 或 x/y/worldId，并提供 actionKey 或短字段 a", Required = false },
                     ["defaults"] = new McpToolParameter { Type = "object", Description = "action=batch 时合并到每项的默认参数", Required = false },

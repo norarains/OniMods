@@ -77,12 +77,14 @@ namespace OniMcp.Tools
                 Parameters = LookupParams(new Dictionary<string, McpToolParameter>
                 {
                     ["buttonIndex"] = new McpToolParameter { Type = "integer", Description = "按钮索引；先用 building_control domain=side_surface kind=button action=list 查询，默认 0", Required = false },
-                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "必须为 true，确认触发通用侧屏按钮", Required = true },
+                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "Required for commits; omit with dryRun=true", Required = false },
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Validate the native button without invoking its callback or opening UI", Required = false },
                     ["force"] = new McpToolParameter { Type = "boolean", Description = "跳过 SidescreenEnabled/Interactable 检查，默认 false", Required = false }
                 }),
                 Handler = args =>
                 {
-                    if (!ToolUtil.GetBool(args, "confirm", false))
+                    bool dryRun = ToolUtil.GetBool(args, "dryRun", false);
+                    if (!dryRun && !ToolUtil.GetBool(args, "confirm", false))
                         return CallToolResult.Error("confirm=true is required for generic side-screen button presses");
 
                     var go = FindTarget(args);
@@ -102,12 +104,15 @@ namespace OniMcp.Tools
                         return CallToolResult.Error("Button is not currently interactable");
 
                     var before = ButtonTargetInfo(go);
-                    button.OnSidescreenButtonPressed();
+                    if (!dryRun)
+                        button.OnSidescreenButtonPressed();
 
                     return CallToolResult.Text(JsonConvert.SerializeObject(new Dictionary<string, object>
                     {
                         ["target"] = TargetInfo(go),
-                        ["pressed"] = ButtonInfo(button, index),
+                        ["dryRun"] = dryRun,
+                        ["committed"] = !dryRun,
+                        [dryRun ? "wouldPress" : "pressed"] = ButtonInfo(button, index),
                         ["before"] = before,
                         ["after"] = ButtonTargetInfo(go)
                     }, McpJsonUtil.Settings));
@@ -133,6 +138,7 @@ namespace OniMcp.Tools
                 ["interactable"] = button.SidescreenButtonInteractable(),
                 ["horizontalGroupId"] = button.HorizontalGroupID(),
                 ["sortOrder"] = button.ButtonSideScreenSortOrder(),
+                ["uiEffect"] = "native_callback_may_open_ui",
                 ["controlType"] = button.GetType().FullName
             };
         }

@@ -14,7 +14,7 @@ namespace OniMcp.Tools
         public static string ReadFileDirectly(string path)
         {
             bool isMd = path.EndsWith(".md", StringComparison.OrdinalIgnoreCase);
-            HashedString activeMode = OverlayScreen.Instance != null ? OverlayScreen.Instance.mode : OverlayModes.None.ID;
+            HashedString activeMode = OverlayModes.None.ID;
             string viewName = GetOverlayViewName(activeMode);
             bool isTempView = activeMode == OverlayModes.Temperature.ID;
 
@@ -28,22 +28,7 @@ namespace OniMcp.Tools
                     if (Camera.main == null)
                         return "<h1>Error</h1><p>Camera not initialized or main camera is not available.</p>";
 
-                    var cam = Camera.main;
-                    var pos = cam.transform.position;
-                    float size = cam.orthographicSize;
-                    float aspect = cam.aspect;
-
-                    int xMin;
-                    int xMax;
-                    int yMin;
-                    int yMax;
-                    if (!TryGetSynchronizedViewportBounds(out xMin, out yMin, out xMax, out yMax))
-                    {
-                        xMin = Mathf.Clamp(Mathf.RoundToInt(pos.x - size * aspect), 0, Grid.WidthInCells - 1);
-                        xMax = Mathf.Clamp(Mathf.RoundToInt(pos.x + size * aspect), 0, Grid.WidthInCells - 1);
-                        yMin = Mathf.Clamp(Mathf.RoundToInt(pos.y - size), 0, Grid.HeightInCells - 1);
-                        yMax = Mathf.Clamp(Mathf.RoundToInt(pos.y + size), 0, Grid.HeightInCells - 1);
-                    }
+                    TryGetCameraBounds(out int xMin, out int xMax, out int yMin, out int yMax);
 
                     int width = xMax - xMin + 1;
 

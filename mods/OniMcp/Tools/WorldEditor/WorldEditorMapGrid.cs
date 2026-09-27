@@ -26,40 +26,15 @@ namespace OniMcp.Tools
 
         private static string ReadInfrastructureMapMarkdown(JObject args, string path, string relative)
         {
-            if (Camera.main == null)
-                return "# " + path + "\n\nCamera not initialized.";
-
             HashedString mode = ModeForInfrastructurePath(relative);
-            string syncNote = string.Empty;
-            if (TryReadMapFocusBounds(args, out int focusXMin, out int focusYMin, out int focusXMax, out int focusYMax, out string focusError))
-            {
-                if (!string.IsNullOrWhiteSpace(focusError))
-                    return "# " + path + "\n\n" + focusError;
+            bool hasBounds = TryReadMapFocusBounds(args, out int xMin, out int yMin, out int xMax, out int yMax, out string focusError);
+            if (hasBounds && !string.IsNullOrWhiteSpace(focusError))
+                return "# " + path + "\n\n" + focusError;
+            if (!hasBounds && !TryGetCameraBounds(out xMin, out xMax, out yMin, out yMax))
+                return "# " + path + "\n\nCamera not initialized; provide explicit map bounds.";
 
-                string viewName = GetOverlayViewName(mode);
-                syncNote = SyncZoomCameraAndView(args, focusXMin, focusYMin, focusXMax, focusYMax, new List<ZoomView>
-                {
-                    new ZoomView { Name = viewName, Mode = mode }
-                });
-            }
-            else if (ToolUtil.GetBool(args, "syncView", true))
-            {
-                ApplyZoomOverlayMode(mode, ToolUtil.GetBool(args, "allowSound", false));
-                syncNote = "覆盖层=" + GetOverlayViewName(mode);
-            }
-            else
-            {
-                syncNote = "未同步(syncView=false)";
-            }
-
-            var cam = Camera.main;
-            var pos = cam.transform.position;
-            float size = cam.orthographicSize;
-            float aspect = cam.aspect;
-            int xMin = Mathf.Clamp(Mathf.RoundToInt(pos.x - size * aspect), 0, Grid.WidthInCells - 1);
-            int xMax = Mathf.Clamp(Mathf.RoundToInt(pos.x + size * aspect), 0, Grid.WidthInCells - 1);
-            int yMin = Mathf.Clamp(Mathf.RoundToInt(pos.y - size), 0, Grid.HeightInCells - 1);
-            int yMax = Mathf.Clamp(Mathf.RoundToInt(pos.y + size), 0, Grid.HeightInCells - 1);
+            string syncNote = SyncZoomCameraAndView(args, xMin, yMin, xMax, yMax,
+                new List<ZoomView> { new ZoomView { Name = GetOverlayViewName(mode), Mode = mode } });
             string map = GetMapMd("[视图: " + GetOverlayViewName(mode) + "] " + path, xMin, xMax, yMin, yMax, mode, ShouldCompactMap(args), WorldEditorResponsePolicy.IncludeHelp(args));
             return map + "\n## View Sync\n- 直播视角: " + syncNote + "\n";
         }
@@ -139,7 +114,7 @@ if (symbol == '←' || symbol == '→' || symbol == '↑' || symbol == '↓') re
 
         private static string GetMapMd(string title, int xMin, int xMax, int yMin, int yMax)
         {
-            HashedString mode = OverlayScreen.Instance != null ? OverlayScreen.Instance.mode : OverlayModes.None.ID;
+            HashedString mode = OverlayModes.None.ID;
             return GetMapMd(title, xMin, xMax, yMin, yMax, mode);
         }
 

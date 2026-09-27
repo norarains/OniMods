@@ -242,7 +242,7 @@ namespace OniMcp.Tools
             result["timeRemainingCycles"] = Immigration.Instance == null ? (object)null : Math.Round(ToolUtil.SafeFloat(telepad.GetTimeRemaining() / 600f), 3);
             result["timeRemainingSeconds"] = Immigration.Instance == null ? (object)null : Math.Round(ToolUtil.SafeFloat(telepad.GetTimeRemaining()), 1);
             result["researchScreenAvailable"] = ManagementMenu.Instance != null && ManagementMenu.Instance.CheckHasResearchCenter();
-            result["hasActiveResearch"] = ManagementMenu.Instance != null && ManagementMenu.Instance.HasActiveResearch;
+            result["hasActiveResearch"] = Research.Instance?.GetActiveResearch() != null;
             result["skillPointsAvailable"] = Components.MinionResumes.Items.Any(resume => resume != null && !resume.HasTag(GameTags.Dead) && resume.TotalSkillPointsGained - resume.SkillsMastered > 0);
             result["newAchievementsQueued"] = SaveGame.Instance?.ColonyAchievementTracker?.achievementsToDisplay?.Count ?? 0;
             if (includeVictory)

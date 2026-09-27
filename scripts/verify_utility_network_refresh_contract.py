@@ -24,7 +24,6 @@ def body(source: str, marker: str) -> str:
 def main() -> None:
     refresh = (BUILD / "BuildPlanningUtilityNetworkRefresh.cs").read_text(encoding="utf-8")
     completion = (BUILD / "BuildPlanningInstantCompletion.cs").read_text(encoding="utf-8")
-    native = (BUILD / "BuildPlanningNativeUtilityPath.cs").read_text(encoding="utf-8")
     placement = (BUILD / "BuildPlanningUtilityConnect.cs").read_text(encoding="utf-8")
 
     exact = body(refresh, "private static bool IsExactConnectionUtilityPrefab")
@@ -74,8 +73,8 @@ def main() -> None:
     assert "EnsureCompletedUtilityNetworkRegistration" in completion
     assert "isolateConnections: true" in completion
     blueprints = (BUILD / "BuildPlanningBlueprintConnections.cs").read_text(encoding="utf-8")
-    for caller in (native, placement):
-        assert "PersistUtilityPathConnections(def, path, out networkError)" in caller
+    assert "PersistUtilityPathConnections(def, path, out networkError)" in placement
+    assert '["networkConnected"]' in placement
     assert "IsCompletedUtilityPath(def, path)" in blueprints
     assert "RefreshAndValidateUtilityPathNetwork(def, path, out error)" in blueprints
     assert "pair.Value.Connections" in blueprints
@@ -84,7 +83,6 @@ def main() -> None:
     assert "pair.Value.Connections != desired[pair.Key]" in blueprints
     assert "ClearCell" not in blueprints
     assert '"utility_network_incomplete"' in placement
-    assert 'result["networkConnected"]' in native
 
     LEFT, RIGHT, UP, DOWN = 1, 2, 4, 8
 

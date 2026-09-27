@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 
@@ -8,62 +7,6 @@ namespace OniMcp.Tools
 {
     public static partial class BuildPlanningTools
     {
-        private static GameObject TryPlaceWithBuildTool(BuildingDef def, int cell, Orientation orientation, IList<Tag> selectedElements, string facadeId, PlacementDetails placement, JObject args, out Dictionary<string, object> details)
-        {
-            details = new Dictionary<string, object>
-            {
-                ["attempted"] = true,
-                ["path"] = "BuildTool.TryBuild",
-                ["reason"] = "direct BuildingDef.TryPlace returned null while natural solid footprint cells were auto-dig queued"
-            };
-
-            if (!ToolUtil.GetBool(args, "allowNativeBuildTool", false))
-            {
-                details["attempted"] = false;
-                details["available"] = false;
-                details["error"] = "native BuildTool fallback disabled; it depends on PlanScreen UI state and can throw PlanScreen.GetBuildingPriority NullReferenceException";
-                details["next"] = "Let queued auto-dig finish, then repeat the same build request. Set allowNativeBuildTool=true only for manual debugging.";
-                return null;
-            }
-
-            if (BuildTool.Instance == null)
-            {
-                details["available"] = false;
-                details["error"] = "BuildTool.Instance is not initialized";
-                return null;
-            }
-
-            try
-            {
-                BuildTool.Instance.Activate(def, selectedElements, facadeId);
-                BuildTool.Instance.SetToolOrientation(orientation);
-                var tryBuild = typeof(BuildTool).GetMethod("TryBuild", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                if (tryBuild == null)
-                {
-                    details["available"] = false;
-                    details["error"] = "BuildTool.TryBuild method was not found";
-                    return null;
-                }
-
-                tryBuild.Invoke(BuildTool.Instance, new object[] { cell });
-                var placed = FindConstructableAtPlacement(def, placement);
-                details["available"] = true;
-                details["placed"] = placed != null;
-                if (placed != null)
-                {
-                    details["id"] = placed.GetComponent<KPrefabID>()?.InstanceID ?? -1;
-                    details["actualPlacement"] = ActualPlacementDetails(placed, def, placement.AnchorX, placement.AnchorY);
-                }
-                return placed;
-            }
-            catch (Exception ex)
-            {
-                details["available"] = false;
-                details["error"] = ex.GetType().Name + ": " + ex.Message;
-                return null;
-            }
-        }
-
         private static GameObject FindConstructableAtPlacement(BuildingDef def, PlacementDetails placement)
         {
             if (def == null || placement == null)

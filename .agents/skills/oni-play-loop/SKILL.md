@@ -48,4 +48,6 @@ The server samples vitals every 0.5 real seconds, food/research infrastructure a
 
 For an older server without `boundedContinue`, use the fallback: arrange a pause in a local try/finally before resuming for 8–15 real seconds, pause, then one compact snapshot. Do not assume continue exists or emulate waiting inside a synchronous server program.
 
+If a window stops with `external_pause`, the player has taken control: remain paused until the user explicitly hands control back. Do not automatically call continue again. Keep map inspection passive (syncView=false, focusCamera=false) and use explicit bounds/worldId while sharing the game with the player.
+
 Leave the game paused when the requested play scope ends. Report milestones, blockers and final pause state briefly. Do not add duplicants without explicit permission or use cheats. During an established livestream, service stream health/comments before continuing; unrelated credentials do not block gameplay.
