@@ -187,13 +187,13 @@ namespace OniMcp.Tools
 
             if (allWorlds)
                 return ClusterManager.Instance.WorldContainers
-                    .Where(item => item != null)
+                    .Where(item => item != null && item.IsDiscovered)
                     .OrderBy(item => item.id)
                     .ToList();
 
             int worldId = ToolUtil.GetInt(args, "worldId") ?? ClusterManager.Instance.activeWorldId;
             var world = ClusterManager.Instance.GetWorld(worldId);
-            return world == null ? new List<WorldContainer>() : new List<WorldContainer> { world };
+            return world == null || !world.IsDiscovered ? new List<WorldContainer>() : new List<WorldContainer> { world };
         }
 
         private static Dictionary<string, object> RedAlertWorldInfo(WorldContainer world)

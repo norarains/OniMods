@@ -148,7 +148,7 @@ namespace OniMcp.Tools
                 ["x2"] = new McpToolParameter { Type = "integer", Description = "区域终点/右上 X；留空时默认当前相机附近", Required = false },
                 ["y2"] = new McpToolParameter { Type = "integer", Description = "区域终点/右上 Y；留空时默认当前相机附近", Required = false },
                 ["worldId"] = new McpToolParameter { Type = "integer", Description = "世界 ID，默认当前激活世界；传 -1 搜全部世界（对象搜索可用）", Required = false },
-                ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "是否只搜索已揭示格子，默认 true", Required = false },
+                ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "Compatibility option; player discovery filtering is always enforced.", Required = false },
                 ["limit"] = new McpToolParameter { Type = "integer", Description = "最多返回结果，默认 50，最大 300", Required = false },
                 ["maxCells"] = new McpToolParameter { Type = "integer", Description = "最大格子扫描量，默认 2500，最大 20000", Required = false }
             };

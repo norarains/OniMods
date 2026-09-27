@@ -186,7 +186,7 @@ namespace OniMcp.Tools
                     ["action"] = new McpToolParameter { Type = "string", Description = "list、status、detail、list_destinations、list_launch_pads、set_destination、request_launch、cancel_launch、set_round_trip、set_landing_pad", Required = true, EnumValues = new List<string> { "list", "status", "detail", "list_destinations", "list_launch_pads", "set_destination", "request_launch", "cancel_launch", "set_round_trip", "set_landing_pad" } },
                     ["includeDetail"] = new McpToolParameter { Type = "boolean", Description = "action=status 时是否包含每艘火箭的详细模块信息，默认 false", Required = false },
                     ["includeBaseGame"] = new McpToolParameter { Type = "boolean", Description = "action=list/status 时是否包含基础版航天器，默认 true", Required = false },
-                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "action=list_destinations 时是否只返回星图可见实体，默认 true", Required = false },
+                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "Compatibility option; player discovery filtering is always enforced.", Required = false },
                     ["layer"] = new McpToolParameter { Type = "string", Description = "action=list_destinations 时按星图层过滤，例如 Asteroid、Craft、POI", Required = false },
                     ["query"] = new McpToolParameter { Type = "string", Description = "action=list_launch_pads 时按发射台名、prefabId、世界名或等待降落火箭名筛选", Required = false },
                     ["limit"] = new McpToolParameter { Type = "integer", Description = "action=list_destinations/list_launch_pads 时最多返回数量", Required = false },

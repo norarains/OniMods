@@ -42,7 +42,7 @@ namespace OniMcp.Tools
                     Kinds = ParseKinds(args["kinds"]),
                     Rect = rect,
                     WorldId = ToolUtil.GetInt(args, "worldId") ?? (ClusterManager.Instance?.activeWorldId ?? 0),
-                    VisibleOnly = ToolUtil.GetBool(args, "visibleOnly", true),
+                    VisibleOnly = true,
                     Limit = Math.Max(1, Math.Min(ToolUtil.GetInt(args, "limit") ?? 50, 300)),
                     Sort = NormalizeSort(args["sort"]?.ToString(), ToolUtil.GetInt(args, "nearX").HasValue && ToolUtil.GetInt(args, "nearY").HasValue),
                     NearX = ToolUtil.GetInt(args, "nearX"),
@@ -93,6 +93,7 @@ namespace OniMcp.Tools
 
             public bool MatchesCell(int cell, int fallbackWorldId = -1)
             {
+                if (!PlayerVisibility.Cell(cell)) return false;
                 int world = fallbackWorldId;
                 if (Grid.IsValidCell(cell) && Grid.IsWorldValidCell(cell))
                     world = Grid.WorldIdx[cell];
@@ -104,7 +105,7 @@ namespace OniMcp.Tools
                     int y = Grid.CellRow(cell);
                     if (x < Rect["x1"] || x > Rect["x2"] || y < Rect["y1"] || y > Rect["y2"])
                         return false;
-                    if (VisibleOnly && !Grid.IsVisible(cell))
+                    if (!PlayerVisibility.Cell(cell))
                         return false;
                 }
                 return true;

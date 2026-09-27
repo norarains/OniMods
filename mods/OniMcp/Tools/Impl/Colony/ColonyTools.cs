@@ -192,7 +192,7 @@ namespace OniMcp.Tools
 
                     var cycle = GameUtil.GetCurrentCycle();
                     var duplicantCount = Components.LiveMinionIdentities.Count;
-                    var worldCount = ClusterManager.Instance?.worldCount ?? 0;
+                    var worldCount = ClusterManager.Instance?.WorldContainers.Count(world => world != null && world.IsDiscovered) ?? 0;
                     var activeWorldId = ClusterManager.Instance?.activeWorldId ?? -1;
 
                     var info = new Dictionary<string, object>
@@ -297,7 +297,7 @@ namespace OniMcp.Tools
 
                     foreach (var world in ClusterManager.Instance.WorldContainers)
                     {
-                        if (world == null) continue;
+                        if (world == null || !world.IsDiscovered) continue;
 
                         worlds.Add(new Dictionary<string, object>
                         {

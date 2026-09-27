@@ -55,7 +55,7 @@ namespace OniMcp.Tools
                     ["id"] = new McpToolParameter { Type = "integer", Description = "复制人 InstanceID，留空返回全部", Required = false },
                     ["name"] = new McpToolParameter { Type = "string", Description = "复制人名称，留空返回全部", Required = false },
                     ["includeAllFoods"] = new McpToolParameter { Type = "boolean", Description = "是否包含未库存的全部食物，默认 false", Required = false },
-                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "是否只统计已揭示格子内库存食物，默认 true；调试可传 false", Required = false }
+                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "Compatibility option; player discovery filtering is always enforced.", Required = false }
                 },
                 Handler = args =>
                 {
@@ -63,7 +63,7 @@ namespace OniMcp.Tools
                         return CallToolResult.Error("Game not initialized");
 
                     bool includeAllFoods = ToolUtil.GetBool(args, "includeAllFoods", false);
-                    bool visibleOnly = ToolUtil.GetBool(args, "visibleOnly", true);
+                    bool visibleOnly = true;
                     var target = ToolUtil.FindDupe(args);
                     var dupes = target != null
                         ? new List<MinionIdentity> { target }
@@ -150,7 +150,7 @@ namespace OniMcp.Tools
                     ["name"] = new McpToolParameter { Type = "string", Description = "复制人名称，留空配合 allDupes", Required = false },
                     ["minQuality"] = new McpToolParameter { Type = "integer", Description = "最低允许品质，默认 -1", Required = false },
                     ["onlyStocked"] = new McpToolParameter { Type = "boolean", Description = "是否只修改当前库存食物，默认 true", Required = false },
-                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "是否只把已揭示格子内食物视为库存，默认 true；调试可传 false", Required = false },
+                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "Compatibility option; player discovery filtering is always enforced.", Required = false },
                     ["allDupes"] = new McpToolParameter { Type = "boolean", Description = "是否应用到全部复制人，默认 true", Required = false }
                 },
                 Handler = args =>
@@ -160,7 +160,7 @@ namespace OniMcp.Tools
 
                     int minQuality = ToolUtil.GetInt(args, "minQuality") ?? -1;
                     bool onlyStocked = ToolUtil.GetBool(args, "onlyStocked", true);
-                    bool visibleOnly = ToolUtil.GetBool(args, "visibleOnly", true);
+                    bool visibleOnly = true;
                     bool allDupes = ToolUtil.GetBool(args, "allDupes", true);
                     var dupes = SelectDupes(args, allDupes);
                     if (dupes.Count == 0)
@@ -200,7 +200,7 @@ namespace OniMcp.Tools
                 ["id"] = new McpToolParameter { Type = "integer", Description = "复制人 InstanceID；status/set/policy 可用", Required = false },
                 ["name"] = new McpToolParameter { Type = "string", Description = "复制人名称；status/set/policy 可用", Required = false },
                 ["includeAllFoods"] = new McpToolParameter { Type = "boolean", Description = "action=status 时是否包含未库存食物，默认 false", Required = false },
-                ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "action=status/policy 时是否只统计已揭示格子内库存食物，默认 true；调试可传 false", Required = false },
+                ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "Compatibility option; player discovery filtering is always enforced.", Required = false },
                 ["food"] = new McpToolParameter { Type = "string", Description = "action=set 时必填；食物 ID 或名称", Required = false },
                 ["allow"] = new McpToolParameter { Type = "boolean", Description = "action=set 时必填；true 允许，false 禁用", Required = false },
                 ["minQuality"] = new McpToolParameter { Type = "integer", Description = "action=policy 最低允许品质，默认 -1", Required = false },
@@ -296,7 +296,7 @@ namespace OniMcp.Tools
             var stocked = new Dictionary<string, FoodStock>();
             foreach (var edible in Components.Edibles.Items)
             {
-                if (edible == null || edible.gameObject == null)
+                if (edible == null || !PlayerVisibility.Object(edible.gameObject))
                     continue;
                 var pickupable = edible.GetComponent<Pickupable>();
                 int cell = pickupable != null ? ToolUtil.PickupableCell(pickupable) : Grid.PosToCell(edible);

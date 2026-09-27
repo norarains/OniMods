@@ -126,8 +126,8 @@ namespace OniMcp.Tools
             {
                 ["target"] = TargetInfo(go),
                 ["kind"] = "broadcast_receiver",
-                ["before"] = before == null ? null : TargetInfo(before.gameObject),
-                ["channel"] = receiver.GetChannel() == null ? null : TargetInfo(receiver.GetChannel().gameObject),
+                ["before"] = PlayerVisibility.Object(before?.gameObject) ? TargetInfo(before.gameObject) : null,
+                ["channel"] = PlayerVisibility.Object(receiver.GetChannel()?.gameObject) ? TargetInfo(receiver.GetChannel().gameObject) : null,
                 ["changed"] = before != receiver.GetChannel()
             }, McpJsonUtil.Settings));
         }
@@ -194,10 +194,10 @@ namespace OniMcp.Tools
                 kinds.Add("broadcast_receiver");
                 var info = new Dictionary<string, object>
                 {
-                    ["channel"] = receiver.GetChannel() == null ? null : TargetInfo(receiver.GetChannel().gameObject)
+                    ["channel"] = PlayerVisibility.Object(receiver.GetChannel()?.gameObject) ? TargetInfo(receiver.GetChannel().gameObject) : null
                 };
                 if (includeOptions)
-                    info["broadcasters"] = Components.LogicBroadcasters.Items.Where(item => item != null).Select(BroadcasterInfo).ToList();
+                    info["broadcasters"] = Components.LogicBroadcasters.Items.Where(item => item != null && PlayerVisibility.Object(item.gameObject)).Select(BroadcasterInfo).ToList();
                 result["broadcastReceiver"] = info;
             }
 
@@ -239,7 +239,7 @@ namespace OniMcp.Tools
             {
                 var go = broadcaster?.gameObject;
                 var kpid = go?.GetComponent<KPrefabID>();
-                if (kpid != null && kpid.InstanceID == id)
+                if (PlayerVisibility.Object(go) && kpid != null && kpid.InstanceID == id)
                     return broadcaster;
             }
             return null;

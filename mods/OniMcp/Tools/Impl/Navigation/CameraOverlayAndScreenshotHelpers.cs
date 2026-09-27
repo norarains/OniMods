@@ -27,7 +27,7 @@ namespace OniMcp.Tools
                     EnumValues = new List<string> { "get_view", "set_active_world", "set_view", "move", "switch_view", "focus_cell", "focus_dupe", "screenshot", "coordinate_screenshot" }
                 },
                 ["worldId"] = new McpToolParameter { Type = "integer", Description = "目标世界 ID，set_active_world 必填；其他 action 默认当前激活世界", Required = false },
-                ["requireDiscovered"] = new McpToolParameter { Type = "boolean", Description = "set_active_world：是否要求目标世界已被发现，默认 true", Required = false },
+                ["requireDiscovered"] = new McpToolParameter { Type = "boolean", Description = "Compatibility option; target world discovery is always required.", Required = false },
                 ["lookAtSurface"] = new McpToolParameter { Type = "boolean", Description = "set_active_world：世界未被访问时是否 LookAtSurface，默认 true", Required = false },
                 ["x"] = new McpToolParameter { Type = "number", Description = "set_view/move jump 目标 X；focus_cell 格子 X；也可用于按坐标定位", Required = false },
                 ["y"] = new McpToolParameter { Type = "number", Description = "set_view/move jump 目标 Y；focus_cell 格子 Y；也可用于按坐标定位", Required = false },

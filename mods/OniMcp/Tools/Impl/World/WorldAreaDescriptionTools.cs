@@ -70,7 +70,7 @@ namespace OniMcp.Tools
         {
             if (!Grid.IsValidCell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
                 return "outsideWorld";
-            if (visibleOnly && !Grid.IsVisible(cell))
+            if (!PlayerVisibility.Cell(cell))
                 return "unrevealed";
             if (Grid.Foundation[cell])
                 return "constructedTile";
@@ -88,8 +88,8 @@ namespace OniMcp.Tools
 
         private static string AreaCellElementId(int cell)
         {
-            if (!Grid.IsValidCell(cell))
-                return "Invalid";
+            if (!PlayerVisibility.Cell(cell))
+                return "Unknown";
             var element = Grid.Element[cell];
             return element?.id.ToString() ?? "Unknown";
         }

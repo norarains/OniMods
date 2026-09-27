@@ -43,9 +43,9 @@ namespace OniMcp.Tools
                     if (xx < 0 || xx >= Grid.WidthInCells || yy < 0 || yy >= Grid.HeightInCells)
                         continue;
                     int cell = Grid.XYToCell(xx, yy);
-                    if (!Grid.IsValidCell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
+                    if (!PlayerVisibility.Cell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
                         continue;
-                    if (Grid.IsVisible(cell))
+                    if (PlayerVisibility.Cell(cell))
                         summary.VisibleCells++;
                     if (Grid.Solid[cell])
                         summary.SolidCells++;
@@ -60,7 +60,7 @@ namespace OniMcp.Tools
                             ["x"] = xx,
                             ["y"] = yy,
                             ["solid"] = Grid.Solid[cell],
-                            ["visible"] = Grid.IsVisible(cell)
+                            ["visible"] = PlayerVisibility.Cell(cell)
                         });
                     }
                 }
@@ -105,7 +105,7 @@ namespace OniMcp.Tools
 
         private static Dictionary<string, object> CellEnvironment(int cell)
         {
-            if (!Grid.IsValidCell(cell) || !Grid.IsWorldValidCell(cell))
+            if (!PlayerVisibility.Cell(cell) || !Grid.IsWorldValidCell(cell))
                 return new Dictionary<string, object> { ["valid"] = false };
 
             var element = Grid.Element[cell];
@@ -113,7 +113,7 @@ namespace OniMcp.Tools
             return new Dictionary<string, object>
             {
                 ["valid"] = true,
-                ["visible"] = Grid.IsVisible(cell),
+                ["visible"] = PlayerVisibility.Cell(cell),
                 ["element"] = element?.id.ToString() ?? "Unknown",
                 ["elementName"] = ToolUtil.CleanName(element?.name ?? "Unknown"),
                 ["state"] = ToolUtil.GetElementState(element),

@@ -48,7 +48,7 @@ namespace OniMcp.Tools
                         return CallToolResult.Error("Game not initialized");
 
                     int? worldId = TryGetInt(args, "worldId");
-                    bool visibleOnly = TryGetBool(args, "visibleOnly", true);
+                    bool visibleOnly = true;
                     int limit = ClampLimit(args, 100, 500);
                     var groups = new Dictionary<string, FoodAggregate>();
                     float totalCaloriesKcal = 0f, storedCaloriesKcal = 0f;
@@ -58,7 +58,7 @@ namespace OniMcp.Tools
 
                     foreach (var edible in Components.Edibles.Items)
                     {
-                        if (edible == null || edible.gameObject == null) continue;
+                        if (edible == null || !PlayerVisibility.Object(edible.gameObject)) continue;
 
                         if (!ObjectReadFacts.MatchesId(edible.gameObject, args)) continue;
                         if (!string.IsNullOrWhiteSpace(query) && edible.GetProperName().IndexOf(query, StringComparison.OrdinalIgnoreCase) < 0

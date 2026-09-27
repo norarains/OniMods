@@ -29,7 +29,7 @@ namespace OniMcp.Tools
                     ["x2"] = new McpToolParameter { Type = "integer", Description = "区域终点/右上 X；留空时默认当前相机视野附近", Required = false },
                     ["y2"] = new McpToolParameter { Type = "integer", Description = "区域终点/右上 Y；留空时默认当前相机视野附近", Required = false },
                     ["worldId"] = new McpToolParameter { Type = "integer", Description = "世界 ID，默认当前激活世界", Required = false },
-                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "是否只导出已揭示格子，默认 true", Required = false },
+                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "Compatibility option; player discovery filtering is always enforced.", Required = false },
                     ["preset"] = new McpToolParameter { Type = "string", Description = "快照预设：terrain=只地形，construction=地形+电力，utilities=地形+全部 utility overlay，planning=utilities+平面规划摘要，all=utilities+截图。默认 construction", Required = false, EnumValues = new List<string> { "terrain", "construction", "utilities", "planning", "all" } },
                     ["overlays"] = new McpToolParameter { Type = "array", Description = "可选 overlay/analysis 列表或逗号分隔字符串：power、gas_conduits、liquid_conduits、solid_conveyor、logic、temperature；覆盖 preset 默认值", Required = false },
                     ["includeBase"] = new McpToolParameter { Type = "boolean", Description = "是否包含基础地形文本地图，默认 true", Required = false },
@@ -79,14 +79,14 @@ namespace OniMcp.Tools
                     {
                         var chunkPlan = BuildChunkPlan(area, rect, worldId, width, height, cells, maxCells, chunkMaxCells, chunkLimit);
                         if (includeChunks)
-                            AddChunkPreviews(chunkPlan, worldId, "base", TryGetBool(args, "visibleOnly", true), TryGetBool(args, "includeBuildings", true), TryGetBool(args, "includeItems", false), TryGetBool(args, "includeDupes", true));
+                            AddChunkPreviews(chunkPlan, worldId, "base", true, TryGetBool(args, "includeBuildings", true), TryGetBool(args, "includeItems", false), TryGetBool(args, "includeDupes", true));
                         return CallToolResult.Text(JsonConvert.SerializeObject(chunkPlan, McpJsonUtil.Settings));
                     }
 
                     string preset = NormalizeSnapshotPreset(args["preset"]?.ToString());
                     bool includeBase = TryGetBool(args, "includeBase", true);
                     bool includeScreenshot = TryGetBool(args, "includeScreenshot", preset == "all");
-                    bool visibleOnly = TryGetBool(args, "visibleOnly", true);
+                    bool visibleOnly = true;
                     bool includeBuildings = TryGetBool(args, "includeBuildings", true);
                     bool includeItems = TryGetBool(args, "includeItems", false);
                     bool includeDupes = TryGetBool(args, "includeDupes", true);

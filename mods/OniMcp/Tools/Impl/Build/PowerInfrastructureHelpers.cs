@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace OniMcp.Tools
 {
@@ -41,10 +42,10 @@ namespace OniMcp.Tools
                     ["maxX"] = cavity.maxX,
                     ["maxY"] = cavity.maxY
                 } : null,
-                ["buildingCount"] = room.buildings?.Count ?? 0,
-                ["plantCount"] = room.plants?.Count ?? 0,
-                ["creatureCount"] = room.creatures?.Count ?? 0,
-                ["otherEntityCount"] = room.otherEntities?.Count ?? 0,
+                ["buildingCount"] = room.buildings?.Count(entity => entity != null && PlayerVisibility.Object(entity.gameObject)) ?? 0,
+                ["plantCount"] = room.plants?.Count(entity => entity != null && PlayerVisibility.Object(entity.gameObject)) ?? 0,
+                ["creatureCount"] = room.creatures?.Count(entity => entity != null && PlayerVisibility.Object(entity.gameObject)) ?? 0,
+                ["otherEntityCount"] = room.otherEntities?.Count(entity => entity != null && PlayerVisibility.Object(entity.gameObject)) ?? 0,
                 ["ownerCount"] = room.NumOwners(),
                 ["effect"] = room.roomType?.effect,
                 ["effects"] = room.roomType?.effects
@@ -70,7 +71,7 @@ namespace OniMcp.Tools
 
             foreach (var entity in entities)
             {
-                if (entity == null || entity.gameObject == null)
+                if (entity == null || !PlayerVisibility.Object(entity.gameObject))
                     continue;
                 var go = entity.gameObject;
                 int cell = Grid.PosToCell(go);

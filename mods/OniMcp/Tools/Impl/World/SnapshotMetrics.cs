@@ -233,7 +233,7 @@ namespace OniMcp.Tools
             if (ClusterManager.Instance == null)
                 return result;
             var world = ClusterManager.Instance.GetWorld(worldId >= 0 ? worldId : ClusterManager.Instance.activeWorldId);
-            var alert = world?.AlertManager;
+            var alert = world != null && world.IsDiscovered ? world.AlertManager : null;
             if (alert == null)
                 return result;
             result["available"] = true;

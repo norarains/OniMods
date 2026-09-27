@@ -51,11 +51,11 @@ namespace OniMcp.Tools
 
         private static bool HasLayer(int cell, params ObjectLayer[] layers)
         {
-            if (!Grid.IsValidCell(cell))
+            if (!PlayerVisibility.Cell(cell))
                 return false;
             foreach (var layer in layers)
             {
-                if (Grid.Objects[cell, (int)layer] != null)
+                if (PlayerVisibility.Object(Grid.Objects[cell, (int)layer]))
                     return true;
             }
             return false;
@@ -147,7 +147,7 @@ if (symbol == '←' || symbol == '→' || symbol == '↑' || symbol == '↓') re
                     GameObject minion = null;
                     GameObject critter = null;
 
-                    if (Grid.IsValidCell(cell))
+                    if (PlayerVisibility.Cell(cell))
                     {
                         var elem = Grid.Element[cell];
                         if (elem != null)
@@ -162,11 +162,11 @@ if (symbol == '←' || symbol == '→' || symbol == '↑' || symbol == '↓') re
                             buildingId = building.GetComponent<Building>()?.Def?.PrefabID ?? building.GetComponent<KPrefabID>()?.PrefabTag.Name ?? building.name;
                             buildingName = building.GetProperName();
                         }
-                        minion = Grid.Objects[cell, (int)ObjectLayer.Minion];
+                        minion = PlayerVisibility.Known(Grid.Objects[cell, (int)ObjectLayer.Minion]);
                         critterCells.TryGetValue(cell, out critter);
                     }
 
-                    float tempC = Grid.IsValidCell(cell) ? Grid.Temperature[cell] - 273.15f : 0f;
+                    float tempC = PlayerVisibility.Cell(cell) ? Grid.Temperature[cell] - 273.15f : 0f;
                     char symbol = ResolveMapSymbol(activeMode, cell, elemId, elemName, buildingId, buildingName, building, minion, critter, tempC);
                     if (!legend.ContainsKey(symbol))
                         legend[symbol] = SymbolLegend(activeMode, symbol);
@@ -230,10 +230,10 @@ if (symbol == '←' || symbol == '→' || symbol == '↑' || symbol == '↓') re
                 return result;
             foreach (var cap in Components.Capturables.Items)
             {
-                if (cap == null || cap.gameObject == null)
+                if (cap == null || !PlayerVisibility.Object(cap.gameObject))
                     continue;
                 int cell = Grid.PosToCell(cap.gameObject);
-                if (Grid.IsValidCell(cell))
+                if (PlayerVisibility.Cell(cell))
                     result[cell] = cap.gameObject;
             }
             return result;
@@ -241,6 +241,7 @@ if (symbol == '←' || symbol == '→' || symbol == '↑' || symbol == '↓') re
 
         private static char ResolveMapSymbol(HashedString mode, int cell, string elemId, string elemName, string buildingId, string buildingName, GameObject building, GameObject minion, GameObject critter, float tempC)
         {
+            if (!PlayerVisibility.Cell(cell)) return '?';
             if (mode == OverlayModes.Power.ID) return ResolvePowerConnectionSymbol(cell);
             if (mode == OverlayModes.LiquidConduits.ID) return ResolveUtilityConnectionSymbol(cell, LiquidLayers);
             if (mode == OverlayModes.GasConduits.ID) return ResolveUtilityConnectionSymbol(cell, GasLayers);
@@ -263,6 +264,7 @@ if (symbol == '←' || symbol == '→' || symbol == '↑' || symbol == '↓') re
 
         private static void AppendCellDetails(List<string> details, HashedString mode, int x, int y, int cell, string elemName, float tempC, GameObject building, string buildingId, string buildingName, GameObject minion, GameObject critter)
         {
+            if (!PlayerVisibility.Cell(cell)) return;
             bool defaultView = mode == OverlayModes.None.ID;
             string bg = "元素=" + StripLinkTags(elemName) + ", 温度=" + tempC.ToString("F1") + "°C";
             if (defaultView && minion != null)
@@ -321,6 +323,7 @@ if (symbol == '←' || symbol == '→' || symbol == '↑' || symbol == '↓') re
         private static string FormatMapCellToken(HashedString mode, char symbol, int x, int y, int cell, GameObject building, GameObject minion, GameObject critter, string buildingId, string buildingName, string previousRunKey, out string runKey)
         {
             runKey = null;
+            if (!PlayerVisibility.Cell(cell)) return "?";
             if (TryFormatPowerAnchorToken(mode, x, y, building, minion, buildingId, buildingName, previousRunKey, out string anchorToken, out runKey))
                 return MergeOverlaySymbol(symbol, anchorToken);
             if (mode != OverlayModes.None.ID)
@@ -390,7 +393,7 @@ if (symbol == '←' || symbol == '→' || symbol == '↑' || symbol == '↓') re
         {
             try
             {
-                if (!Grid.IsValidCell(cell)) return string.Empty;
+                if (!PlayerVisibility.Cell(cell)) return string.Empty;
                 var elem = Grid.Element[cell];
                 if (elem == null || !elem.IsLiquid) return string.Empty;
                 return ", 移动=游泳/液体(" + StripLinkTags(elem.name) + " " + Grid.Mass[cell].ToString("F1") + "kg)";

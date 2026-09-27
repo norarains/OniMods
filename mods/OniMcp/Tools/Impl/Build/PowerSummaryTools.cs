@@ -232,7 +232,8 @@ namespace OniMcp.Tools
 
                     foreach (var room in Game.Instance.roomProber.rooms)
                     {
-                        if (room == null || room.IsNull())
+                        if (room == null || room.IsNull() || room.cavity?.cells == null
+                            || !room.cavity.cells.All(PlayerVisibility.Cell))
                             continue;
 
                         int roomWorldId = GetRoomWorldId(room);

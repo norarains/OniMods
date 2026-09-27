@@ -18,7 +18,7 @@ namespace OniMcp.Tools
         private static IEnumerable<GameObject> LiveCompletedBuildings()
         {
             return Components.BuildingCompletes?.Items
-                ?.Where(item => item != null && item.gameObject != null)
+                ?.Where(item => item != null && PlayerVisibility.Object(item.gameObject))
                 .Select(item => item.gameObject)
                 ?? Enumerable.Empty<GameObject>();
         }

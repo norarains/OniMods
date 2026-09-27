@@ -38,7 +38,7 @@ namespace OniMcp.Tools
             if (def == null) return conflicts;
             foreach (var target in BuildingPortTargets(def, placement))
             {
-                bool valid = Grid.IsValidCell(target.Cell) && Grid.IsVisible(target.Cell)
+                bool valid = Grid.IsValidCell(target.Cell) && PlayerVisibility.Cell(target.Cell)
                     && ToolUtil.CellMatchesWorld(target.Cell, placement.WorldId);
                 var existing = valid ? Grid.Objects[target.Cell, (int)target.Layer] : null;
                 if (valid && (existing == null || existing == ignored)) continue;
@@ -49,8 +49,8 @@ namespace OniMcp.Tools
                     ["cell"] = target.Cell,
                     ["x"] = Grid.IsValidCell(target.Cell) ? Grid.CellColumn(target.Cell) : -1,
                     ["y"] = Grid.IsValidCell(target.Cell) ? Grid.CellRow(target.Cell) : -1,
-                    ["existingId"] = existing?.GetComponent<KPrefabID>()?.InstanceID,
-                    ["existingPrefabId"] = existing == null ? null : PlacementObjectPrefabId(existing)
+                    ["existingId"] = PlayerVisibility.Object(existing) ? existing.GetComponent<KPrefabID>()?.InstanceID : null,
+                    ["existingPrefabId"] = PlayerVisibility.Object(existing) ? PlacementObjectPrefabId(existing) : null
                 });
             }
             return conflicts;

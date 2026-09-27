@@ -22,6 +22,13 @@ internal static class UtilityReadRegression
         network.Physical[right] = UtilityConnections.Left;
         Check(UtilityConnectionRead.Read(cell, layers) == UtilityConnections.Right, "endpoint has only its actual reciprocal neighbor");
         Check(UtilityConnectionRead.Read(right, layers) == UtilityConnections.Left, "endpoint relation is symmetric");
+        Grid.Hidden.Add(right);
+        Check(!UtilityConnectionRead.HasLine(right, layers), "fog hides neighboring line presence");
+        Check(UtilityConnectionRead.Read(cell, layers) == 0, "fog hides links into neighboring lines");
+        Grid.Hidden.Remove(right);
+        neighbor.Components[typeof(Uncoverable)] = new Uncoverable { IsUncovered = false };
+        Check(!UtilityConnectionRead.HasLine(right, layers), "covered objects cannot leak through utility reads");
+        neighbor.Components.Remove(typeof(Uncoverable));
         Grid.WorldIdx[right] = 1;
         Check(UtilityConnectionRead.Read(cell, layers) == 0, "adjacent worlds cannot link");
         Grid.WorldIdx[right] = 0;
@@ -29,7 +36,7 @@ internal static class UtilityReadRegression
         Check(UtilityConnectionRead.Read(cell, layers) == UtilityConnections.Right, "mixed blueprint path uses reciprocal planned network");
         Check(!UtilityConnectionRead.IsBuilt(right, layers) && UtilityConnectionRead.IsBuilt(cell, layers), "planned presence does not claim a physical pipe");
         Grid.Objects[cell, 0] = Grid.Objects[right, 0] = null;
-        Console.WriteLine("Utility read regression checks passed: 8");
+        Console.WriteLine("Utility read regression checks passed: 11");
     }
 
     private static GameObject Pipe(TestUtilityNetwork network, bool built)

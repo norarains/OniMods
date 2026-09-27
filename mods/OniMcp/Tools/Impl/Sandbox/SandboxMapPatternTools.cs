@@ -32,7 +32,7 @@ namespace OniMcp.Tools
                     ["x2"] = new McpToolParameter { Type = "integer", Description = "搜索区域终点/右上 X；可省略", Required = false },
                     ["y2"] = new McpToolParameter { Type = "integer", Description = "搜索区域终点/右上 Y；可省略", Required = false },
                     ["worldId"] = new McpToolParameter { Type = "integer", Description = "目标世界 ID，默认当前激活世界或 areaId 绑定世界", Required = false },
-                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "搜索时是否把未揭示格视为 unk，默认 false", Required = false },
+                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "Compatibility option; player discovery filtering is always enforced.", Required = false },
                     ["matchMode"] = new McpToolParameter { Type = "string", Description = "匹配处理：unique 要求唯一；first 取第一个；all 替换全部。默认 unique", Required = false, EnumValues = new List<string> { "unique", "first", "all" } },
                     ["matchIndex"] = new McpToolParameter { Type = "integer", Description = "当有多个匹配时选择第几个，0 基；优先于 matchMode=unique/first", Required = false },
                     ["maxCells"] = new McpToolParameter { Type = "integer", Description = "默认搜索范围最大格数 1600，硬上限 2500；实际替换仍受沙盒 max 1000 限制", Required = false },
@@ -75,7 +75,7 @@ namespace OniMcp.Tools
                         return CallToolResult.Error($"Search area has {scanCells} cells; maxCells={maxCells}. Use areaId or a smaller x1/y1/x2/y2 rectangle.");
 
                     int worldId = ToolUtil.ResolveWorldId(args);
-                    bool visibleOnly = ToolUtil.GetBool(args, "visibleOnly", false);
+                    bool visibleOnly = true;
                     var matches = FindPatternMatches(search, rect, worldId, visibleOnly);
                     if (matches.Count == 0)
                     {

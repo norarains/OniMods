@@ -194,7 +194,7 @@ namespace OniMcp.Tools
                             ["y"] = targetY.Value,
                             ["worldId"] = targetWorldId,
                             ["valid"] = valid,
-                            ["visible"] = valid && Grid.IsVisible(cell)
+                            ["visible"] = valid && PlayerVisibility.Cell(cell)
                         };
                     }
 

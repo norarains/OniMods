@@ -168,7 +168,7 @@ namespace OniMcp.Tools
 
             foreach (var pickupable in Components.Pickupables.Items)
             {
-                if (pickupable == null || pickupable.gameObject == null)
+                if (pickupable == null || !PlayerVisibility.Object(pickupable.gameObject))
                     continue;
 
                 int itemWorldId = PickupableWorldId(pickupable);

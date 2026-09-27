@@ -15,7 +15,7 @@ int limit = CellPickupItemLimit(args);
 var entries = new List<CellPickupDetail>();
             foreach (var pickupable in Components.Pickupables.Items)
             {
-                if (pickupable == null || pickupable.gameObject == null)
+                if (pickupable == null || !PlayerVisibility.Object(pickupable.gameObject))
                     continue;
                 if (!PickupableTouchesCell(pickupable, cell))
                     continue;
@@ -88,7 +88,7 @@ foreach (CellPickupDetail item in entries.OrderByDescending(item => item.MassKg)
 
         private static bool PickupableTouchesCell(Pickupable pickupable, int cell)
         {
-            if (pickupable == null || pickupable.gameObject == null)
+            if (pickupable == null || !PlayerVisibility.Object(pickupable.gameObject))
                 return false;
             return pickupable.cachedCell == cell || Grid.PosToCell(pickupable.gameObject) == cell;
         }

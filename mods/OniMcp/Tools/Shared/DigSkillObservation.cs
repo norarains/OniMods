@@ -7,7 +7,7 @@ namespace OniMcp.Tools
     {
         internal static List<Dictionary<string, object>> Read(IEnumerable<int> cells, int worldId)
         {
-            var requirements = cells.Where(Grid.IsValidCell).Distinct()
+            var requirements = cells.Where(PlayerVisibility.Cell).Distinct()
                 .Select(cell => new { cell, perk = RequiredPerk(Grid.Element[cell].hardness) })
                 .Where(item => item.perk != null).GroupBy(item => item.perk);
             return requirements.Select(group => new Dictionary<string, object> {

@@ -166,7 +166,7 @@ namespace OniMcp.Tools
                 foreach (var entity in bucket)
                 {
                     if (entity == null) continue;
-                    if (visibleOnly && !grid.IsVisible(entity)) continue;
+                    if (!grid.IsVisible(entity)) continue;
                     if (!string.IsNullOrWhiteSpace(layer) && !string.Equals(entity.Layer.ToString(), layer, StringComparison.OrdinalIgnoreCase)) continue;
                     results.Add(entity);
                     if (results.Count >= limit)
@@ -305,7 +305,7 @@ namespace OniMcp.Tools
                     {
                         var asteroid = entity != null ? entity.GetComponent<AsteroidGridEntity>() : null;
                         var world = GetAsteroidWorld(asteroid);
-                        if (world != null && world.id == worldId)
+                        if (world != null && world.IsDiscovered && grid.IsVisible(entity) && world.id == worldId)
                         {
                             location = entity.Location;
                             return true;
@@ -322,7 +322,7 @@ namespace OniMcp.Tools
         {
             var result = AxialToDictionary(location);
             var grid = ClusterGrid.Instance;
-            if (grid == null)
+            if (grid == null || grid.GetCellRevealLevel(location) != ClusterRevealLevel.Visible)
                 return result;
 
             UnityEngine.Sprite sprite;

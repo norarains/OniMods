@@ -49,7 +49,7 @@ namespace OniMcp.Tools
                     ["matchIndex"] = new McpToolParameter { Type = "integer", Description = "kind=map_designate 多匹配时选择第几个，0 基", Required = false },
                     ["maxCells"] = new McpToolParameter { Type = "integer", Description = "区域/搜索安全上限", Required = false },
                     ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "kind=map_designate 只预览不修改，默认 true", Required = false },
-                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "kind=map_designate 搜索时是否把未揭示格视为 unk，默认 false", Required = false },
+                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "Compatibility option; player discovery filtering is always enforced.", Required = false },
                     ["force"] = new McpToolParameter { Type = "boolean", Description = "允许绕过对应底层工具的沙盒模式或 InstantBuild 要求，默认 false", Required = false },
                     ["confirm"] = new McpToolParameter { Type = "boolean", Description = "危险写操作确认", Required = false }
                 },

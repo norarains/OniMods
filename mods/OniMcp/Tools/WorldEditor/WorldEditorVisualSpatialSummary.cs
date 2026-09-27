@@ -90,7 +90,7 @@ namespace OniMcp.Tools
                 for (int x = xMin; x <= xMax; x++)
                 {
                     int start = Grid.XYToCell(x, y);
-                    if (!Grid.IsValidCell(start) || visited.Contains(start) || !predicate(start))
+                    if (!PlayerVisibility.Cell(start) || visited.Contains(start) || !predicate(start))
                         continue;
 
                     var region = new SpatialRegion(x, y);
@@ -105,7 +105,7 @@ namespace OniMcp.Tools
                         region.Add(cell, cx, cy, xMin, xMax, yMin, yMax);
                         foreach (int next in CardinalCells(cell))
                         {
-                            if (!Grid.IsValidCell(next) || visited.Contains(next))
+                            if (!PlayerVisibility.Cell(next) || visited.Contains(next))
                                 continue;
                             int nx = Grid.CellColumn(next);
                             int ny = Grid.CellRow(next);
@@ -130,7 +130,7 @@ namespace OniMcp.Tools
                 int start = -1;
                 for (int x = xMin; x <= xMax + 1; x++)
                 {
-                    bool match = x <= xMax && Grid.IsValidCell(Grid.XYToCell(x, y)) && predicate(Grid.XYToCell(x, y));
+                    bool match = x <= xMax && PlayerVisibility.Cell(Grid.XYToCell(x, y)) && predicate(Grid.XYToCell(x, y));
                     if (match && start < 0) start = x;
                     if (!match && start >= 0)
                     {
@@ -263,7 +263,7 @@ namespace OniMcp.Tools
                 for (int x = xMin; x <= xMax; x++)
                 {
                     int cell = Grid.XYToCell(x, y);
-                    if (Grid.IsValidCell(cell)) action(x, y, cell);
+                    if (PlayerVisibility.Cell(cell)) action(x, y, cell);
                 }
         }
 

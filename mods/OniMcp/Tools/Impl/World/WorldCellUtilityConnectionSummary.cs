@@ -226,7 +226,7 @@ namespace OniMcp.Tools
         {
             if (!Grid.IsValidCell(cell))
                 return false;
-            return layers.Any(layer => Grid.Objects[cell, (int)layer] != null);
+            return PlayerVisibility.Cell(cell) && layers.Any(layer => PlayerVisibility.Object(Grid.Objects[cell, (int)layer]));
         }
 
         private static ushort UtilityPowerCircuitId(int cell)

@@ -194,14 +194,14 @@ namespace OniMcp.Tools
                 ["y"] = y,
                 ["dx"] = x - anchorX,
                 ["dy"] = y - anchorY,
-                ["hasWire"] = wire != null,
+                ["hasWire"] = PlayerVisibility.Cell(cell) ? (object)(wire != null) : null,
                 ["wire"] = wire
             };
         }
 
         private static Dictionary<string, object> PowerWireAtCell(int cell)
         {
-            if (!Grid.IsValidCell(cell))
+            if (!PlayerVisibility.Cell(cell))
                 return null;
 
             return LayerObjectInfo(cell, ObjectLayer.Wire, "wire")
@@ -211,7 +211,7 @@ namespace OniMcp.Tools
 
         private static Dictionary<string, object> LayerObjectInfo(int cell, ObjectLayer layer, string kind)
         {
-            var go = Grid.Objects[cell, (int)layer];
+            var go = PlayerVisibility.Cell(cell) ? PlayerVisibility.Known(Grid.Objects[cell, (int)layer]) : null;
             if (go == null)
                 return null;
 
@@ -281,7 +281,7 @@ namespace OniMcp.Tools
 
         private static bool CellInRect(int cell, Dictionary<string, int> rect, int worldId)
         {
-            if (!Grid.IsValidCell(cell))
+            if (!PlayerVisibility.Cell(cell))
                 return false;
             if (!ToolUtil.CellMatchesWorld(cell, worldId))
                 return false;

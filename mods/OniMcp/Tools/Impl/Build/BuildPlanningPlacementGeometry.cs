@@ -79,7 +79,7 @@ namespace OniMcp.Tools
                 {
                     X = fx, Y = fy, Cell = cell, WorldId = worldId,
                     Valid = inBounds && Grid.IsValidCell(cell),
-                    Visible = inBounds && Grid.IsValidCell(cell) && Grid.IsVisible(cell),
+                    Visible = inBounds && Grid.IsValidCell(cell) && PlayerVisibility.Cell(cell),
                     InWorld = inBounds && Grid.IsValidCell(cell) && ToolUtil.CellMatchesWorld(cell, worldId)
                 };
             }
@@ -113,7 +113,7 @@ namespace OniMcp.Tools
         private static void AddBackwallFoundationFailure(PlacementDetails placement, List<Dictionary<string, object>> obstructions)
         {
             var def = ResolveBuildingDefForPlacement(placement);
-            if (def == null)
+            if (def == null || placement.Footprint.Any(part => !part.Valid || !part.Visible || !part.InWorld))
                 return;
 
             string rule = def.BuildLocationRule.ToString();

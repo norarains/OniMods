@@ -37,7 +37,7 @@ namespace OniMcp.Tools
             digs = UnityEngine.Object.FindObjectsByType<Diggable>(FindObjectsSortMode.None);
             deconstructions = UnityEngine.Object.FindObjectsByType<Deconstructable>(FindObjectsSortMode.None);
             foreach (var dig in digs)
-                if (dig != null && (worldId < 0 || dig.GetMyWorldId() == worldId))
+                if (dig != null && ToolUtil.GameObjectMatchesWorld(dig.gameObject, worldId))
                 {
                     int cell = Grid.PosToCell(dig);
                     if (Grid.IsValidCell(cell) && Grid.Solid[cell]) solidDigCells[dig.GetInstanceID()] = cell;
@@ -62,7 +62,7 @@ namespace OniMcp.Tools
                 foodKcal = storedFoodKcal = 0;
                 foreach (var edible in Components.Edibles.Items)
                     if (edible != null && (worldId < 0 || edible.GetMyWorldId() == worldId)
-                        && ToolUtil.VisibleCellAllowed(Grid.PosToCell(edible), true))
+                        && PlayerVisibility.Object(edible.gameObject))
                     {
                         double kcal = ToolUtil.SafeFloat(edible.Calories) / 1000.0;
                         foodKcal += kcal;
@@ -73,21 +73,21 @@ namespace OniMcp.Tools
             sample.FoodKcal = foodKcal;
             sample.StoredFoodKcal = storedFoodKcal;
             foreach (var item in builds)
-                if (item != null && (worldId < 0 || item.GetMyWorldId() == worldId))
+                if (item != null && ToolUtil.GameObjectMatchesWorld(item.gameObject, worldId))
                 {
                     sample.PendingBuilds++;
                     sample.PendingIds.Add(item.GetInstanceID());
                     ReadWork(item.GetComponent<Workable>());
                 }
             foreach (var item in digs)
-                if (item != null && (worldId < 0 || item.GetMyWorldId() == worldId))
+                if (item != null && ToolUtil.GameObjectMatchesWorld(item.gameObject, worldId))
                 {
                     sample.PendingDigs++;
                     sample.PendingIds.Add(item.GetInstanceID());
                     ReadWork(item.GetComponent<Workable>());
                 }
             foreach (var item in deconstructions)
-                if (item != null && item.IsMarkedForDeconstruction() && (worldId < 0 || item.GetMyWorldId() == worldId))
+                if (item != null && item.IsMarkedForDeconstruction() && ToolUtil.GameObjectMatchesWorld(item.gameObject, worldId))
                 {
                     sample.PendingDeconstructions++;
                     sample.PendingIds.Add(item.GetInstanceID());
@@ -165,7 +165,7 @@ namespace OniMcp.Tools
                 infrastructureResearchId = sample.ResearchId;
                 foreach (var building in Components.BuildingCompletes.Items)
                 {
-                    if (building == null || (worldId >= 0 && building.GetMyWorldId() != worldId)) continue;
+                    if (building == null || !ToolUtil.GameObjectMatchesWorld(building.gameObject, worldId)) continue;
                     BuildingSupplyObservation.Read(building.gameObject, false, buildingSupplies);
                     string id = building.Def?.PrefabID ?? "";
                     if (id == "Bed" || id == "LuxuryBed") beds++;

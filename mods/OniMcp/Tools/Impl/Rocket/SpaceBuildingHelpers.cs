@@ -101,11 +101,11 @@ namespace OniMcp.Tools
                 yield break;
             foreach (var world in ClusterManager.Instance.WorldContainers)
             {
-                if (world == null || world.IsModuleInterior)
+                if (world == null || !world.IsDiscovered || world.IsModuleInterior)
                     continue;
                 var location = world.GetMyWorldLocation();
                 bool visible = ClusterGrid.Instance == null || ClusterGrid.Instance.GetCellRevealLevel(location) == ClusterRevealLevel.Visible;
-                yield return (location, ToolUtil.CleanName(world.GetProperName()), visible);
+                if (visible) yield return (location, ToolUtil.CleanName(world.GetProperName()), visible);
             }
         }
 

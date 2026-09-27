@@ -8,12 +8,12 @@ namespace OniMcp.Tools
     {
         private static GameObject CellBuildingObject(int cell)
         {
-            if (!Grid.IsValidCell(cell))
+            if (!PlayerVisibility.Cell(cell))
                 return null;
             return WorldEditorCellObjectPolicy.SelectBuildingCandidate(
-                Grid.Objects[cell, (int)ObjectLayer.Building],
-                Grid.Objects[cell, (int)ObjectLayer.LogicGate],
-                Grid.Objects[cell, (int)ObjectLayer.Gantry]);
+                PlayerVisibility.Known(Grid.Objects[cell, (int)ObjectLayer.Building]),
+                PlayerVisibility.Known(Grid.Objects[cell, (int)ObjectLayer.LogicGate]),
+                PlayerVisibility.Known(Grid.Objects[cell, (int)ObjectLayer.Gantry]));
         }
 
         private static bool RegisteredLogicGateEndpointFlags(

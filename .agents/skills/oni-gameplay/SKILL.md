@@ -15,7 +15,7 @@ Keep paused while observing, planning and issuing orders. Use fresh targeted evi
 
 Use `server_control domain=query action=select query=...` for selective colony facts. Discover datasets with `action=schema`, then request only the needed `dataset` schema. Example: `SELECT id, position, statuses FROM buildings WHERE id = 123 LIMIT 1`.
 
-Select only needed fields. Routine individual-building warnings belong to the on-demand `building_warnings` dataset or `/active/buildings/warnings.md`; intended interactions need no repair. Continue retains colony alerts and essential safety facts. Use specialized diagnostics for navigation, full power circuits, terrain or research rather than assuming an ordinary object query proves them. Unknown/null is not zero or false; loose/stored mass does not prove fetchability. Queries return facts, never recommended actions.
+Select only needed fields. Routine individual-building warnings belong to the on-demand `building_warnings` dataset or `/active/buildings/warnings.md`; intended interactions need no repair. Continue retains colony alerts and essential safety facts. Use specialized diagnostics for navigation, full power circuits, terrain or research rather than assuming an ordinary object query proves them. Unknown/null is not zero or false; loose/stored mass does not prove fetchability. Queries return facts, never recommended actions. Reads obey player discovery: fog is unknown, buried objects stay hidden until native discovery, and IDs or visibleOnly=false cannot bypass this; explored off-screen areas remain readable. Static definitions do not prove an object exists in the save.
 
 ## Colony architecture
 

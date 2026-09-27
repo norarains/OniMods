@@ -30,7 +30,7 @@ namespace OniMcp.Tools
             var layers = UtilityLayersForPrefab(def.PrefabID);
             foreach (var cellInfo in placement.Footprint)
             {
-                if (!cellInfo.Valid || !cellInfo.InWorld)
+                if (!cellInfo.Valid || !cellInfo.Visible || !cellInfo.InWorld)
                     continue;
 
                 foreach (var layer in layers)
@@ -51,7 +51,7 @@ namespace OniMcp.Tools
                         ["reason"] = "target utility layer is occupied by a different object; placement was rejected before ONI could stomp the existing endpoint or connector",
                         ["expectedPrefabId"] = def.PrefabID,
                         ["actualPrefabId"] = actualPrefabId,
-                        ["actualName"] = ToolUtil.CleanName(existing.GetProperName()),
+                        ["actualName"] = PlayerVisibility.Object(existing) ? ToolUtil.CleanName(existing.GetProperName()) : null,
                         ["layer"] = layer.ToString(),
                         ["x"] = cellInfo.X,
                         ["y"] = cellInfo.Y,
@@ -91,7 +91,7 @@ namespace OniMcp.Tools
                 string targetKey = target.Cell + "|" + (int)target.Layer;
                 if (!seen.Add(targetKey))
                     continue;
-                if (!Grid.IsValidCell(target.Cell) || !Grid.IsVisible(target.Cell)
+                if (!Grid.IsValidCell(target.Cell) || !PlayerVisibility.Cell(target.Cell)
                     || !ToolUtil.CellMatchesWorld(target.Cell, placement.WorldId))
                 {
                     conflicts.Add(new Dictionary<string, object>
@@ -119,7 +119,7 @@ namespace OniMcp.Tools
                     ["expectedPrefabId"] = def.PrefabID,
                     ["actualPrefabId"] = actualPrefabId,
                     ["samePrefab"] = EqualsIgnoreCase(actualPrefabId, def.PrefabID),
-                    ["actualName"] = ToolUtil.CleanName(existing.GetProperName()),
+                    ["actualName"] = PlayerVisibility.Object(existing) ? ToolUtil.CleanName(existing.GetProperName()) : null,
                     ["role"] = target.Role,
                     ["layer"] = target.Layer.ToString(),
                     ["x"] = Grid.CellColumn(target.Cell),
@@ -203,7 +203,7 @@ namespace OniMcp.Tools
                     Cell = cell,
                     WorldId = placement.WorldId,
                     Valid = Grid.IsValidCell(cell),
-                    Visible = Grid.IsValidCell(cell) && Grid.IsVisible(cell),
+                    Visible = Grid.IsValidCell(cell) && PlayerVisibility.Cell(cell),
                     InWorld = Grid.IsValidCell(cell) && ToolUtil.CellMatchesWorld(cell, placement.WorldId)
                 };
             }
@@ -211,7 +211,7 @@ namespace OniMcp.Tools
 
         private static string PlacementObjectPrefabId(GameObject go)
         {
-            if (go == null)
+            if (!PlayerVisibility.Object(go))
                 return string.Empty;
             var building = go.GetComponent<Building>();
             return building?.Def?.PrefabID ?? go.GetComponent<KPrefabID>()?.PrefabTag.Name ?? go.name;
@@ -228,7 +228,7 @@ namespace OniMcp.Tools
             var seen = new HashSet<int>();
             foreach (var cellInfo in PlacementSafetyFootprint(def, placement))
             {
-                if (!cellInfo.Valid)
+                if (!cellInfo.Valid || !cellInfo.Visible)
                     continue;
                 var existing = Grid.Objects[cellInfo.Cell, (int)ObjectLayer.Building];
                 if (existing == null || !seen.Add(existing.GetInstanceID()))
@@ -243,7 +243,7 @@ namespace OniMcp.Tools
                     ["reason"] = "requested physical footprint is occupied by a different building object; placement was rejected before construction could replace it",
                     ["expectedPrefabId"] = def.PrefabID,
                     ["actualPrefabId"] = actualPrefabId,
-                    ["actualName"] = ToolUtil.CleanName(existing.GetProperName()),
+                    ["actualName"] = PlayerVisibility.Object(existing) ? ToolUtil.CleanName(existing.GetProperName()) : null,
                     ["x"] = cellInfo.X,
                     ["y"] = cellInfo.Y,
                     ["cell"] = cellInfo.Cell
@@ -260,7 +260,7 @@ namespace OniMcp.Tools
             if (UsesNativeBridgeEndpointRegistration(def))
                 return conflicts;
 
-            var footprintCells = new HashSet<int>(placement.Footprint.Where(item => item.Valid).Select(item => item.Cell));
+            var footprintCells = new HashSet<int>(placement.Footprint.Where(item => item.Valid && item.Visible).Select(item => item.Cell));
             var seenObjects = new HashSet<int>();
             foreach (var complete in Components.BuildingCompletes.Items)
                 AddLogicEndpointConflicts(complete?.gameObject, def, footprintCells, seenObjects, conflicts);
@@ -311,7 +311,7 @@ namespace OniMcp.Tools
                     ["reason"] = "requested logic-building footprint overlaps an existing logic endpoint; placement was rejected before endpoint registration could stomp it",
                     ["actualPrefabId"] = actualPrefabId,
                     ["portDirection"] = direction,
-                    ["portId"] = port.id.ToString(),
+                    ["portId"] = PlayerVisibility.Object(ports.gameObject) ? port.id.ToString() : null,
                     ["x"] = Grid.CellColumn(cell),
                     ["y"] = Grid.CellRow(cell),
                     ["cell"] = cell

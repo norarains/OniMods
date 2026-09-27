@@ -81,7 +81,11 @@ namespace OniMcp.Tools
 
         public static bool GameObjectMatchesWorld(GameObject go, int worldId)
         {
-            if (go == null || worldId < 0)
+            // Every MCP object selector includes the same discovery boundary,
+            // including all-world and exact-ID lookups.
+            if (!PlayerVisibility.Object(go))
+                return false;
+            if (worldId < 0)
                 return true;
 
             int cell = Grid.PosToCell(go);
@@ -102,7 +106,8 @@ namespace OniMcp.Tools
 
         public static bool VisibleCellAllowed(int cell, bool visibleOnly)
         {
-            return !visibleOnly || (Grid.IsValidCell(cell) && Grid.IsVisible(cell));
+            // Kept for old callers; false can no longer expose unexplored facts.
+            return PlayerVisibility.Cell(cell);
         }
 
         public static MinionIdentity FindDupe(JObject args)

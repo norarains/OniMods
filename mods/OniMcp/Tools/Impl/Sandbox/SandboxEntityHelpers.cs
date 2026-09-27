@@ -10,6 +10,8 @@ namespace OniMcp.Tools
     {
         private static Dictionary<string, object> CellSample(int cell)
         {
+            if (!PlayerVisibility.Cell(cell))
+                return new Dictionary<string, object> { ["cell"] = cell, ["isVisible"] = false, ["state"] = "unknown" };
             var element = Grid.Element[cell];
             string diseaseId = null;
             if (Grid.DiseaseIdx[cell] != byte.MaxValue && Grid.DiseaseIdx[cell] >= 0)
@@ -22,7 +24,7 @@ namespace OniMcp.Tools
                 ["x"] = x,
                 ["y"] = y,
                 ["worldId"] = Grid.WorldIdx[cell],
-                ["isVisible"] = Grid.IsVisible(cell),
+                ["isVisible"] = PlayerVisibility.Cell(cell),
                 ["element"] = element?.id.ToString() ?? "Unknown",
                 ["elementName"] = ToolUtil.CleanName(element?.name ?? "Unknown"),
                 ["state"] = ToolUtil.GetElementState(element),

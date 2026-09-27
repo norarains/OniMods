@@ -194,7 +194,7 @@ namespace OniMcp.Tools
             string q = query.Trim();
             var candidates = ResourcePinTags(inventory, includeUnpinned: true)
                 .Concat(Components.Pickupables.Items
-                    .Where(item => item != null && item.KPrefabID != null)
+                    .Where(item => item != null && PlayerVisibility.Object(item.gameObject) && item.KPrefabID != null)
                     .Select(item => item.KPrefabID.PrefabTag))
                 .Where(tag => tag.IsValid)
                 .Distinct()

@@ -120,10 +120,10 @@ namespace OniMcp.Tools
                     for (int xx = Math.Max(0, x - radius); xx <= Math.Min(Grid.WidthInCells - 1, x + radius); xx++)
                     {
                         int cell = Grid.XYToCell(xx, yy);
-                        if (!ToolUtil.CellMatchesWorld(cell, worldId))
+                        if (!PlayerVisibility.Cell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
                             continue;
                         scanned++;
-                        if (Grid.IsVisible(cell))
+                        if (PlayerVisibility.Cell(cell))
                             visible++;
                         if (Grid.Solid[cell])
                             solid++;
@@ -183,7 +183,7 @@ namespace OniMcp.Tools
                 ["element"] = element?.id.ToString() ?? "Unknown",
                 ["state"] = ToolUtil.GetElementState(element),
                 ["solid"] = Grid.Solid[cell],
-                ["visible"] = Grid.IsVisible(cell),
+                ["visible"] = PlayerVisibility.Cell(cell),
                 ["temperatureC"] = Math.Round(ToolUtil.SafeFloat(Grid.Temperature[cell]) - 273.15f, 1)
             };
         }

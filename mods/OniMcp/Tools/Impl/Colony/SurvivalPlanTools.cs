@@ -25,7 +25,7 @@ namespace OniMcp.Tools
                     ["action"] = new McpToolParameter { Type = "string", Description = "plan 或 status，默认 plan", Required = false },
                     ["targetCycles"] = new McpToolParameter { Type = "integer", Description = "目标长跑周期数，默认 100", Required = false },
                     ["foodKcalPerDupe"] = new McpToolParameter { Type = "number", Description = "每个复制人的最低食物库存阈值，默认 2000 kcal", Required = false },
-                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "是否只统计已揭示格子内食物，默认 true；调试可传 false", Required = false },
+                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "Compatibility option; player discovery filtering is always enforced.", Required = false },
                     ["includeConstructionPlan"] = new McpToolParameter { Type = "boolean", Description = "是否执行较重的梯子/楼梯开路构造搜索，默认 false；快速长跑分诊优先返回 frontier/map next calls", Required = false }
                 },
                 Handler = args =>
@@ -41,7 +41,7 @@ namespace OniMcp.Tools
         {
             int targetCycles = ToolUtil.GetInt(args, "targetCycles") ?? 100;
             float foodPerDupe = ToolUtil.GetFloat(args, "foodKcalPerDupe") ?? 2000f;
-            bool visibleOnly = ToolUtil.GetBool(args, "visibleOnly", true);
+            bool visibleOnly = true;
             int dupes = Components.LiveMinionIdentities.Count;
             float foodKcal = UsableFoodKcal(visibleOnly);
             float maxStress = MaxStress();
@@ -157,7 +157,7 @@ namespace OniMcp.Tools
             var seen = new HashSet<string>();
             foreach (var building in Components.BuildingCompletes.Items)
             {
-                if (building == null)
+                if (building == null || !PlayerVisibility.Object(building.gameObject))
                     continue;
                 var pos = building.transform.GetPosition();
                 string id = (building.Def?.PrefabID ?? building.name) + "|" + Math.Round(pos.x) + "|" + Math.Round(pos.y) + "|" + building.GetMyWorldId();
@@ -179,7 +179,7 @@ namespace OniMcp.Tools
             foreach (var harvestable in Components.HarvestDesignatables.Items)
             {
                 var go = harvestable?.gameObject;
-                if (go == null || !harvestable.CanBeHarvested() || harvestable.MarkedForHarvest)
+                if (!PlayerVisibility.Object(go) || !harvestable.CanBeHarvested() || harvestable.MarkedForHarvest)
                     continue;
                 var kpid = go.GetComponent<KPrefabID>();
                 int cell = Grid.PosToCell(go);
@@ -361,7 +361,7 @@ namespace OniMcp.Tools
                 for (int x = minX; x <= maxX; x++)
                 {
                     int cell = Grid.XYToCell(x, y);
-                    if (!Grid.IsValidCell(cell) || !Grid.IsVisible(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
+                    if (!Grid.IsValidCell(cell) || !PlayerVisibility.Cell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
                         continue;
                     if (!Grid.Solid[cell] || Grid.Foundation[cell])
                         continue;
@@ -371,15 +371,16 @@ namespace OniMcp.Tools
                         continue;
 
                     bool adjacentLiquid = HasAdjacentLiquid(cell);
+                    bool unknownNeighbor = AdjacentCells(cell).Any(n => Grid.IsValidCell(n) && !PlayerVisibility.Cell(n));
                     int distance = Math.Abs(x - targetX) + Math.Abs(y - targetY);
-                    int score = distance + (adjacentLiquid ? 100 : 0);
+                    int score = distance + (adjacentLiquid || unknownNeighbor ? 100 : 0);
                     candidates.Add(new Dictionary<string, object>
                     {
                         ["x"] = x,
                         ["y"] = y,
                         ["distance"] = distance,
                         ["score"] = score,
-                        ["risk"] = adjacentLiquid ? "adjacent_liquid" : "none",
+                        ["risk"] = adjacentLiquid ? "adjacent_liquid" : unknownNeighbor ? "unexplored_neighbor" : "none",
                         ["supportRisk"] = "none",
                         ["workCell"] = new Dictionary<string, object>
                         {
@@ -398,7 +399,7 @@ namespace OniMcp.Tools
             workCell = -1;
             foreach (int candidate in AdjacentCells(cell))
             {
-                if (!Grid.IsValidCell(candidate) || Grid.Solid[candidate] || Grid.Foundation[candidate])
+                if (!PlayerVisibility.Cell(candidate) || Grid.Solid[candidate] || Grid.Foundation[candidate])
                     continue;
                 foreach (var navigator in navigators)
                 {
@@ -416,7 +417,7 @@ namespace OniMcp.Tools
         {
             foreach (int candidate in AdjacentCells(cell))
             {
-                if (!Grid.IsValidCell(candidate) || Grid.Solid[candidate])
+                if (!PlayerVisibility.Cell(candidate) || Grid.Solid[candidate])
                     continue;
                 var element = Grid.Element[candidate];
                 if (element != null && element.IsLiquid && Grid.Mass[candidate] > 1f)
@@ -431,7 +432,7 @@ namespace OniMcp.Tools
             int y = Grid.CellRow(cell);
             foreach (var building in Components.BuildingCompletes.Items)
             {
-                if (building == null || building.GetMyWorldId() != worldId)
+                if (building == null || !ToolUtil.GameObjectMatchesWorld(building.gameObject, worldId))
                     continue;
                 var def = building.Def;
                 if (def == null || !string.Equals(def.BuildLocationRule.ToString(), "OnFloor", StringComparison.OrdinalIgnoreCase))

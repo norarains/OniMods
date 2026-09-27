@@ -15,7 +15,7 @@ namespace OniMcp.Tools
                 var identity = KPrefabIDTracker.Get().GetInstance(id);
                 // Retain the unindexed universe for objects without a KPrefabID,
                 // unregistered/transitional objects, and older saves/mods.
-                if (identity == null) return null;
+                if (identity == null || !PlayerVisibility.Object(identity.gameObject)) return null;
                 var go = identity.gameObject;
                 if (go.GetComponent<BuildingComplete>() != null || go.GetComponent<Geyser>() != null
                     || go.GetComponent<Constructable>() != null) objects.Add(go);

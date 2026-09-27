@@ -25,16 +25,16 @@ namespace OniMcp.Tools
             }
             int origin = PlacementOriginCell(def, placement.AnchorX, placement.AnchorY, placement.Orientation);
             int workCell = navigators.Count == 0 || !Grid.IsValidCell(origin)
-                || placement.Footprint.Any(cell => !cell.Valid || !cell.InWorld) ? -1 : ConstructionWorkCells.FindReachable(
+                || placement.Footprint.Any(cell => !cell.Valid || !cell.Visible || !cell.InWorld) ? -1 : ConstructionWorkCells.FindReachable(
                 ConstructionTable(def, placement.Orientation).Select(row => row.Select(offset =>
                 {
                     int cell = Grid.OffsetCell(origin, offset);
                     return Grid.IsValidCell(cell) && Grid.CellColumn(cell) == Grid.CellColumn(origin) + offset.x
                         && Grid.CellRow(cell) == Grid.CellRow(origin) + offset.y ? cell : -1;
                 }).ToArray()),
-                cell => Grid.IsValidCell(cell) && Grid.IsVisible(cell)
+                cell => Grid.IsValidCell(cell) && PlayerVisibility.Cell(cell)
                     && ToolUtil.CellMatchesWorld(cell, placement.WorldId) && !Grid.Solid[cell],
-                cell => Grid.IsValidCell(cell) && Grid.IsVisible(cell)
+                cell => Grid.IsValidCell(cell) && PlayerVisibility.Cell(cell)
                     && ToolUtil.CellMatchesWorld(cell, placement.WorldId) && HasConstructionNavigator(cell, navigators));
             return new Dictionary<string, object> {
                 ["source"] = "native_construction_offset_table",
@@ -44,7 +44,7 @@ namespace OniMcp.Tools
                 ["footprintAccessSource"] = "current_navigator_adjacent_cells",
                 ["reachableFootprintCells"] = reachable,
                 ["footprintCells"] = placement.Footprint.Count, ["allCellsHaveCurrentAccess"] = blocked.Count == 0,
-                ["digSkillRequirements"] = DigSkillObservation.Read(placement.Footprint.Where(cell => cell.Valid && Grid.Solid[cell.Cell]).Select(cell => cell.Cell), placement.WorldId),
+                ["digSkillRequirements"] = DigSkillObservation.Read(placement.Footprint.Where(cell => cell.Valid && cell.Visible && Grid.Solid[cell.Cell]).Select(cell => cell.Cell), placement.WorldId),
                 ["autoDigCells"] = digTotal, ["reachableAutoDigCells"] = digReachable,
                 ["blockedCells"] = blocked.Take(16).ToList(), ["blockedCellCount"] = blocked.Count,
                 ["completionReachabilityVerified"] = false,

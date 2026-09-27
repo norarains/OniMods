@@ -9,7 +9,7 @@ namespace OniMcp.Tools
         internal static void Read(GameObject go, bool construction, List<BuildingSupplyFinding> result)
         {
             int cell = Grid.PosToCell(go);
-            if (!Grid.IsValidCell(cell) || !ToolUtil.VisibleCellAllowed(cell, true)) return;
+            if (!PlayerVisibility.Object(go)) return;
             var group = go.GetComponent<KSelectable>()?.GetStatusItemGroup();
             if (group == null) return;
             BuildingSupplyFinding finding = null;

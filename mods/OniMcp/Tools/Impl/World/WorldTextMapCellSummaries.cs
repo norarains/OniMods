@@ -17,8 +17,8 @@ namespace OniMcp.Tools
             }
 
             summary.Valid = true;
-            summary.Visible = Grid.IsVisible(cell);
-            if (visibleOnly && !summary.Visible)
+            summary.Visible = PlayerVisibility.Cell(cell);
+            if (!summary.Visible)
             {
                 summary.Symbol = '?';
                 summary.Occupancy = "unrevealed";
@@ -242,7 +242,7 @@ namespace OniMcp.Tools
 
         private static string CellDetailLine(CellSummary summary, int originX, int originY, string view)
         {
-            if (!summary.Valid)
+            if (!summary.Valid || !summary.Visible)
                 return $"rxy={summary.X - originX},{summary.Y - originY} abs={summary.X},{summary.Y} token=unk";
 
             string overlay = summary.Overlay != null ? $" obj={summary.Overlay.Kind}:{summary.Overlay.Id}" : "";
@@ -339,7 +339,7 @@ namespace OniMcp.Tools
 
             public string ToDetailLine()
             {
-                if (!Valid)
+                if (!Valid || !Visible)
                     return $"({X},{Y}) ?";
 
                 string overlay = Overlay != null ? $" obj={Overlay.Kind}:{Overlay.Id}" : "";

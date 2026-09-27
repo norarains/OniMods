@@ -11,7 +11,7 @@ namespace OniMcp.Tools
         internal static bool MatchesId(GameObject go, JObject args)
         {
             int? id = ToolUtil.GetInt(args, "id");
-            return go != null && (!id.HasValue || (go.GetComponent<KPrefabID>()?.InstanceID ?? go.GetInstanceID()) == id.Value);
+            return PlayerVisibility.Object(go) && (!id.HasValue || (go.GetComponent<KPrefabID>()?.InstanceID ?? go.GetInstanceID()) == id.Value);
         }
 
         internal static Dictionary<string, object> Read(GameObject go)
@@ -50,12 +50,12 @@ namespace OniMcp.Tools
         {
             var seen = new HashSet<int>();
             foreach (var building in Components.BuildingCompletes.Items)
-                if (building != null && seen.Add(building.gameObject.GetInstanceID())) yield return building.gameObject;
+                if (building != null && PlayerVisibility.Object(building.gameObject) && seen.Add(building.gameObject.GetInstanceID())) yield return building.gameObject;
             foreach (var geyser in UnityEngine.Object.FindObjectsByType<Geyser>(FindObjectsSortMode.None))
-                if (geyser != null && seen.Add(geyser.gameObject.GetInstanceID())) yield return geyser.gameObject;
+                if (geyser != null && PlayerVisibility.Object(geyser.gameObject) && seen.Add(geyser.gameObject.GetInstanceID())) yield return geyser.gameObject;
             if (includePlanned)
                 foreach (var blueprint in UnityEngine.Object.FindObjectsByType<Constructable>(FindObjectsSortMode.None))
-                    if (blueprint != null && seen.Add(blueprint.gameObject.GetInstanceID())) yield return blueprint.gameObject;
+                    if (blueprint != null && PlayerVisibility.Object(blueprint.gameObject) && seen.Add(blueprint.gameObject.GetInstanceID())) yield return blueprint.gameObject;
         }
     }
 }

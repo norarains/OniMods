@@ -34,7 +34,7 @@ namespace OniMcp.Tools
                 for (int x = xMin; x <= xMax; x++)
                 {
                     int cell = Grid.XYToCell(x, y);
-                    if (!Grid.IsValidCell(cell))
+                    if (!PlayerVisibility.Cell(cell))
                         continue;
 
                     if (HasLayer(cell, layers))

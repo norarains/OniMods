@@ -25,7 +25,7 @@ namespace OniMcp.Tools
                     continue;
                 }
 
-                if (go == null)
+                if (!PlayerVisibility.Object(go))
                     continue;
                 result.Add(ObjectInfo(go, layer.ToString(), cell));
             }
@@ -161,7 +161,7 @@ namespace OniMcp.Tools
             foreach (var layer in layers)
             {
                 var go = Grid.Objects[cell, (int)layer];
-                if (go != null)
+                if (PlayerVisibility.Object(go))
                     result[layer.ToString()] = ObjectInfo(go, layer.ToString(), cell);
             }
             result["connectionSummary"] = CellUtilityConnectionSummary(cell);
@@ -171,7 +171,7 @@ namespace OniMcp.Tools
         private static Dictionary<string, object> CellBuildability(int cell, int worldId)
         {
             bool naturalSolid = Grid.IsValidCell(cell)
-                && Grid.IsVisible(cell)
+                && PlayerVisibility.Cell(cell)
                 && ToolUtil.CellMatchesWorld(cell, worldId)
                 && Grid.Solid[cell]
                 && !Grid.Foundation[cell];
@@ -226,7 +226,7 @@ namespace OniMcp.Tools
 
         private static bool MatchesWorld(GameObject go, int worldId)
         {
-            return worldId < 0 || ToolUtil.GameObjectMatchesWorld(go, worldId);
+            return ToolUtil.GameObjectMatchesWorld(go, worldId);
         }
     }
 }

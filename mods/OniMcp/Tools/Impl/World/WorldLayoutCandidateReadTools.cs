@@ -31,7 +31,7 @@ namespace OniMcp.Tools
                     ["purpose"] = new McpToolParameter { Type = "string", Description = "用途：generic、lab、barracks、bathroom、power、farm，默认 generic", Required = false, EnumValues = new List<string> { "generic", "lab", "barracks", "bathroom", "power", "farm" } },
                     ["width"] = new McpToolParameter { Type = "integer", Description = "目标房间宽度；留空按 purpose 默认", Required = false },
                     ["height"] = new McpToolParameter { Type = "integer", Description = "目标房间高度；留空按 purpose 默认", Required = false },
-                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "是否只考虑已揭示格子，默认 true", Required = false },
+                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "Compatibility option; player discovery filtering is always enforced.", Required = false },
                     ["limit"] = new McpToolParameter { Type = "integer", Description = "最多返回候选数量，默认 10，最大 50", Required = false },
                     ["maxCells"] = new McpToolParameter { Type = "integer", Description = "最大扫描格子数，默认 2500，硬上限 2500", Required = false },
                     ["detailHazards"] = new McpToolParameter { Type = "boolean", Description = "是否返回每格危险详情；默认 false，仅返回坐标和元素计数", Required = false }
@@ -58,7 +58,7 @@ namespace OniMcp.Tools
                         return CallToolResult.Error($"Area too large: {width}x{height}={cells} cells, maxCells={maxCells}");
 
                     string purpose = NormalizeLayoutPurpose(args["purpose"]?.ToString());
-                    bool visibleOnly = TryGetBool(args, "visibleOnly", true);
+                    bool visibleOnly = true;
                     int limit = ClampInt(args, "limit", 10, 1, 50);
                     var defaults = LayoutDefaults(purpose);
                     int candidateWidth = ClampInt(args, "width", defaults.Width, 4, Math.Min(64, width));

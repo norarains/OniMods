@@ -77,10 +77,10 @@ namespace OniMcp.Tools
         private static Dictionary<string, object> RemoteWorkTerminalInfo(RemoteWorkTerminal terminal, bool includeDocks)
         {
             var result = TargetInfo(terminal.gameObject);
-            result["currentDock"] = terminal.CurrentDock == null ? null : DockInfo(terminal.CurrentDock);
-            result["futureDock"] = terminal.FutureDock == null ? null : DockInfo(terminal.FutureDock);
+            result["currentDock"] = PlayerVisibility.Object(terminal.CurrentDock?.gameObject) ? DockInfo(terminal.CurrentDock) : null;
+            result["futureDock"] = PlayerVisibility.Object(terminal.FutureDock?.gameObject) ? DockInfo(terminal.FutureDock) : null;
             result["availableDocks"] = includeDocks
-                ? Components.RemoteWorkerDocks.GetItems(terminal.GetMyWorldId()).Where(dock => dock != null).Select(DockInfo).ToList()
+                ? Components.RemoteWorkerDocks.GetItems(terminal.GetMyWorldId()).Where(dock => dock != null && PlayerVisibility.Object(dock.gameObject)).Select(DockInfo).ToList()
                 : new List<Dictionary<string, object>>();
             return result;
         }
@@ -98,7 +98,7 @@ namespace OniMcp.Tools
             string name = args["dockName"]?.ToString();
             foreach (var dock in Components.RemoteWorkerDocks.GetItems(terminal.GetMyWorldId()))
             {
-                if (dock == null)
+                if (dock == null || !PlayerVisibility.Object(dock.gameObject))
                     continue;
                 var kpid = dock.GetComponent<KPrefabID>();
                 if (id.HasValue && kpid != null && kpid.InstanceID == id.Value)

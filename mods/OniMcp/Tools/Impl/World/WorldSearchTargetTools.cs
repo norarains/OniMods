@@ -12,7 +12,7 @@ namespace OniMcp.Tools
             {
                 if (!Grid.IsValidCell(cell) || !Grid.IsWorldValidCell(cell))
                     continue;
-                if (request.VisibleOnly && !Grid.IsVisible(cell))
+                if (!PlayerVisibility.Cell(cell))
                     continue;
                 scanned++;
 
@@ -55,7 +55,7 @@ namespace OniMcp.Tools
                     TemperatureC = tempC,
                     State = state,
                     Solid = solid,
-                    Visible = Grid.IsVisible(cell),
+                    Visible = PlayerVisibility.Cell(cell),
                     Scanned = scanned
                 });
             }
@@ -66,7 +66,7 @@ namespace OniMcp.Tools
         {
             foreach (var building in Components.BuildingCompletes.Items)
             {
-                if (building == null || building.gameObject == null)
+                if (building == null || !PlayerVisibility.Object(building.gameObject))
                     continue;
                 int cell = Grid.PosToCell(building.gameObject);
                 if (!request.MatchesCell(cell))
@@ -91,7 +91,7 @@ namespace OniMcp.Tools
                     Y = y,
                     WorldId = Grid.IsWorldValidCell(cell) ? Grid.WorldIdx[cell] : building.GetMyWorldId(),
                     Operational = building.GetComponent<Operational>()?.IsOperational,
-                    Visible = Grid.IsValidCell(cell) && Grid.IsVisible(cell)
+                    Visible = Grid.IsValidCell(cell) && PlayerVisibility.Cell(cell)
                 };
             }
         }
@@ -100,7 +100,7 @@ namespace OniMcp.Tools
         {
             foreach (var pickupable in Components.Pickupables.Items)
             {
-                if (pickupable == null || pickupable.gameObject == null)
+                if (pickupable == null || !PlayerVisibility.Object(pickupable.gameObject))
                     continue;
                 int cell = pickupable.cachedCell;
                 if (!request.MatchesCell(cell, pickupable.GetMyWorldId()))
@@ -128,7 +128,7 @@ namespace OniMcp.Tools
                     MassKg = primary == null ? (float?)null : ToolUtil.SafeFloat(primary.Mass),
                     TemperatureC = primary == null ? (float?)null : ToolUtil.SafeFloat(primary.Temperature) - 273.15f,
                     Stored = pickupable.storage != null || kpid != null && kpid.HasTag(GameTags.Stored),
-                    Visible = Grid.IsValidCell(cell) && Grid.IsVisible(cell)
+                    Visible = Grid.IsValidCell(cell) && PlayerVisibility.Cell(cell)
                 };
             }
         }
@@ -137,7 +137,7 @@ namespace OniMcp.Tools
         {
             foreach (var dupe in Components.LiveMinionIdentities.Items)
             {
-                if (dupe == null || dupe.gameObject == null)
+                if (dupe == null || !PlayerVisibility.Object(dupe.gameObject))
                     continue;
                 int cell = Grid.PosToCell(dupe.gameObject);
                 if (!request.MatchesCell(cell, dupe.GetMyWorldId()))
@@ -158,7 +158,7 @@ namespace OniMcp.Tools
                     X = x,
                     Y = y,
                     WorldId = dupe.GetMyWorldId(),
-                    Visible = Grid.IsValidCell(cell) && Grid.IsVisible(cell)
+                    Visible = Grid.IsValidCell(cell) && PlayerVisibility.Cell(cell)
                 };
             }
         }

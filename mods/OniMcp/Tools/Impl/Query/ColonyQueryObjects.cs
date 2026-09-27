@@ -30,7 +30,7 @@ namespace OniMcp.Tools
             foreach (var go in candidates ?? GameControlTools.BuildingReadCandidates(true))
             {
                 int cell = Grid.PosToCell(go);
-                if (!ToolUtil.VisibleCellAllowed(cell, true)) continue;
+                if (!PlayerVisibility.Object(go)) continue;
                 yield return new FactRow(field => {
                     switch (field.ToLowerInvariant())
                     {
@@ -114,7 +114,7 @@ namespace OniMcp.Tools
             {
                 if (item == null) continue;
                 int cell = ToolUtil.PickupableCell(item);
-                if (!ToolUtil.VisibleCellAllowed(cell, true)) continue;
+                if (!PlayerVisibility.Object(item.gameObject)) continue;
                 yield return new FactRow(field => {
                     var go = item.gameObject;
                     var primary = item.PrimaryElement ?? go.GetComponent<PrimaryElement>();

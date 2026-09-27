@@ -49,7 +49,7 @@ namespace OniMcp.Tools
                         for (int x = rect["x1"]; x <= rect["x2"]; x++)
                         {
                             int cell = Grid.XYToCell(x, y);
-                            if (!Grid.IsValidCell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
+                            if (!PlayerVisibility.Cell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
                                 continue;
 
                             for (int layer = 0; layer < 45; layer++)

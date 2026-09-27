@@ -13,7 +13,7 @@ namespace OniMcp.Tools
             float totalKcal = 0f;
             foreach (var edible in Components.Edibles.Items)
             {
-                if (edible == null || edible.gameObject == null)
+                if (edible == null || !PlayerVisibility.Object(edible.gameObject))
                     continue;
                 int cell = Grid.PosToCell(edible);
                 if (!ToolUtil.VisibleCellAllowed(cell, visibleOnly))
@@ -60,7 +60,7 @@ namespace OniMcp.Tools
             var seen = new HashSet<string>();
             foreach (var building in Components.BuildingCompletes.Items)
             {
-                if (building == null)
+                if (building == null || !PlayerVisibility.Object(building.gameObject))
                     continue;
                 int buildingWorld = building.GetMyWorldId();
                 if (worldId >= 0 && buildingWorld != worldId)
@@ -103,7 +103,7 @@ namespace OniMcp.Tools
             var result = new Dictionary<string, object>
             {
                 ["duplicantCount"] = Components.LiveMinionIdentities.Count,
-                ["worldCount"] = ClusterManager.Instance?.worldCount ?? 0,
+                ["worldCount"] = ClusterManager.Instance?.WorldContainers.Count(world => world != null && world.IsDiscovered) ?? 0,
                 ["activeWorldId"] = ClusterManager.Instance?.activeWorldId ?? -1
             };
             try

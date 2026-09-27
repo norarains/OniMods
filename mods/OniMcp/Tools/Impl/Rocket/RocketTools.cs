@@ -152,13 +152,13 @@ namespace OniMcp.Tools
                 Description = "兼容入口：请使用 building_control domain=rocket rocketDomain=ops action=list_destinations。列出星图实体和基础版航天目的地，可用于选择 set_destination 的 q/r 或 worldId",
                 Parameters = new Dictionary<string, McpToolParameter>
                 {
-                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "是否只返回星图可见实体，默认 true", Required = false },
+                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "Compatibility option; player discovery filtering is always enforced.", Required = false },
                     ["layer"] = new McpToolParameter { Type = "string", Description = "按星图层过滤，例如 Asteroid、Craft、POI", Required = false },
                     ["limit"] = new McpToolParameter { Type = "integer", Description = "最多返回多少个星图实体，默认 200，最大 1000", Required = false }
                 },
                 Handler = args =>
                 {
-                    bool visibleOnly = ToolUtil.GetBool(args, "visibleOnly", true);
+                    bool visibleOnly = true;
                     string layer = args["layer"]?.ToString();
                     int limit = ToolUtil.ClampLimit(args, 200, 1000);
 

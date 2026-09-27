@@ -16,7 +16,7 @@ namespace OniMcp.Tools
 
                 private static bool CellInRect(int cell, Dictionary<string, int> rect, int worldId)
                 {
-                    if (!Grid.IsValidCell(cell)) return false;
+                    if (!PlayerVisibility.Cell(cell)) return false;
                     if (!ToolUtil.CellMatchesWorld(cell, worldId)) return false;
                     int x = Grid.CellColumn(cell);
                     int y = Grid.CellRow(cell);

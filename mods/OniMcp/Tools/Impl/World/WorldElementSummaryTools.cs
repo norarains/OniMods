@@ -56,7 +56,7 @@ namespace OniMcp.Tools
 
                     int worldId = TryGetInt(args, "worldId", ClusterManager.Instance?.activeWorldId ?? 0);
                     string stateFilter = (args["state"]?.ToString() ?? "all").ToLowerInvariant();
-                    bool visibleOnly = TryGetBool(args, "visibleOnly", true);
+                    bool visibleOnly = true;
                     int limit = ClampLimit(args, 50, 200);
 
                     var groups = new Dictionary<string, ElementAggregate>();
@@ -67,7 +67,7 @@ namespace OniMcp.Tools
                     {
                         if (!Grid.IsWorldValidCell(cell)) continue;
                         if (Grid.WorldIdx[cell] != worldId) continue;
-                        if (visibleOnly && !Grid.IsVisible(cell)) continue;
+                        if (!PlayerVisibility.Cell(cell)) continue;
 
                         scannedCells++;
                         var element = Grid.Element[cell];

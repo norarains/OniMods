@@ -86,7 +86,7 @@ namespace OniMcp.Tools
                 return Grid.IsValidCell(cell) && ToolUtil.CellMatchesWorld(cell, worldId);
             if (!Grid.IsValidCell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
                 return token == "unk" || token == "unknown" || token == "outside";
-            if (visibleOnly && !Grid.IsVisible(cell))
+            if (!PlayerVisibility.Cell(cell))
                 return token == "unk" || token == "unknown" || token == "?";
             if (token == "tile")
                 return Grid.Foundation[cell];

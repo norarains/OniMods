@@ -14,14 +14,14 @@ namespace OniMcp.Tools
             var result = new List<Dictionary<string, object>>();
             var placementDef = ResolveBuildingDefForPlacement(placement);
             var safetyFootprint = PlacementSafetyFootprint(placementDef, placement).ToList();
-            var footprintCells = new HashSet<int>(safetyFootprint.Where(cell => cell.Valid).Select(cell => cell.Cell));
+            var footprintCells = new HashSet<int>(safetyFootprint.Where(cell => cell.Valid && cell.Visible).Select(cell => cell.Cell));
             bool utility = IsUtilityPrefab(placement.PrefabId);
             bool endpointBridge = UsesNativeBridgeEndpointRegistration(placementDef);
             bool physical = placementDef?.ObjectLayer == ObjectLayer.Building && !endpointBridge && !IsLinearUtilityPrefab(placement.PrefabId);
 
             foreach (var cellInfo in safetyFootprint)
             {
-                if (!cellInfo.Valid)
+                if (!cellInfo.Valid || !cellInfo.Visible)
                     continue;
                 if (Grid.Solid[cellInfo.Cell] && (!utility || physical || IsNaturalDiggableSolidCell(cellInfo.Cell, placement.WorldId)))
                 {
@@ -302,7 +302,7 @@ namespace OniMcp.Tools
         private static bool IsNaturalDiggableSolidCell(int cell, int worldId)
         {
             return Grid.IsValidCell(cell)
-                && Grid.IsVisible(cell)
+                && PlayerVisibility.Cell(cell)
                 && ToolUtil.CellMatchesWorld(cell, worldId)
                 && Grid.Solid[cell]
                 && !Grid.Foundation[cell];

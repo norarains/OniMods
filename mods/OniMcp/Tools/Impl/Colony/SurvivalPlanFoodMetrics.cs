@@ -10,7 +10,7 @@ namespace OniMcp.Tools
             float total = 0f;
             foreach (var edible in Components.Edibles.Items)
             {
-                if (edible == null || edible.gameObject == null)
+                if (edible == null || !PlayerVisibility.Object(edible.gameObject))
                     continue;
 
                 var pickupable = edible.GetComponent<Pickupable>();
@@ -31,7 +31,7 @@ namespace OniMcp.Tools
         private static float TotalFoodKcal(bool visibleOnly)
         {
             return Components.Edibles.Items
-                .Where(e => e != null && e.gameObject != null && ToolUtil.VisibleCellAllowed(Grid.PosToCell(e), visibleOnly))
+                .Where(e => e != null && PlayerVisibility.Object(e.gameObject) && ToolUtil.VisibleCellAllowed(Grid.PosToCell(e), visibleOnly))
                 .Sum(e => ToolUtil.SafeFloat(e.Calories) / 1000f);
         }
 

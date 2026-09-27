@@ -159,7 +159,7 @@ namespace OniMcp.Tools
                     ["x2"] = new McpToolParameter { Type = "integer", Description = "区域终点/右上 X；留空时默认当前相机视野附近", Required = false },
                     ["y2"] = new McpToolParameter { Type = "integer", Description = "区域终点/右上 Y；留空时默认当前相机视野附近", Required = false },
                     ["worldId"] = new McpToolParameter { Type = "integer", Description = "世界 ID，默认当前激活世界", Required = false },
-                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "是否只考虑已揭示格子，默认 true", Required = false },
+                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "Compatibility option; player discovery filtering is always enforced.", Required = false },
                     ["allowUnsupported"] = new McpToolParameter { Type = "boolean", Description = "是否允许 OnFloor 建筑缺少支撑时仍返回候选，默认 false", Required = false },
                     ["material"] = new McpToolParameter { Type = "string", Description = "可选建材；留空或 auto 时使用自动选择", Required = false },
                     ["facade"] = new McpToolParameter { Type = "string", Description = "可选建筑外观/permit id", Required = false },
@@ -195,7 +195,6 @@ namespace OniMcp.Tools
 
                     int worldId = ToolUtil.ResolveWorldId(args);
                     int limit = Math.Max(1, Math.Min(ToolUtil.GetInt(args, "limit") ?? 8, 50));
-                    bool visibleOnly = ToolUtil.GetBool(args, "visibleOnly", true);
                     bool allowUnsupported = ToolUtil.GetBool(args, "allowUnsupported", false);
                     bool includeRejected = ToolUtil.GetBool(args, "includeRejected", false);
 

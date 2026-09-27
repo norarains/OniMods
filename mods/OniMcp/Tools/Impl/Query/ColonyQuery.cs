@@ -71,7 +71,7 @@ namespace OniMcp.Tools
                 var result = FactQueryExecutor.Execute(plan, dataset);
                 result["sample"] = new JObject { ["frame"] = frame,
                     ["cycle"] = Math.Round(GameUtil.GetCurrentCycle() + (GameClock.Instance?.GetCurrentCycleAsPercentage() ?? 0f), 4),
-                    ["scope"] = plan.Dataset == "building_defs" ? "installed_definitions" : "visible_objects_all_worlds_unless_filtered" };
+                    ["scope"] = plan.Dataset == "building_defs" ? "installed_definitions" : "player_discovered_objects_all_worlds_unless_filtered" };
                 return CallToolResult.Text(result.ToString(Formatting.None));
             }
             catch (ArgumentException ex) { return CallToolResult.Error(ex.Message); }

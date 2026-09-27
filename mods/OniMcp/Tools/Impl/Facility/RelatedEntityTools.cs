@@ -144,7 +144,7 @@ namespace OniMcp.Tools
             try
             {
                 return (related.GetRelatedEntities() ?? new List<KSelectable>())
-                    .Where(item => item != null && item.gameObject != null)
+                    .Where(item => item != null && PlayerVisibility.Object(item.gameObject))
                     .ToList();
             }
             catch

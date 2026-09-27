@@ -9,6 +9,8 @@
     <StartupObject>BenchmarkMetadataRegressionEntry</StartupObject>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../mods/OniMcp/Tools/Shared/PlayerVisibility.cs" Link="Source/PlayerVisibility.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Orders/OrdersCellObservations.cs" Link="Source/OrdersCellObservations.cs" />
     <Compile Include="../../mods/OniMcp/Tools/WorldEditor/WorldEditorOperationReceipts.cs" Link="Source/WorldEditorOperationReceipts.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/World/AreaDefinition.cs" Link="Source/AreaDefinition.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Build/PowerConnectionReadiness.cs" Link="Source/PowerConnectionReadiness.cs" />

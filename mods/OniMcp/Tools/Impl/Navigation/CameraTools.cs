@@ -125,7 +125,7 @@ namespace OniMcp.Tools
                 Parameters = new Dictionary<string, McpToolParameter>
                 {
                     ["worldId"] = new McpToolParameter { Type = "integer", Description = "目标世界 ID，可先读 oni://world/list", Required = true },
-                    ["requireDiscovered"] = new McpToolParameter { Type = "boolean", Description = "是否要求目标世界已被发现，默认 true", Required = false },
+                    ["requireDiscovered"] = new McpToolParameter { Type = "boolean", Description = "Compatibility option; target world discovery is always required.", Required = false },
                     ["lookAtSurface"] = new McpToolParameter { Type = "boolean", Description = "如果世界还未被复制人访问，是否调用 LookAtSurface 后切换，默认 true", Required = false },
                     ["zoom"] = new McpToolParameter { Type = "number", Description = "切换后相机缩放，默认保持当前缩放或 10", Required = false }
                 },
@@ -139,12 +139,8 @@ namespace OniMcp.Tools
                         return CallToolResult.Error("worldId is required");
 
                     var world = ClusterManager.Instance.GetWorld(worldId.Value);
-                    if (world == null)
+                    if (world == null || !world.IsDiscovered)
                         return CallToolResult.Error($"World not found: {worldId.Value}");
-
-                    bool requireDiscovered = ToolUtil.GetBool(args, "requireDiscovered", true);
-                    if (requireDiscovered && !world.IsDiscovered)
-                        return CallToolResult.Error($"World {worldId.Value} is not discovered");
 
                     bool lookAtSurface = ToolUtil.GetBool(args, "lookAtSurface", true);
                     if (lookAtSurface && !world.IsDupeVisited)

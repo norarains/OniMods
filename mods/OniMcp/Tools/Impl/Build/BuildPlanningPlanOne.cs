@@ -29,7 +29,7 @@ return ErrorResult(prefabId, x, y, availabilityError, new Dictionary<string, obj
 });
 
 int cell = Grid.XYToCell(x, y);
-            if (!Grid.IsValidBuildingCell(cell) || !Grid.IsVisible(cell))
+            if (!Grid.IsValidBuildingCell(cell) || !PlayerVisibility.Cell(cell))
                 return ErrorResult(prefabId, x, y, "Invalid or not visible cell");
 
             int worldId = ToolUtil.ResolveWorldId(args);
@@ -38,6 +38,8 @@ int cell = Grid.XYToCell(x, y);
 
             var orientation = ParseOrientation(args["orientation"]?.ToString());
             var earlyPlacement = BuildPlacementDetails(def, x, y, worldId, orientation);
+            if (earlyPlacement.Footprint.Any(part => !part.Valid || !part.Visible || !part.InWorld))
+                return ErrorResult(prefabId, x, y, "Every footprint cell must be explored and inside the selected world");
             var earlyExistingBuild = ExistingMatchingBuildAtPlacement(def, earlyPlacement);
             if (earlyExistingBuild != null)
             {

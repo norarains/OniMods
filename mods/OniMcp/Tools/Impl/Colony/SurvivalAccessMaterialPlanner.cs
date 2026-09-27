@@ -91,7 +91,7 @@ namespace OniMcp.Tools
         {
             foreach (var pickupable in Components.Pickupables.Items)
             {
-                if (pickupable == null || pickupable.gameObject == null)
+                if (pickupable == null || !PlayerVisibility.Object(pickupable.gameObject))
                     continue;
                 if (pickupable.storage != null ||
                     pickupable.KPrefabID == null ||
@@ -138,7 +138,7 @@ namespace OniMcp.Tools
                 for (int x = bounds.MinX; x <= bounds.MaxX; x++)
                 {
                     int cell = Grid.XYToCell(x, y);
-                    if (!Grid.IsValidCell(cell) || !Grid.IsVisible(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
+                    if (!Grid.IsValidCell(cell) || !PlayerVisibility.Cell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
                         continue;
                     if (CellHasBuildingOrBlueprint(cell, worldId))
                         continue;
@@ -180,7 +180,7 @@ namespace OniMcp.Tools
         {
             foreach (var complete in Components.BuildingCompletes.Items)
             {
-                if (complete == null || complete.gameObject == null || complete.GetMyWorldId() != worldId)
+                if (complete == null || !ToolUtil.GameObjectMatchesWorld(complete.gameObject, worldId))
                     continue;
                 var kpid = complete.GetComponent<KPrefabID>();
                 string prefabId = kpid != null ? kpid.PrefabTag.Name : null;
@@ -277,7 +277,7 @@ namespace OniMcp.Tools
 
         private static bool OpenForLadder(int cell, int worldId)
         {
-            if (!Grid.IsValidCell(cell) || !Grid.IsVisible(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
+            if (!Grid.IsValidCell(cell) || !PlayerVisibility.Cell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
                 return false;
             if (CellHasBuildingOrBlueprint(cell, worldId))
                 return false;
@@ -291,7 +291,7 @@ namespace OniMcp.Tools
             int y = Grid.CellRow(cell);
             foreach (var complete in Components.BuildingCompletes.Items)
             {
-                if (complete == null || complete.gameObject == null || complete.GetMyWorldId() != worldId)
+                if (complete == null || !ToolUtil.GameObjectMatchesWorld(complete.gameObject, worldId))
                     continue;
                 if (FootprintContains(complete.gameObject, complete.Def, x, y))
                     return true;

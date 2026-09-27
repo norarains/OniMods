@@ -60,7 +60,7 @@ for order_array in ("builds", "digs", "deconstructions"):
     loop = extract_block(monitor, "foreach (var item in " + order_array + ")")
     # The condition lies before the loop body in single-statement foreach syntax.
     start = monitor.index("foreach (var item in " + order_array + ")")
-    assert '(worldId < 0 || item.GetMyWorldId() == worldId)' in monitor[start:start + 250]
+    assert 'ToolUtil.GameObjectMatchesWorld(item.gameObject, worldId)' in monitor[start:start + 250]
 assert "!Grid.Solid[dig.Value]" in monitor
 assert "sample.PendingDeconstructions++" in monitor
 assert 'wallSeconds >= nextInfrastructureRead' in monitor
@@ -69,7 +69,7 @@ assert 'BuildingSupplyObservation.Read(building.gameObject, true, buildingSuppli
 assert 'sample.BuildingSupplies.AddRange(buildingSupplies)' in monitor
 supply = (ROOT / 'Impl/Core/BuildingSupplyObservation.cs').read_text()
 assert 'GetStatusItemGroup()' in supply and 'BuildingSupplyFinding.IsShortage(status)' in supply
-assert 'GetRemainingMinimum()' in supply and 'VisibleCellAllowed(cell, true)' in supply
+assert 'GetRemainingMinimum()' in supply and 'PlayerVisibility.Object(go)' in supply
 power = (ROOT / 'Impl/Build/BuildPlanningPowerConnect.cs').read_text()
 assert 'sourceCell == inputCell && UtilityConnectionRead.HasLine' in power
 for field in ('autoDigObstructions', 'autoUprootObstructions'):
@@ -81,6 +81,57 @@ assert 'building.GetUtilityInputCell()' in ports and 'building.GetUtilityOutputC
 snapshot = (ROOT / 'Impl/World/SnapshotTools.cs').read_text()
 assert 'FoodSnapshot food = !compactObservation' in snapshot
 assert 'BuildingSnapshot buildings = !compactObservation' in snapshot
+# These are wiring guards, complementary to the executable PlayerVisibility tests.
+# Filtering must happen before lazy native fields, matching, counts and pagination.
+visibility = (ROOT / 'Shared/PlayerVisibility.cs').read_text()
+assert '!uncoverable.IsUncovered' in visibility
+assert '!Grid.IsWorldValidCell(cell) || !Grid.IsVisible(cell)' in visibility
+assert 'GetWorld(Grid.WorldIdx[cell])?.IsDiscovered ?? false' in visibility
+assert 'Camera' not in visibility and 'SelectTool' not in visibility
+util = (ROOT / 'Shared/ToolUtil.cs').read_text()
+selector = extract_block(util, 'public static bool GameObjectMatchesWorld')
+assert selector.index('PlayerVisibility.Object(go)') < selector.index('worldId < 0')
+assert 'return PlayerVisibility.Cell(cell);' in extract_block(util, 'public static bool VisibleCellAllowed')
+rows = (ROOT / 'Impl/Query/ColonyQueryObjects.cs').read_text()
+for marker, guard in [('private static IEnumerable<FactRow> BuildingRows', 'PlayerVisibility.Object(go)'),
+                      ('private static IEnumerable<FactRow> ItemRows', 'PlayerVisibility.Object(item.gameObject)')]:
+    body = extract_block(rows, marker)
+    assert body.index(guard) < body.index('yield return new FactRow')
+indexed = (ROOT / 'Impl/Query/ColonyQueryIdentity.cs').read_text()
+assert 'PlayerVisibility.Object(identity.gameObject)' in indexed and 'BuildingRows(warnings, objects)' in indexed
+cell = (ROOT / 'Impl/World/WorldCellInfoReadTools.cs').read_text()
+assert cell.index('!PlayerVisibility.Cell(cell)') < cell.index('Grid.Element[cell]')
+cell_md = (ROOT / 'WorldEditor/WorldEditorCellSnapshot.cs').read_text()
+assert cell_md.index('!PlayerVisibility.Cell(cell)') < cell_md.index('AppendCellBaseSnapshot(sb, cell)')
+layer = (ROOT / 'WorldEditor/WorldEditorLogicGateRead.cs').read_text()
+assert layer.count('PlayerVisibility.Known(Grid.Objects') == 3
+html_routes = (ROOT / 'WorldEditor/WorldEditorVirtualFileReader.cs').read_text()
+assert html_routes.count('RenderDiscoveredHtmlCells(xMin, xMax, yMin, yMax, activeMode)') == 2
+assert 'Grid.Element[cell]' not in html_routes and 'Grid.Temperature[cell]' not in html_routes
+html_cells = (ROOT / 'WorldEditor/WorldEditorHtmlMap.cs').read_text()
+assert html_cells.index('PlayerVisibility.Cell(cell)') < html_cells.index('Grid.Element[cell]')
+assert 'CellBuildingObject(cell)' in html_cells and 'Unknown (unrevealed)' in html_cells
+navigation = (ROOT / 'Impl/Navigation/CameraTools.cs').read_text()
+assert 'GetBool(args, "requireDiscovered"' not in navigation
+assert navigation.index('world == null || !world.IsDiscovered') < navigation.index('world.LookAtSurface()')
+for relative in ('Impl/World/WorldSearchRequest.cs', 'Impl/World/WorldTextMapReadTools.cs',
+                 'Impl/World/WorldAreaSnapshotReadTools.cs', 'Impl/Colony/InventoryTools.cs',
+                 'Impl/World/WorldElementSummaryTools.cs', 'Impl/Rocket/RocketTools.cs'):
+    source = (ROOT / relative).read_text()
+    assert 'GetBool(args, "visibleOnly"' not in source, relative
+geysers = (ROOT / 'Impl/Bio/GeoTunerTools.cs').read_text()
+assert 'PlayerVisibility.Object(geyser.gameObject)' in geysers
+for path in ROOT.rglob('*.cs'):
+    if path.name not in ('PlayerVisibility.cs', 'SandboxEntityAndEnvironmentTools.cs'):
+        assert 'Grid.IsVisible(' not in path.read_text(), path
+risks = (ROOT / 'Impl/Orders/OrdersCellObservations.cs').read_text()
+assert risks.index('!PlayerVisibility.Cell(neighbor)') < risks.index('Grid.Element[neighbor]')
+assert '"unexplored_neighbor"' in risks
+liquids = (ROOT / 'Impl/Orders/OrdersLiquidTools.cs').read_text()
+assert liquids.count('!PlayerVisibility.Cell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId)') == 3
+assert '!PlayerVisibility.Object(go) || seen.Contains(go)' in liquids
+assert 'PlayerVisibility.Cell(Grid.CellBelow(cell))' in liquids
+assert plan.index('earlyPlacement.Footprint.Any') < plan.index('ExistingMatchingBuildAtPlacement')
 detail = extract_block((ROOT / 'Impl/Dupes/DuplicantInfoTools.cs').read_text(), 'private static List<Dictionary<string, object>> CompactAttributes')
 assert detail.index('EssentialAttributeIds.Contains(attr.Id)') < detail.index('.Take(24)')
-print('PASS preview mutation guards, shared observation wiring, native footprint verification (source contracts)')
+print('PASS preview mutation guards, observation/discovery wiring, native footprint verification (source contracts)')

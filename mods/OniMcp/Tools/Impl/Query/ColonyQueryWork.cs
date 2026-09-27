@@ -43,11 +43,11 @@ namespace OniMcp.Tools
         private static IEnumerable<FactRow> OrderRows()
         {
             foreach (var item in UnityEngine.Object.FindObjectsByType<Constructable>(FindObjectsSortMode.None))
-                if (item != null && ToolUtil.VisibleCellAllowed(Grid.PosToCell(item), true)) yield return OrderRow(item.gameObject, "construction", item);
+                if (item != null && PlayerVisibility.Object(item.gameObject)) yield return OrderRow(item.gameObject, "construction", item);
             foreach (var item in Components.Diggables.Items)
-                if (item != null && ToolUtil.VisibleCellAllowed(Grid.PosToCell(item), true)) yield return OrderRow(item.gameObject, "dig", item);
+                if (item != null && PlayerVisibility.Object(item.gameObject)) yield return OrderRow(item.gameObject, "dig", item);
             foreach (var item in UnityEngine.Object.FindObjectsByType<Deconstructable>(FindObjectsSortMode.None))
-                if (item != null && item.IsMarkedForDeconstruction() && ToolUtil.VisibleCellAllowed(Grid.PosToCell(item), true)) yield return OrderRow(item.gameObject, "deconstruction", item);
+                if (item != null && item.IsMarkedForDeconstruction() && PlayerVisibility.Object(item.gameObject)) yield return OrderRow(item.gameObject, "deconstruction", item);
         }
 
         private static FactRow OrderRow(GameObject go, string kind, Component component)

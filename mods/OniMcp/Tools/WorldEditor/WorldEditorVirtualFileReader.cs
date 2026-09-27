@@ -37,44 +37,7 @@ namespace OniMcp.Tools
                         return GetMapMd($"[视图: {viewName}] Camera Viewport Map (X: {xMin}~{xMax}, Y: {yMin}~{yMax})", xMin, xMax, yMin, yMax);
                     }
 
-                    var sbCells = new StringBuilder();
-                    for (int y = yMax; y >= yMin; y--)
-                    {
-                        for (int x = xMin; x <= xMax; x++)
-                        {
-                            int cell = Grid.XYToCell(x, y);
-                            string elemName = "Vacuum";
-                            string color = "#1a202c";
-                            float temp = 0f;
-                            string bldName = "";
-                            GameObject go = null;
-
-                            if (Grid.IsValidCell(cell))
-                            {
-                                var elem = Grid.Element[cell];
-                                temp = Grid.Temperature[cell];
-                                if (elem != null)
-                                    elemName = elem.id.ToString();
-
-                                go = Grid.Objects[cell, (int)ObjectLayer.Building];
-                                if (go != null)
-                                {
-                                    var cmp = go.GetComponent<BuildingComplete>();
-                                    bldName = cmp != null ? cmp.name : go.name;
-                                }
-
-                                color = GetHtmlCellColor(cell, elem, go, activeMode, temp, bldName);
-                            }
-
-                            string tooltip = $"Cell: {cell} ({x}, {y})\nElement: {elemName}\nTemp: {temp - 273.15f:F1}°C";
-                            if (!string.IsNullOrEmpty(bldName))
-                            {
-                                tooltip += $"\nBuilding: {bldName}";
-                            }
-
-                            sbCells.AppendFormat("<div class=\"cell\" style=\"background:{0};\" title=\"{1}\"></div>", color, WebUtility.HtmlEncode(tooltip));
-                        }
-                    }
+                    var sbCells = RenderDiscoveredHtmlCells(xMin, xMax, yMin, yMax, activeMode);
 
                     string legendHtml = "";
                     if (activeMode == OverlayModes.Temperature.ID)
@@ -207,44 +170,7 @@ namespace OniMcp.Tools
                                 return GetMapMd($"[视图: {viewName}] Map Layer Y = {relYMin} to {relYMax}", xMin, xMax, yMin, yMax);
                             }
 
-                            var sbCells = new StringBuilder();
-                            for (int y = yMax; y >= yMin; y--)
-                            {
-                                for (int x = xMin; x <= xMax; x++)
-                                {
-                                    int cell = Grid.XYToCell(x, y);
-                                    string elemName = "Vacuum";
-                                    string color = "#1a202c";
-                                    float temp = 0f;
-                                    string bldName = "";
-                                    GameObject go = null;
-
-                                    if (Grid.IsValidCell(cell))
-                                    {
-                                        var elem = Grid.Element[cell];
-                                        temp = Grid.Temperature[cell];
-                                        if (elem != null)
-                                            elemName = elem.id.ToString();
-
-                                        go = Grid.Objects[cell, (int)ObjectLayer.Building];
-                                        if (go != null)
-                                        {
-                                            var cmp = go.GetComponent<BuildingComplete>();
-                                            bldName = cmp != null ? cmp.name : go.name;
-                                        }
-
-                                        color = GetHtmlCellColor(cell, elem, go, activeMode, temp, bldName);
-                                    }
-
-                                    string tooltip = $"Cell: {cell} ({x}, {y})\nElement: {elemName}\nTemp: {temp - 273.15f:F1}°C";
-                                    if (!string.IsNullOrEmpty(bldName))
-                                    {
-                                        tooltip += $"\nBuilding: {bldName}";
-                                    }
-
-                                    sbCells.AppendFormat("<div class=\"cell\" style=\"background:{0};\" title=\"{1}\"></div>", color, WebUtility.HtmlEncode(tooltip));
-                                }
-                            }
+                            var sbCells = RenderDiscoveredHtmlCells(xMin, xMax, yMin, yMax, activeMode);
 
                             string legendHtml = "";
                             if (activeMode == OverlayModes.Temperature.ID)

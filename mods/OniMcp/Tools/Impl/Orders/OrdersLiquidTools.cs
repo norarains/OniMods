@@ -53,7 +53,7 @@ namespace OniMcp.Tools
                         for (int x = rect["x1"]; x <= rect["x2"]; x++)
                         {
                             int cell = Grid.XYToCell(x, y);
-                            if (!Grid.IsValidCell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
+                            if (!PlayerVisibility.Cell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
                                 continue;
                             if (Grid.Solid[cell] || !Grid.Element[cell].IsLiquid)
                                 continue;
@@ -63,7 +63,7 @@ namespace OniMcp.Tools
                             IncrementSkip(executionSkipped, "already_queued");
                             continue;
                         }
-                            bool onFloor = Grid.IsValidCell(Grid.CellBelow(cell)) && Grid.Solid[Grid.CellBelow(cell)];
+                            bool onFloor = PlayerVisibility.Cell(Grid.CellBelow(cell)) && Grid.Solid[Grid.CellBelow(cell)];
                             bool smallEnough = Grid.Mass[cell] <= MopTool.maxMopAmt;
                         if (!onFloor || !smallEnough)
                         {
@@ -144,13 +144,13 @@ namespace OniMcp.Tools
                         for (int x = rect["x1"]; x <= rect["x2"]; x++)
                         {
                             int cell = Grid.XYToCell(x, y);
-                            if (!Grid.IsValidCell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
+                            if (!PlayerVisibility.Cell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
                                 continue;
 
                             for (int layer = 0; layer < (int)ObjectLayer.NumLayers; layer++)
                             {
                                 var go = Grid.Objects[cell, layer];
-                                if (go == null || seen.Contains(go))
+                                if (!PlayerVisibility.Object(go) || seen.Contains(go))
                                     continue;
                                 seen.Add(go);
 
@@ -186,7 +186,7 @@ namespace OniMcp.Tools
                 for (int x = rect["x1"]; x <= rect["x2"]; x++)
                 {
                     int cell = Grid.XYToCell(x, y);
-                    if (!Grid.IsValidCell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
+                    if (!PlayerVisibility.Cell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
                         continue;
                     if (Grid.Solid[cell] || !Grid.Element[cell].IsLiquid)
                         continue;

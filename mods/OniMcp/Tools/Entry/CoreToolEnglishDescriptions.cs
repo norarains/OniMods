@@ -209,7 +209,7 @@ namespace OniMcp.Tools
             d["temperatureC"] = "Temperature in Celsius.";
             d["matchMode"] = "Search match mode.";
             d["matchIndex"] = "Zero-based match index.";
-            d["visibleOnly"] = "Treat unrevealed cells as unknown while searching.";
+            d["visibleOnly"] = "Compatibility option; player discovery filtering is always enforced.";
             d["saveName"] = "Save file name.";
             d["overwrite"] = "Overwrite an existing save file.";
             d["path"] = "Full save path.";
@@ -225,7 +225,7 @@ namespace OniMcp.Tools
             d["domain"] = "Camera domain. If omitted, the tool accepts known camera actions.";
             d["action"] = "Camera action: get_view, set_active_world, set_view, move, switch_view, focus_cell, focus_dupe, screenshot, or coordinate_screenshot.";
             d["worldId"] = "Target world id; required by set_active_world and otherwise defaults to the active world.";
-            d["requireDiscovered"] = "Require the target world to be discovered before switching.";
+            d["requireDiscovered"] = "Compatibility option; target world discovery is always required.";
             d["lookAtSurface"] = "Reveal the target world's surface before switching when needed.";
             d["x"] = "Target world X for set_view/move, or cell X for focus_cell.";
             d["y"] = "Target world Y for set_view/move, or cell Y for focus_cell.";

@@ -73,7 +73,7 @@ namespace OniMcp.Tools
                                 IncrementSkip(skipped, "invalid_or_wrong_world");
                                 continue;
                             }
-                            if (!Grid.IsVisible(cell))
+                            if (!PlayerVisibility.Cell(cell))
                             {
                                 IncrementSkip(skipped, "not_visible");
                                 continue;

@@ -15,7 +15,7 @@ namespace OniMcp.Tools
             foreach (var constructable in FindConstructables(placement.WorldId))
             {
                 var go = constructable?.gameObject;
-                if (go == null)
+                if (!PlayerVisibility.Object(go))
                     continue;
 
                 var building = go.GetComponent<Building>();
@@ -120,7 +120,7 @@ namespace OniMcp.Tools
             foreach (var layer in layers)
             {
                 var go = Grid.Objects[cellInfo.Cell, (int)layer];
-                if (go == null)
+                if (!PlayerVisibility.Object(go))
                     continue;
 
                 var building = go.GetComponent<Building>();
@@ -141,7 +141,7 @@ namespace OniMcp.Tools
 
         private static IEnumerable<Dictionary<string, object>> ExistingObjectFootprint(GameObject go, BuildingDef def, string kind, HashSet<int> footprintCells)
         {
-            if (go == null)
+            if (!PlayerVisibility.Object(go))
                 yield break;
             int objectCell = Grid.PosToCell(go);
             if (!Grid.IsValidCell(objectCell))
@@ -294,7 +294,8 @@ namespace OniMcp.Tools
             var missing = new List<Dictionary<string, object>>();
             foreach (var supportCell in FloorSupportCells(def, x, y, orientation))
             {
-                bool supported = Grid.IsValidCell(supportCell.Cell)
+                bool known = PlayerVisibility.Cell(supportCell.Cell);
+                bool supported = known
                     && (Grid.Solid[supportCell.Cell]
                         || HasSupportBlueprint(supportCell.Cell)
                         || (plannedSupportCells != null && plannedSupportCells.Contains(supportCell.Cell)));
@@ -304,8 +305,8 @@ namespace OniMcp.Tools
                         ["x"] = supportCell.X,
                         ["y"] = supportCell.Y,
                         ["cell"] = supportCell.Cell,
-                        ["reasonCode"] = "missing_support",
-                        ["reason"] = "OnFloor building requires solid terrain, a constructed support tile, or a support blueprint below this cell."
+                        ["reasonCode"] = known ? "missing_support" : "unexplored_support",
+                        ["reason"] = known ? "OnFloor building requires solid terrain, a constructed support tile, or a support blueprint below this cell." : "Support terrain has not been explored."
                     });
             }
 
@@ -331,13 +332,13 @@ namespace OniMcp.Tools
 
         private static bool HasSupportBlueprint(int cell)
         {
-            if (!Grid.IsValidCell(cell))
+            if (!PlayerVisibility.Cell(cell))
                 return false;
 
             for (int layer = 0; layer < (int)ObjectLayer.NumLayers; layer++)
             {
                 var go = Grid.Objects[cell, layer];
-                if (go == null)
+                if (!PlayerVisibility.Object(go))
                     continue;
 
                 var building = go.GetComponent<Building>();

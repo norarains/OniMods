@@ -59,7 +59,7 @@ namespace OniMcp.Tools
                         for (int x = rect["x1"]; x <= rect["x2"]; x++)
                         {
                             int cell = Grid.XYToCell(x, y);
-                            if (!Grid.IsValidCell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
+                            if (!PlayerVisibility.Cell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
                                 continue;
 
                             foreach (var layer in layers)
@@ -167,7 +167,7 @@ namespace OniMcp.Tools
                         for (int x = rect["x1"]; x <= rect["x2"]; x++)
                         {
                             int cell = Grid.XYToCell(x, y);
-                            if (!Grid.IsValidCell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
+                            if (!PlayerVisibility.Cell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
                                 continue;
 
                             foreach (var go in FindCuttableObjects(cell, layers))

@@ -48,7 +48,7 @@ namespace OniMcp.Tools
             int visibleCells = 0;
             for (int cell = 0; cell < Grid.CellCount; cell++)
             {
-                if (!Grid.IsWorldValidCell(cell) || (worldId >= 0 && Grid.WorldIdx[cell] != worldId) || !Grid.IsVisible(cell))
+                if (!Grid.IsWorldValidCell(cell) || (worldId >= 0 && Grid.WorldIdx[cell] != worldId) || !PlayerVisibility.Cell(cell))
                     continue;
                 visibleCells++;
                 var element = Grid.Element[cell];

@@ -109,7 +109,7 @@ namespace OniMcp.Tools
                     if (!TryResolveActionCell(args, out x, out y, out resolveError))
                         return CallToolResult.Error(resolveError);
                     int cell = Grid.XYToCell(x, y);
-                    if (!Grid.IsValidCell(cell) || !Grid.IsVisible(cell))
+                    if (!Grid.IsValidCell(cell) || !PlayerVisibility.Cell(cell))
                         return CallToolResult.Error("Target cell is invalid or not visible");
                     int worldId = ToolUtil.ResolveWorldId(args, dupe.GetMyWorldId());
                     Dictionary<string, object> moved;
@@ -318,7 +318,7 @@ namespace OniMcp.Tools
         {
             moved = null;
             int cell = Grid.XYToCell(x, y);
-            if (!Grid.IsValidCell(cell) || !Grid.IsVisible(cell))
+            if (!Grid.IsValidCell(cell) || !PlayerVisibility.Cell(cell))
                 return "Target cell is invalid or not visible";
             if (!ToolUtil.CellMatchesWorld(cell, worldId))
                 return $"Target cell is not in worldId={worldId}";

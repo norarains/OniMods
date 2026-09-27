@@ -41,11 +41,11 @@ namespace OniMcp.Tools
 
         private static GameObject Line(int cell, ObjectLayer[] layers)
         {
-            if (!Grid.IsValidCell(cell)) return null;
+            if (!PlayerVisibility.Cell(cell)) return null;
             foreach (var layer in layers)
             {
                 var go = Grid.Objects[cell, (int)layer];
-                if (go != null) return go;
+                if (PlayerVisibility.Object(go)) return go;
             }
             return null;
         }

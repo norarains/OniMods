@@ -117,7 +117,7 @@ namespace OniMcp.Tools
                     int limit = Math.Max(1, Math.Min(ToolUtil.GetInt(args, "limit") ?? 100, 500));
 
                     var geysers = Components.Geysers.GetItems(worldId)
-                        .Where(geyser => geyser != null)
+                        .Where(geyser => geyser != null && PlayerVisibility.Object(geyser.gameObject))
                         .Select(geyser => GeyserInfo(geyser, tuner))
                         .Where(info => (bool)info["studied"] || (includeUnstudied && (bool)info["visible"]))
                         .Where(info => MatchesQuery(info, query))
@@ -161,7 +161,7 @@ namespace OniMcp.Tools
                 Handler = args =>
                 {
                     var tuner = FindGeoTuner(args);
-                    if (tuner == null)
+                    if (tuner == null || !PlayerVisibility.Object(tuner.gameObject))
                         return CallToolResult.Error("Target GeoTuner not found");
 
                     bool clear = ToolUtil.GetBool(args, "clear", false);
@@ -170,7 +170,7 @@ namespace OniMcp.Tools
                     if (!clear)
                     {
                         geyser = FindGeyser(args, tuner.GetMyWorldId());
-                        if (geyser == null)
+                        if (geyser == null || !PlayerVisibility.Object(geyser.gameObject))
                             return CallToolResult.Error("Target geyser not found; provide geyserId or geyserX/geyserY, or set clear=true");
                         if (geyser.GetMyWorldId() != tuner.GetMyWorldId())
                             return CallToolResult.Error("GeoTuner and geyser must be in the same world");
@@ -201,8 +201,8 @@ namespace OniMcp.Tools
             var result = TargetInfo(tuner.gameObject);
             var future = tuner.GetFutureGeyser();
             var assigned = tuner.GetAssignedGeyser();
-            result["futureGeyser"] = future != null ? GeyserInfo(future, tuner) : null;
-            result["assignedGeyser"] = assigned != null ? GeyserInfo(assigned, tuner) : null;
+            result["futureGeyser"] = future != null && PlayerVisibility.Object(future.gameObject) ? GeyserInfo(future, tuner) : null;
+            result["assignedGeyser"] = assigned != null && PlayerVisibility.Object(assigned.gameObject) ? GeyserInfo(assigned, tuner) : null;
             result["enhancementDuration"] = Math.Round(ToolUtil.SafeFloat(tuner.enhancementDuration), 2);
             result["hasSwitchChore"] = future != assigned;
             return result;
@@ -217,7 +217,7 @@ namespace OniMcp.Tools
             int futureOrAssignedCount = Components.GeoTuners.GetItems(worldId).Count(tuner => tuner.GetFutureGeyser() == geyser || tuner.GetAssignedGeyser() == geyser);
             bool isCurrentFuture = contextTuner != null && contextTuner.GetFutureGeyser() == geyser;
             bool studied = IsStudied(geyser);
-            bool visible = Grid.IsValidCell(cell) && Grid.Visible[cell] > 0;
+            bool visible = PlayerVisibility.Object(geyser.gameObject);
             bool uncovered = geyser.GetComponent<Uncoverable>()?.IsUncovered ?? false;
             var kpid = geyser.GetComponent<KPrefabID>();
             var info = new Dictionary<string, object>
@@ -271,7 +271,7 @@ namespace OniMcp.Tools
 
             foreach (var tuner in AllGeoTuners(worldId))
             {
-                if (tuner == null)
+                if (tuner == null || !PlayerVisibility.Object(tuner.gameObject))
                     continue;
                 var go = tuner.gameObject;
                 var kpid = go.GetComponent<KPrefabID>();
@@ -292,7 +292,7 @@ namespace OniMcp.Tools
 
             foreach (var geyser in Components.Geysers.GetItems(worldId))
             {
-                if (geyser == null)
+                if (geyser == null || !PlayerVisibility.Object(geyser.gameObject))
                     continue;
                 var kpid = geyser.GetComponent<KPrefabID>();
                 if (geyserId.HasValue && kpid != null && kpid.InstanceID == geyserId.Value)

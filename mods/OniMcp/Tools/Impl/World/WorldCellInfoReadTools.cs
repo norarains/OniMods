@@ -70,6 +70,9 @@ namespace OniMcp.Tools
                     if (!Grid.IsValidCell(cell))
                         return CallToolResult.Error("Invalid cell");
 
+                    if (!PlayerVisibility.Cell(cell))
+                        return CallToolResult.Text(JsonConvert.SerializeObject(new { x, y, isVisible = false, state = "unknown" }));
+
                     int requestedWorldId = ToolUtil.GetInt(args, "worldId") ?? -1;
                     if (!ToolUtil.CellMatchesWorld(cell, requestedWorldId))
                         return CallToolResult.Error($"Cell ({x},{y}) is not in worldId={requestedWorldId}");
@@ -82,7 +85,7 @@ namespace OniMcp.Tools
                         ["y"] = y,
                         ["worldId"] = Grid.WorldIdx[cell],
                         ["isWorldValid"] = Grid.IsWorldValidCell(cell),
-                        ["isVisible"] = Grid.IsVisible(cell),
+                        ["isVisible"] = PlayerVisibility.Cell(cell),
                         ["element"] = element?.id.ToString() ?? "Unknown",
                         ["elementName"] = ToolUtil.CleanName(element?.name ?? "Unknown"),
                         ["state"] = ToolUtil.GetElementState(element),

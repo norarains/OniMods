@@ -363,7 +363,7 @@ namespace OniMcp.Tools
                 ["temperatureK"] = new McpToolParameter { Type = "number", Description = "Forwarded sandbox temperature in kelvin.", Required = false },
                 ["disease"] = new McpToolParameter { Type = "string", Description = "Forwarded sandbox disease ID.", Required = false },
                 ["diseaseCount"] = new McpToolParameter { Type = "integer", Description = "Forwarded sandbox disease count.", Required = false },
-                ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "Forwarded sandbox map visibility filter.", Required = false },
+                ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "Compatibility option; player discovery filtering is always enforced.", Required = false },
                 ["matchIndex"] = new McpToolParameter { Type = "integer", Description = "Forwarded sandbox map match index.", Required = false },
                 ["payload"] = new McpToolParameter { Type = "object", Description = "Advanced routing payload merged into generated child tool calls.", Required = false }
             };

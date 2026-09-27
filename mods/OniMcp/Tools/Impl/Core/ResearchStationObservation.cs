@@ -19,7 +19,7 @@ namespace OniMcp.Tools
             sourceCircuits.Remove(ushort.MaxValue);
             foreach (var building in Components.BuildingCompletes.Items)
             {
-                if (building == null || (worldId >= 0 && building.GetMyWorldId() != worldId)) continue;
+                if (building == null || !ToolUtil.GameObjectMatchesWorld(building.gameObject, worldId)) continue;
                 var station = building.GetComponent<ResearchCenter>();
                 if (station == null) continue;
                 string type = station.GetResearchType();

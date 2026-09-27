@@ -165,7 +165,7 @@ namespace OniMcp.Tools
                 for (int x = x1; x <= x2; x++)
                 {
                     int cell = Grid.XYToCell(x, y);
-                    if (!Grid.IsValidCell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId) || (visibleOnly && !Grid.IsVisible(cell)))
+                    if (!Grid.IsValidCell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId) || (!PlayerVisibility.Cell(cell)))
                     {
                         unknown++;
                         continue;
@@ -241,7 +241,7 @@ namespace OniMcp.Tools
 
         private static bool IsStandableCell(int cell, int worldId, bool visibleOnly, HashSet<int> occupied)
         {
-            if (!Grid.IsValidCell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId) || (visibleOnly && !Grid.IsVisible(cell)))
+            if (!Grid.IsValidCell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId) || (!PlayerVisibility.Cell(cell)))
                 return false;
             if (occupied.Contains(cell))
                 return false;
@@ -249,14 +249,14 @@ namespace OniMcp.Tools
                 return false;
 
             int above = Grid.CellAbove(cell);
-            if (!Grid.IsValidCell(above) || !ToolUtil.CellMatchesWorld(above, worldId) || (visibleOnly && !Grid.IsVisible(above)))
+            if (!Grid.IsValidCell(above) || !ToolUtil.CellMatchesWorld(above, worldId) || (!PlayerVisibility.Cell(above)))
                 return false;
             return !Grid.Solid[above] && !Grid.Foundation[above];
         }
 
         private static bool IsDiggableCell(int cell, int worldId, bool visibleOnly)
         {
-            if (!Grid.IsValidCell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId) || (visibleOnly && !Grid.IsVisible(cell)))
+            if (!Grid.IsValidCell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId) || (!PlayerVisibility.Cell(cell)))
                 return false;
             var element = Grid.Element[cell];
             return element != null && element.IsSolid && !Grid.Foundation[cell];
@@ -264,7 +264,7 @@ namespace OniMcp.Tools
 
         private static bool IsHazardCell(int cell, bool visibleOnly)
         {
-            if (!Grid.IsValidCell(cell) || !Grid.IsWorldValidCell(cell) || (visibleOnly && !Grid.IsVisible(cell)))
+            if (!Grid.IsValidCell(cell) || !Grid.IsWorldValidCell(cell) || (!PlayerVisibility.Cell(cell)))
                 return false;
             var element = Grid.Element[cell];
             float tempC = SafeFloat(Grid.Temperature[cell]) - 273.15f;

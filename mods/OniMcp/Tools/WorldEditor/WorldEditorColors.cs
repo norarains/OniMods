@@ -93,7 +93,7 @@ namespace OniMcp.Tools
             }
             else if (activeMode == OverlayModes.Power.ID)
             {
-                bool isWire = Grid.Objects[cell, (int)ObjectLayer.Wire] != null;
+                bool isWire = PlayerVisibility.Object(Grid.Objects[cell, (int)ObjectLayer.Wire]);
                 bool isPowerBld = go != null && (go.GetComponent<EnergyConsumer>() != null || go.GetComponent<EnergyGenerator>() != null || go.GetComponent<Battery>() != null);
                 return isPowerBld ? "#dd6b20" : (isWire ? "#ecc94b" : "#2d3748");
             }
@@ -116,12 +116,12 @@ namespace OniMcp.Tools
             }
             else if (activeMode == OverlayModes.LiquidConduits.ID)
             {
-                bool hasPipe = Grid.Objects[cell, (int)ObjectLayer.LiquidConduit] != null;
+                bool hasPipe = PlayerVisibility.Object(Grid.Objects[cell, (int)ObjectLayer.LiquidConduit]);
                 return hasPipe ? "#3182ce" : "#2d3748";
             }
             else if (activeMode == OverlayModes.GasConduits.ID)
             {
-                bool hasPipe = Grid.Objects[cell, (int)ObjectLayer.GasConduit] != null;
+                bool hasPipe = PlayerVisibility.Object(Grid.Objects[cell, (int)ObjectLayer.GasConduit]);
                 return hasPipe ? "#38a169" : "#2d3748";
             }
             else if (activeMode == OverlayModes.Light.ID)

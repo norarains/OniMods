@@ -28,7 +28,7 @@ namespace OniMcp.Tools
                     ["query"] = new McpToolParameter { Type = "string", Description = "pins 时按物品名、prefabId、元素、tag 或资源名模糊搜索", Required = false },
                     ["worldId"] = new McpToolParameter { Type = "integer", Description = "按世界 ID 过滤，留空返回全部世界或当前激活世界", Required = false },
                     ["includeStored"] = new McpToolParameter { Type = "boolean", Description = "inventory 时是否包含已储存在容器/复制人身上的物品", Required = false },
-                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "是否只统计已揭示格子内资源，默认 true；调试可传 false", Required = false },
+                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "Compatibility option; player discovery filtering is always enforced.", Required = false },
                     ["includeUnpinned"] = new McpToolParameter { Type = "boolean", Description = "pins 时是否包含未固定且未通知的已发现资源，默认 false", Required = false },
                     ["limit"] = new McpToolParameter { Type = "integer", Description = "最多返回数量；各 action 使用原工具默认值和上限", Required = false },
                     ["pinned"] = new McpToolParameter { Type = "boolean", Description = "set_pin 时是否固定在资源面板；不传则不修改", Required = false },
@@ -81,7 +81,7 @@ namespace OniMcp.Tools
                     ["query"] = new McpToolParameter { Type = "string", Description = "Optional food/pin filter", Required = false },
                     ["worldId"] = new McpToolParameter { Type = "integer", Description = "按世界 ID 过滤，留空返回全部世界", Required = false },
                     ["includeStored"] = new McpToolParameter { Type = "boolean", Description = "action=inventory 时是否包含已储存在容器/复制人身上的物品", Required = false },
-                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "是否只返回已揭示格子内资源，默认 true；调试可传 false", Required = false },
+                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "Compatibility option; player discovery filtering is always enforced.", Required = false },
                     ["limit"] = new McpToolParameter { Type = "integer", Description = "最多返回数量；各 action 使用原工具默认值和上限", Required = false }
                 },
                 Handler = args =>
@@ -137,7 +137,7 @@ namespace OniMcp.Tools
                     ["visibleOnly"] = new McpToolParameter
                     {
                         Type = "boolean",
-                        Description = "是否只统计已揭示格子内资源，默认 true；调试可传 false",
+                        Description = "兼容参数；始终仅统计玩家已发现资源，false 不会绕过可见性",
                         Required = false
                     }
                 },
@@ -149,7 +149,7 @@ namespace OniMcp.Tools
                     string filter = (args["resource"] ?? args["query"])?.ToString()?.ToLowerInvariant();
                     int? worldId = TryGetInt(args, "worldId");
                     bool includeStored = TryGetBool(args, "includeStored", true);
-                    bool visibleOnly = TryGetBool(args, "visibleOnly", true);
+                    bool visibleOnly = true;
                     int limit = ClampLimit(args, 100, 500);
 
                     var groups = new Dictionary<string, InventoryAggregate>();
@@ -157,7 +157,7 @@ namespace OniMcp.Tools
 
                     foreach (var pickupable in Components.Pickupables.Items)
                     {
-                        if (pickupable == null || pickupable.gameObject == null) continue;
+                        if (pickupable == null || !PlayerVisibility.Object(pickupable.gameObject)) continue;
                         scanned++;
 
                         var primary = pickupable.PrimaryElement;

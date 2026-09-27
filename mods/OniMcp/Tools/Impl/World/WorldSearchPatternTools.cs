@@ -84,7 +84,7 @@ namespace OniMcp.Tools
                     return false;
                 if (request.WorldId >= 0 && Grid.WorldIdx[cell] != request.WorldId)
                     return false;
-                if (request.VisibleOnly && !Grid.IsVisible(cell))
+                if (!PlayerVisibility.Cell(cell))
                     return false;
 
                 var element = Grid.Element[cell];

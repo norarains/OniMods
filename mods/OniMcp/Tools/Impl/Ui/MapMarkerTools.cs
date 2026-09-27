@@ -249,7 +249,7 @@ namespace OniMcp.Tools
                 Y = y,
                 Cell = cell,
                 WorldId = Grid.WorldIdx[cell],
-                Visible = Grid.IsVisible(cell),
+                Visible = PlayerVisibility.Cell(cell),
                 Position = Grid.CellToPosCBC(cell, Grid.SceneLayer.Move)
             };
         }

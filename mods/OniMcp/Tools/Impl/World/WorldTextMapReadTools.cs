@@ -30,7 +30,7 @@ namespace OniMcp.Tools
                     ["x2"] = new McpToolParameter { Type = "integer", Description = "区域终点/右上 X；留空时默认当前相机视野附近", Required = false },
                     ["y2"] = new McpToolParameter { Type = "integer", Description = "区域终点/右上 Y；留空时默认当前相机视野附近", Required = false },
                     ["worldId"] = new McpToolParameter { Type = "integer", Description = "世界 ID，默认当前激活世界", Required = false },
-                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "是否只导出已揭示格子，默认 true", Required = false },
+                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "Compatibility option; player discovery filtering is always enforced.", Required = false },
                     ["view"] = new McpToolParameter { Type = "string", Description = "文本化视图：base/terrain、temperature、power、gas_conduits、liquid_conduits、solid_conveyor、logic。默认输出 Markdown 区段地图；temperature 输出温度区段", Required = false, EnumValues = new List<string> { "base", "terrain", "temperature", "power", "gas_conduits", "liquid_conduits", "solid_conveyor", "logic" } },
                     ["sparse"] = new McpToolParameter { Type = "boolean", Description = "是否稀疏输出。默认 false；开启后只列出非空 overlay/关键格子，适合很大的管线/电力检查", Required = false },
                     ["includeBuildings"] = new McpToolParameter { Type = "boolean", Description = "是否标注区域内建筑，默认 true", Required = false },
@@ -64,7 +64,7 @@ namespace OniMcp.Tools
                     }
 
                     int worldId = TryGetInt(args, "worldId", requestedArea?.WorldId ?? ClusterManager.Instance?.activeWorldId ?? 0);
-                    bool visibleOnly = TryGetBool(args, "visibleOnly", true);
+                    bool visibleOnly = true;
                     string view = NormalizeTextMapView(args["view"]?.ToString());
                     bool overlayView = IsUtilityOverlayView(view);
                     bool analysisView = IsAnalysisView(view);

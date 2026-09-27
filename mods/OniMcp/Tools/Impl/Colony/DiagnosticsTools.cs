@@ -21,7 +21,7 @@ namespace OniMcp.Tools
                 Description = "弃用警告：旧工具将在 0.3.0 移除；请改用 colony_control domain=diagnostic action=diagnostics",
                 Parameters = new Dictionary<string, McpToolParameter>
                 {
-                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "是否只统计已揭示格子内食物，默认 true；调试可传 false", Required = false }
+                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "Compatibility option; player discovery filtering is always enforced.", Required = false }
                 },
                 Handler = args =>
                 {
@@ -243,7 +243,7 @@ namespace OniMcp.Tools
                     ["criteriaId"] = new McpToolParameter { Type = "string", Description = "action=set_settings 时子条件 ID；传 criteriaEnabled 时必填", Required = false },
                     ["criteriaEnabled"] = new McpToolParameter { Type = "boolean", Description = "action=set_settings 时是否启用指定子条件", Required = false },
                     ["debugNotificationsDisabled"] = new McpToolParameter { Type = "boolean", Description = "action=set_settings 时是否禁用 Debug 通知", Required = false },
-                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "action=diagnostics/alerts 时是否只统计已揭示格子内食物，默认 true；调试可传 false", Required = false },
+                    ["visibleOnly"] = new McpToolParameter { Type = "boolean", Description = "Compatibility option; player discovery filtering is always enforced.", Required = false },
                     ["disabled"] = new McpToolParameter { Type = "boolean", Description = "action=set_auto_disinfect 时 true=全局禁用自动消毒；false=允许游戏默认自动消毒行为", Required = false },
                     ["applyNow"] = new McpToolParameter { Type = "boolean", Description = "action=set_auto_disinfect 时是否立即同步现有对象，默认 true", Required = false },
                     ["confirm"] = new McpToolParameter { Type = "boolean", Description = "action=set_settings/set_auto_disinfect 时必须为 true", Required = false }

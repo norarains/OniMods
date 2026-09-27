@@ -93,15 +93,15 @@ namespace OniMcp.Tools
 
         internal static GameObject BuildingAtCell(int cell)
         {
-            if (!Grid.IsValidCell(cell))
+            if (!PlayerVisibility.Cell(cell))
                 return null;
-            return Grid.Objects[cell, (int)ObjectLayer.Building]
-                ?? Grid.Objects[cell, (int)ObjectLayer.LogicGate];
+            return PlayerVisibility.Known(Grid.Objects[cell, (int)ObjectLayer.Building])
+                ?? PlayerVisibility.Known(Grid.Objects[cell, (int)ObjectLayer.LogicGate]);
         }
 
         internal static bool ConnectedAtCell(int cell)
         {
-            return Grid.IsValidCell(cell)
+            return PlayerVisibility.Cell(cell)
                 && Game.Instance?.logicCircuitManager?.GetNetworkForCell(cell) != null;
         }
 

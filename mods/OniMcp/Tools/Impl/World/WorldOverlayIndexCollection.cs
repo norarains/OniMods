@@ -16,10 +16,10 @@ namespace OniMcp.Tools
                 var seen = new HashSet<string>();
                 foreach (var building in Components.BuildingCompletes.Items)
                 {
-                    if (building == null || building.GetMyWorldId() != worldId)
+                    if (building == null || !ToolUtil.GameObjectMatchesWorld(building.gameObject, worldId))
                         continue;
                     int cell = Grid.PosToCell(building.gameObject);
-                    if (!Grid.IsValidCell(cell))
+                    if (!PlayerVisibility.Cell(cell))
                         continue;
                     var def = building.Def;
                     string id = def?.PrefabID ?? building.name;
@@ -37,10 +37,10 @@ namespace OniMcp.Tools
                 foreach (var constructable in FindConstructables(worldId))
                 {
                     var go = constructable?.gameObject;
-                    if (go == null)
+                    if (!PlayerVisibility.Object(go))
                         continue;
                     int cell = Grid.PosToCell(go);
-                    if (!Grid.IsValidCell(cell))
+                    if (!PlayerVisibility.Cell(cell))
                         continue;
                     var building = go.GetComponent<Building>();
                     var kpid = go.GetComponent<KPrefabID>();
@@ -59,7 +59,7 @@ namespace OniMcp.Tools
             {
                 foreach (var dupe in Components.LiveMinionIdentities.Items)
                 {
-                    if (dupe == null || dupe.GetMyWorldId() != worldId)
+                    if (dupe == null || !ToolUtil.GameObjectMatchesWorld(dupe.gameObject, worldId))
                         continue;
                     var pos = dupe.transform.GetPosition();
                     int x = Mathf.RoundToInt(pos.x);
@@ -97,7 +97,7 @@ namespace OniMcp.Tools
             {
                 foreach (var pickupable in Components.Pickupables.Items)
                 {
-                    if (pickupable == null || pickupable.GetMyWorldId() != worldId)
+                    if (pickupable == null || !ToolUtil.GameObjectMatchesWorld(pickupable.gameObject, worldId))
                         continue;
                     var pos = pickupable.transform.GetPosition();
                     int x = Mathf.RoundToInt(pos.x);
@@ -142,8 +142,9 @@ namespace OniMcp.Tools
 
         private static OverlaySummary BuildFootprintObject(int worldId, BuildingDef def, GameObject go, string kind, string id, string name, char footprintSymbol, char anchorSymbol)
         {
+            if (!PlayerVisibility.Object(go)) return null;
             int objectCell = Grid.PosToCell(go);
-            if (!Grid.IsValidCell(objectCell) || !ToolUtil.CellMatchesWorld(objectCell, worldId))
+            if (!PlayerVisibility.Cell(objectCell) || !ToolUtil.CellMatchesWorld(objectCell, worldId))
                 return null;
 
             int objectX = Grid.CellColumn(objectCell);
@@ -218,7 +219,7 @@ namespace OniMcp.Tools
                     if (!InRect(rect, x, y))
                         continue;
                     int cell = Grid.XYToCell(x, y);
-                    if (!Grid.IsValidCell(cell))
+                    if (!PlayerVisibility.Cell(cell))
                         continue;
                     OverlaySummary existing;
                     if (overlays.TryGetValue(cell, out existing) && existing.Key != source.Key && existing.Priority >= source.Priority)
@@ -372,7 +373,7 @@ namespace OniMcp.Tools
                 for (int x = rect["x1"]; x <= rect["x2"]; x++)
                 {
                     int cell = Grid.XYToCell(x, y);
-                    if (!Grid.IsValidCell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
+                    if (!PlayerVisibility.Cell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
                         continue;
 
                     AddLayerOverlayIfRequested(indexes, "power", cell, x, y, 'w', "wire", ObjectLayer.Wire, ObjectLayer.WireTile, ObjectLayer.ReplacementWire);
@@ -399,7 +400,7 @@ namespace OniMcp.Tools
             foreach (var layer in layers)
             {
                 var go = Grid.Objects[cell, (int)layer];
-                if (go == null)
+                if (!PlayerVisibility.Object(go))
                     continue;
                 AddOverlay(overlays, cell, go, kind, symbol, x, y);
                 return;
@@ -413,13 +414,13 @@ namespace OniMcp.Tools
                 for (int x = rect["x1"]; x <= rect["x2"]; x++)
                 {
                     int cell = Grid.XYToCell(x, y);
-                    if (!Grid.IsValidCell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
+                    if (!PlayerVisibility.Cell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
                         continue;
 
                     foreach (var layer in layers)
                     {
                         var go = Grid.Objects[cell, (int)layer];
-                        if (go == null)
+                        if (!PlayerVisibility.Object(go))
                             continue;
                         AddOverlay(overlays, cell, go, kind, symbol, x, y);
                         break;
@@ -443,7 +444,7 @@ namespace OniMcp.Tools
             if (go == null || !ToolUtil.GameObjectMatchesWorld(go, worldId))
                 return;
             int cell = Grid.PosToCell(go);
-            if (!Grid.IsValidCell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
+            if (!PlayerVisibility.Cell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
                 return;
             int x = Grid.CellColumn(cell);
             int y = Grid.CellRow(cell);
@@ -455,6 +456,7 @@ namespace OniMcp.Tools
 
         private static void AddOverlay(Dictionary<int, OverlaySummary> overlays, int cell, GameObject go, string kind, char symbol, int x, int y, string extra = null)
         {
+            if (!PlayerVisibility.Cell(cell) || !PlayerVisibility.Object(go)) return;
             var building = go.GetComponent<Building>();
             var kpid = go.GetComponent<KPrefabID>();
             overlays[cell] = new OverlaySummary

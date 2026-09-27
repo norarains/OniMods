@@ -37,7 +37,7 @@ namespace OniMcp.Tools
         }
 
         private static bool LadderClearCell(int cell, int worldId, ISet<int> ready)
-            => Grid.IsValidCell(cell) && Grid.IsVisible(cell) && ToolUtil.CellMatchesWorld(cell, worldId)
+            => Grid.IsValidCell(cell) && PlayerVisibility.Cell(cell) && ToolUtil.CellMatchesWorld(cell, worldId)
                 && (!Grid.Solid[cell] || ready.Contains(cell));
     }
 }

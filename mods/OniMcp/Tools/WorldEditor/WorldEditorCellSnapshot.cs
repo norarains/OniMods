@@ -37,6 +37,12 @@ namespace OniMcp.Tools
                 return sb.ToString();
             }
 
+            if (!PlayerVisibility.Cell(cell))
+            {
+                sb.AppendLine("- 状态: unrevealed (unknown)");
+                return sb.ToString();
+            }
+
             AppendCellBaseSnapshot(sb, cell);
             AppendCellObjectSnapshot(sb, x, y, cell);
             AppendCellInfrastructureSnapshot(sb, cell);

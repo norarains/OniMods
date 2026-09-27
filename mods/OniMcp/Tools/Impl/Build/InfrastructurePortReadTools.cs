@@ -66,10 +66,11 @@ namespace OniMcp.Tools
                 ["role"] = role,
                 ["label"] = label,
                 ["cell"] = CellObject(cell),
-                ["hasLine"] = HasLayer(cell, layers),
-                ["hasBuiltLine"] = UtilityConnectionRead.IsBuilt(cell, layers),
-                ["line"] = LineObject(cell, layers)
+                ["hasLine"] = PlayerVisibility.Cell(cell) ? (object)HasLayer(cell, layers) : null,
+                ["hasBuiltLine"] = PlayerVisibility.Cell(cell) ? (object)UtilityConnectionRead.IsBuilt(cell, layers) : null,
+                ["line"] = PlayerVisibility.Cell(cell) ? LineObject(cell, layers) : null
             };
+            if (!PlayerVisibility.Cell(cell)) { result["connected"] = null; return result; }
             foreach (var item in extra)
                 result[item.Key] = item.Value;
             return result;
@@ -121,7 +122,7 @@ namespace OniMcp.Tools
 
         private static bool HasLayer(int cell, ObjectLayer[] layers)
         {
-            return Grid.IsValidCell(cell) && layers.Any(layer => Grid.Objects[cell, (int)layer] != null);
+            return PlayerVisibility.Cell(cell) && layers.Any(layer => PlayerVisibility.Object(Grid.Objects[cell, (int)layer]));
         }
 
         private static Dictionary<string, object> LineObject(int cell, ObjectLayer[] layers)
@@ -185,7 +186,7 @@ namespace OniMcp.Tools
 
         private static string BridgeId(int cell)
         {
-            var go = Grid.IsValidCell(cell) ? Grid.Objects[cell, (int)ObjectLayer.Building] : null;
+            var go = PlayerVisibility.Cell(cell) ? PlayerVisibility.Known(Grid.Objects[cell, (int)ObjectLayer.Building]) : null;
             if (go == null)
                 return null;
             string id = go.GetComponent<BuildingComplete>()?.name ?? go.name;

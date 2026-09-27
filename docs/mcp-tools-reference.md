@@ -56,6 +56,10 @@ HUD 缺料通知的每个原生目标都已被具体 finding 覆盖时，仅具�
 
 智能电池使用 `building_control domain=config action=set_battery_thresholds id=… lowThreshold=20 highThreshold=80 dryRun=true`；提交使用 `confirm=true`。配置读取及建筑实例文件均显示阈值、电量；实例文件可编辑 `Battery.LowThreshold` 和 `Battery.HighThreshold`。电力摘要中的 `generatorStoredEnergyEmpty` 指发电机内部储能为空，不能据此判断燃料是否耗尽。
 
+## 玩家探索边界
+
+读取、搜索、SQL 聚合、地图及对象操作仅接受玩家已发现的对象。未探索格返回 unknown；埋藏对象遵循游戏原生 Uncoverable 发现记录，不能通过坐标、ID、端口或状态列表透视。已探索但不在屏幕内的内容仍可读取；已发现对象再次掩埋不会丢失发现记录。旧 visibleOnly 参数仅为兼容保留，false 不能绕过过滤。建筑定义等静态资料不代表当前存档中存在该对象。
+
 ## 与玩家共享 UI 的边界
 
 正常的建造、接线/接管、订单、配置和有明确范围的结构化读取直接操作游戏数据，不激活鼠标工具，不依赖玩家选中了哪个建筑。`nativePathPlacement` 和 `allowNativeBuildTool` 的旧参数不能再启用 UI 建造路径。用户可以同时平移/缩放、切覆盖层和点击建筑查看。

@@ -173,16 +173,6 @@ namespace OniMcp.Tools
             };
         }
 
-        private static Dictionary<string, object> CellResult(int cell, string status)
-        {
-            return new Dictionary<string, object>
-            {
-                ["status"] = status,
-                ["x"] = Grid.IsValidCell(cell) ? Grid.CellColumn(cell) : -1,
-                ["y"] = Grid.IsValidCell(cell) ? Grid.CellRow(cell) : -1,
-                ["element"] = Grid.IsValidCell(cell) ? Grid.Element[cell].id.ToString() : "",
-                ["massKg"] = Grid.IsValidCell(cell) ? Math.Round(Grid.Mass[cell], 3) : 0
-            };
-        }
+
 }
 }

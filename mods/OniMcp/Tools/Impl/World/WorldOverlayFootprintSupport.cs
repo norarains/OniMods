@@ -37,7 +37,7 @@ namespace OniMcp.Tools
 
         private static bool IsSupportCell(int cell, int worldId)
         {
-            if (!Grid.IsValidCell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
+            if (!PlayerVisibility.Cell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
                 return false;
             if (Grid.Solid[cell] || Grid.Foundation[cell])
                 return true;
@@ -45,7 +45,7 @@ namespace OniMcp.Tools
             for (int layer = 0; layer < (int)ObjectLayer.NumLayers; layer++)
             {
                 var go = Grid.Objects[cell, layer];
-                if (go == null)
+                if (!PlayerVisibility.Object(go))
                     continue;
                 var building = go.GetComponent<Building>();
                 string prefabId = building?.Def?.PrefabID ?? go.GetComponent<KPrefabID>()?.PrefabTag.Name;
@@ -72,7 +72,7 @@ namespace OniMcp.Tools
                     int x = anchorX + dx;
                     int y = anchorY + dy;
                     int cell = Grid.XYToCell(x, y);
-                    if (!Grid.IsValidCell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
+                    if (!PlayerVisibility.Cell(cell) || !ToolUtil.CellMatchesWorld(cell, worldId))
                     {
                         obstructions.Add("invalid@" + x + "," + y);
                         continue;
