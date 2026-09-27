@@ -438,9 +438,10 @@ int cell = Grid.XYToCell(x, y);
             RegisterSupportBlueprint(prefabId, x, y, plannedSupportCells);
             var actualPlacement = ActualPlacementDetails(go, def, x, y);
             var placementCheck = ComparePlacement(placement, actualPlacement);
-            if (!GetBool(placementCheck, "valid"))
+            if (!GetBool(placementCheck, "valid") && !GetBool(placementCheck, "pending"))
                 return ErrorResult(prefabId, x, y, "Native placement does not match the requested footprint; inspect before retrying.",
-                    new Dictionary<string, object> { ["mutationAttempted"] = true, ["blueprintPlaced"] = !completedImmediately,
+                    new Dictionary<string, object> { ["id"] = go.GetComponent<KPrefabID>()?.InstanceID ?? -1, ["safeToRetry"] = false,
+                        ["mutationAttempted"] = true, ["blueprintPlaced"] = !completedImmediately,
                         ["buildingCompleted"] = completedImmediately, ["actualPlacement"] = actualPlacement, ["placementCheck"] = placementCheck });
             var placedPowerAutoConnect = TryAutoConnectPower(def, x, y, orientation, args, plannedSupportCells, autoDigContext);
             return new Dictionary<string, object>

@@ -84,12 +84,13 @@ namespace OniMcp.Tools
                 Risk = "low",
                 Aliases = new List<string> { "game_control_speed", "game_pause_resume_speed" },
                 Tags = new List<string> { "game", "speed", "pause", "resume", "time" },
-                Description = "Game time and speed. Prefer action=continue for planned work: run 1-20 real seconds, monitor safety/progress, pause and return recommendedAction=continue/review/urgent in one call. Repeat continue directly when healthy. Other actions: time/pause/resume/set_speed.",
+                Description = "Game time and speed. Prefer action=continue for planned work: run 1-20 real seconds, monitor safety/progress, pause and return stopReason, current observation, net changes and detected events. The caller decides what to do. Configure explicit ignoreEvents/unignoreEvents via continue or stop_events. Other actions: time/pause/resume/set_speed.",
                 Parameters = new Dictionary<string, McpToolParameter>
                 {
-                    ["action"] = new McpToolParameter { Type = "string", Description = "continue/advance runs a bounded monitored window; time/pause/resume/set_speed are manual controls", Required = true, EnumValues = new List<string> { "continue", "advance", "time", "pause", "resume", "set_speed" } },
+                    ["action"] = new McpToolParameter { Type = "string", Description = "continue/advance runs a bounded monitored window; time/pause/resume/set_speed are manual controls", Required = true, EnumValues = new List<string> { "continue", "advance", "stop_events", "time", "pause", "resume", "set_speed" } },
                     ["seconds"] = new McpToolParameter { Type = "number", Description = "continue: real seconds, 1-20, default 15", Required = false },
-                    ["resetMonitor"] = new McpToolParameter { Type = "boolean", Description = "continue: refresh work tracking after planning/review, default false", Required = false },
+                    ["ignoreEvents"] = new McpToolParameter { Type = "array", Items = new SchemaProperty { Type = "string" }, Description = "continue/stop_events: persistently ignore event codes or exact finding IDs for this MCP session; findings remain visible", Required = false },
+                    ["unignoreEvents"] = new McpToolParameter { Type = "array", Items = new SchemaProperty { Type = "string" }, Description = "continue/stop_events: remove these explicit ignores; stop_events with no arrays reads current settings", Required = false },
                     ["speed"] = new McpToolParameter
                     {
                         Type = "integer",
@@ -106,6 +107,8 @@ namespace OniMcp.Tools
                         case "continue":
                         case "advance":
                             return GameContinueRunner.Begin(args);
+                        case "stop_events":
+                            return GameContinueRunner.Configure(args);
                         case "time":
                         case "get_time":
                             return GetGameTime().Handler(args);

@@ -38,11 +38,28 @@ geometry = (ROOT / 'Impl/Build/BuildPlanningPlacementGeometry.cs').read_text()
 assert 'def.PlacementOffsets' in geometry and 'GetRotatedCellOffset' in geometry
 assert 'RegisteredBuildingOccupancy.Cells' in geometry and '.SetEquals(' in geometry
 plan = (ROOT / 'Impl/Build/BuildPlanningPlanOne.cs').read_text()
-assert plan.index('if (!GetBool(placementCheck, "valid"))') < plan.index('var placedPowerAutoConnect')
+assert plan.index('if (!GetBool(placementCheck, "valid") && !GetBool(placementCheck, "pending"))') < plan.index('var placedPowerAutoConnect')
+assert '"registrationPending"' in geometry and '!go.GetComponent<Constructable>().isSpawned' in geometry
+assert '"safeToRetry"] = false' in plan and '"id"] = go.GetComponent<KPrefabID>()' in plan
+manual = extract_block((ROOT / 'Impl/Orders/OrdersBuildingTools.cs').read_text(), "public static McpTool ConfigureManualDelivery()")
+mutations = extract_block(manual, 'if (!dryRun)')
+for mutation in ('delivery.Pause(', 'delivery.capacity =', 'delivery.refillMass =', 'delivery.MinimumMass =', 'delivery.RequestDelivery()', 'delivery.UpdateDeliveryState()'):
+    assert manual.count(mutation) == mutations.count(mutation) == 1
+reward = (ROOT / 'Impl/Facility/FacilityPrintingPodRewardTools.cs').read_text()
+claim = extract_block(reward, 'private static CallToolResult ClaimPrintingReward')
+assert claim.index('!Immigration.Instance.ImmigrantsAvailable') < claim.index('CurrentCarePackages()') < claim.index('telepad.OnAcceptDelivery')
+current = extract_block(reward, 'private static IEnumerable<CarePackageInfo> CurrentCarePackages')
+assert current.index('!Immigration.Instance.ImmigrantsAvailable') < current.index('GetField("containers"')
+assert '"/active/ops/orders.md"' in reward and '"orders_control"' not in reward
+runner = (ROOT / 'Impl/Core/GameContinueRunner.cs').read_text()
+configure = extract_block(runner, 'internal static CallToolResult Configure')
+assert configure.index('"dryRun"') < configure.index('Settings(args)')
 monitor = (ROOT / 'Impl/Core/GameContinueMonitor.cs').read_text()
 assert monitor.count('(worldId < 0 || item.GetMyWorldId() == worldId)') == 2
 assert 'wallSeconds >= nextInfrastructureRead' in monitor
 snapshot = (ROOT / 'Impl/World/SnapshotTools.cs').read_text()
 assert 'FoodSnapshot food = !compactObservation' in snapshot
 assert 'BuildingSnapshot buildings = !compactObservation' in snapshot
+detail = extract_block((ROOT / 'Impl/Dupes/DuplicantInfoTools.cs').read_text(), 'private static List<Dictionary<string, object>> CompactAttributes')
+assert detail.index('EssentialAttributeIds.Contains(attr.Id)') < detail.index('.Take(24)')
 print('PASS preview mutation guards, shared observation wiring, native footprint verification (source contracts)')

@@ -59,10 +59,10 @@ namespace OniMcp.Tools
                 if (IsManagementMarkdown(relative))
                     return ReadManagementMarkdown(args, path, relative);
                 if (IsOperationMarkdown(relative))
-                    return ReadOperationMarkdown(path, relative);
+                    return ReadOperationMarkdown(path, relative, WorldEditorResponsePolicy.IncludeHelp(args));
 
                 if (relative == "infrastructure/power.oni")
-                    return ReadTools.ControlRead().Handler(Child(args, "infrastructure", "power_summary"));
+                    return ReadEditableTemplate(path, "Use exactly: connect (x1,y1) -> (x2,y2) [-> (x3,y3) ...]. This file builds Wire; diagonal legs are not accepted. Read /active/infrastructure/power.md for current connections.");
                 if (relative == "infrastructure/power_ports.oni")
                     return CallToolResult.Error("power_ports.oni is hidden from world_editor because broad port scans are crash-prone. Use /active/infrastructure/power.md or /active/map/cell_X_Y.md for low-token anchors.");
                 if (relative == "infrastructure/rooms.oni")

@@ -21,22 +21,59 @@ namespace OniMcp.Tools
         private GameContinueMonitor monitor;
         private GameContinuePolicy policy;
         private ContinueSample latest, start;
-        private ContinueDecision decision;
+        private ContinueEvents events;
+        private ContinueStopEvents stopSettings;
+        private double requestedSeconds;
+        private static readonly Dictionary<string, ContinueStopEvents> settingsBySession = new Dictionary<string, ContinueStopEvents>();
+        private Dictionary<string, string> lastReported = new Dictionary<string, string>();
+        private readonly Dictionary<string, Dictionary<string, object>> windowEvents = new Dictionary<string, Dictionary<string, object>>();
         private TaskCompletionSource<CallToolResult> completion;
         private readonly Stopwatch clock = Stopwatch.StartNew();
         private double started;
         private BoundedGameWindow window;
         private int activity, removed;
         private bool progressed;
-        private readonly HashSet<string> added = new HashSet<string>();
-        private readonly HashSet<string> resolved = new HashSet<string>();
-        private readonly HashSet<string> changed = new HashSet<string>();
         internal static bool Active => instance != null && instance.completion != null;
+
+        private static ContinueStopEvents Settings(JObject args)
+        {
+            string owner = McpHttpServer.CurrentSessionId ?? "local";
+            if (!settingsBySession.TryGetValue(owner, out var settings))
+                settingsBySession[owner] = settings = new ContinueStopEvents();
+            settings.Update(EventKeys(args, "ignoreEvents"), EventKeys(args, "unignoreEvents"));
+            return settings;
+        }
+
+        private static string[] EventKeys(JObject args, string key)
+        {
+            if (args[key] == null) return new string[0];
+            if (!(args[key] is JArray values) || values.Any(value => value.Type != JTokenType.String))
+                throw new ArgumentException(key + " must be an array of event codes or finding IDs.");
+            return values.Values<string>().ToArray();
+        }
+
+        internal static CallToolResult Configure(JObject args)
+        {
+            if (Active) return CallToolResult.Error("Stop-event settings cannot change during a running window.");
+            if (ToolUtil.GetBool(args, "dryRun", false))
+                return CallToolResult.Error("stop_events does not support dryRun; omit ignoreEvents/unignoreEvents to read settings without changing them.");
+            try
+            {
+                var settings = Settings(args);
+                return CallToolResult.Text(JsonConvert.SerializeObject(new {
+                    defaultEvents = ContinueStopEvents.Defaults, ignoredEvents = settings.Ignored,
+                    scope = "MCP session; preserved across windows and save loads until explicitly changed"
+                }));
+            }
+            catch (ArgumentException ex) { return CallToolResult.Error(ex.Message); }
+        }
 
         internal static CallToolResult Begin(JObject args)
         {
             if (!DeferredToolCall.IsDirect(args))
                 return CallToolResult.Error("continue requires a direct game_control tools/call; do not put it in a batch, program, resource, or protocol task.");
+            if (args["resetMonitor"] != null)
+                return CallToolResult.Error("resetMonitor was removed in schema 3; use explicit ignoreEvents/unignoreEvents or speed/stop_events.");
             if (Active) return CallToolResult.Error("A continue window is already active; wait for its result or call speed/pause.");
             if (Game.Instance == null || Game.Instance.IsLoading() || SpeedControlScreen.Instance == null)
                 return CallToolResult.Error("A loaded game and speed control are required.");
@@ -52,7 +89,8 @@ namespace OniMcp.Tools
             int world = ToolUtil.GetInt(args, "worldId") ?? ClusterManager.Instance.activeWorldId;
             if (ClusterManager.Instance.GetWorld(world) == null) return CallToolResult.Error("Unknown worldId.");
             if (instance == null) instance = MainThreadBridge.Instance.gameObject.AddComponent<GameContinueRunner>();
-            return instance.StartWindow(args, world, seconds, speed);
+            try { return instance.StartWindow(args, world, seconds, speed); }
+            catch (ArgumentException ex) { return CallToolResult.Error(ex.Message); }
         }
 
         private CallToolResult StartWindow(JObject args, int world, double seconds, int speed)
@@ -60,7 +98,8 @@ namespace OniMcp.Tools
             string owner = McpHttpServer.CurrentSessionId;
             bool reset = policy == null || game != Game.Instance || world != worldId || owner != session
                 || generation != GameContextLifecycle.CaptureGeneration();
-            bool reviewed = ToolUtil.GetBool(args, "resetMonitor", false);
+            stopSettings = Settings(args);
+            requestedSeconds = seconds;
             game = Game.Instance;
             session = owner;
             worldId = world;
@@ -70,18 +109,19 @@ namespace OniMcp.Tools
             {
                 monitor = ColonyObservationRuntime.Monitor(world, true);
                 policy = new GameContinuePolicy();
+                lastReported.Clear();
             }
-            if (!reset && reviewed) monitor = ColonyObservationRuntime.Monitor(world, true);
-            latest = monitor.Read(clock.Elapsed.TotalSeconds);
-            if (reset || reviewed) policy.Reset(latest, acknowledge: !reset && reviewed);
+            monitor.RefreshOrders();
+            latest = monitor.Read(clock.Elapsed.TotalSeconds, true);
+            if (reset) policy.Reset(latest);
             start = latest;
             activity = removed = 0;
             progressed = false;
-            added.Clear(); resolved.Clear(); changed.Clear();
+            windowEvents.Clear();
             started = clock.Elapsed.TotalSeconds;
-            decision = policy.Observe(latest);
-            CaptureChanges();
-            if (decision.Decision != "continue") return Result("preflight");
+            events = policy.Observe(latest, stopSettings);
+            CaptureEvents();
+            if (events.Stops) return Result("event");
             completion = new TaskCompletionSource<CallToolResult>(TaskCreationOptions.RunContinuationsAsynchronously);
             var deferred = new DeferredToolResult(completion.Task);
             window = new BoundedGameWindow(() => clock.Elapsed.TotalSeconds,
@@ -90,7 +130,7 @@ namespace OniMcp.Tools
                     var control = SpeedControlScreen.Instance;
                     if (game != null && game == Game.Instance && control != null && !control.IsPaused) control.Pause();
                 },
-                () => { Observe(); return decision.Decision == "continue" ? null : "attention_required"; }, Complete);
+                () => { Observe(); return events.Stops ? "event" : null; }, Complete);
             window.Start(seconds, () =>
             {
                 SpeedControlScreen.Instance.SetSpeed(speed - 1);
@@ -119,18 +159,21 @@ namespace OniMcp.Tools
         private void Observe(bool refreshFood = false)
         {
             latest = monitor.Read(clock.Elapsed.TotalSeconds, refreshFood);
-            decision = policy.Observe(latest);
-            CaptureChanges();
-            activity += decision.Activity;
-            removed += decision.Completed;
-            progressed |= decision.WorkProgress;
+            events = policy.Observe(latest, stopSettings);
+            CaptureEvents();
+            activity += events.Activity;
+            removed += events.Completed;
+            progressed |= events.WorkProgress;
         }
 
-        private void CaptureChanges()
+        private void CaptureEvents()
         {
-            added.UnionWith(policy.Added);
-            resolved.UnionWith(policy.Resolved);
-            changed.UnionWith(policy.Changed);
+            foreach (var item in events.Items)
+            {
+                string key = item["code"] + ":" + (item.TryGetValue("findingId", out var id) ? id
+                    : item.TryGetValue("targetId", out var target) ? target : "");
+                windowEvents[key] = item;
+            }
         }
 
         private void Finish(string reason, string error = null)
@@ -146,10 +189,8 @@ namespace OniMcp.Tools
             bool sameGame = game != null && game == Game.Instance;
             try
             {
-                if (sameGame && reason == "window_complete") Observe(refreshFood: true);
-                if (reason != "window_complete" && reason != "attention_required")
-                    decision.Add("replan", reason);
-                if (error != null) decision.Add("replan", "monitor_error");
+                if (sameGame && (reason == "window_complete" || reason == "event")) Observe(refreshFood: true);
+                if (!sameGame) latest.Available = false;
                 pending.TrySetResult(Result(reason, error));
             }
             catch (Exception ex)
@@ -162,27 +203,29 @@ namespace OniMcp.Tools
         private CallToolResult Result(string reason, string error = null)
         {
             bool paused = game == Game.Instance && SpeedControlScreen.Instance != null && SpeedControlScreen.Instance.IsPaused;
-            if (!paused) decision.Add("urgent", "pause_not_confirmed");
+            if (!paused) reason = "pause_not_confirmed";
+            var findings = ColonyObservation.Findings(latest);
+            var current = findings.ToDictionary(item => item.Id, item => item.Signature);
+            var delta = ColonyObservation.Delta(lastReported, current);
             var result = new JObject
             {
-                ["schemaVersion"] = 2,
-                ["recommendedAction"] = decision.Decision == "replan" ? "review" : decision.Decision,
-                ["endedBy"] = reason, ["isPaused"] = paused,
+                ["schemaVersion"] = 3,
+                ["stopReason"] = reason == "window_complete" ? "duration_elapsed" : reason,
+                ["isPaused"] = paused, ["requestedSeconds"] = requestedSeconds,
+                ["ignoredEvents"] = JArray.FromObject(stopSettings.Ignored),
                 ["elapsedSeconds"] = Math.Round(clock.Elapsed.TotalSeconds - started, 2),
                 ["gameSecondsAdvanced"] = Math.Round(latest.GameSeconds - start.GameSeconds, 2),
-                ["observation"] = JObject.FromObject(ColonyObservation.Serialize(latest, policy.Findings)),
+                ["observation"] = JObject.FromObject(ColonyObservation.Serialize(latest, findings)),
                 ["changes"] = new JObject
                 {
-                    ["added"] = JArray.FromObject(added), ["resolved"] = JArray.FromObject(resolved),
-                    ["changed"] = JArray.FromObject(changed),
+                    ["added"] = JArray.FromObject(delta["added"]), ["resolved"] = JArray.FromObject(delta["resolved"]),
+                    ["changed"] = JArray.FromObject(delta["changed"]),
                     ["foodDeltaKcal"] = Math.Round(latest.FoodKcal - start.FoodKcal),
                     ["ordersRemoved"] = removed, ["activityChanges"] = activity, ["workProgressObserved"] = progressed
                 },
-                ["triggers"] = JArray.FromObject(decision.Reasons),
-                ["next"] = decision.Decision == "continue"
-                    ? "Repeat continue directly; no separate snapshot or map read is needed."
-                    : "Keep paused. Review triggers while paused, plan useful work, then continue with resetMonitor=true to acknowledge findings already reported. This is a recommendation, not a waiting MCP call."
+                ["events"] = JArray.FromObject(windowEvents.Values)
             };
+            lastReported = current;
             if (error != null) result["error"] = error;
             return CallToolResult.Text(result.ToString(Formatting.None));
         }

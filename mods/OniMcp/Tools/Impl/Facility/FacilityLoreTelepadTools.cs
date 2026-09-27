@@ -87,13 +87,13 @@ namespace OniMcp.Tools
                 Mode = "read",
                 Risk = "none",
                 Aliases = new List<string> { "printing_pods_list", "immigration_telepads_list" },
-                Tags = new List<string> { "story", "telepad", "printing-pod", "immigration", "side-screen" },
+                Tags = new List<string> { "story", "telepad", "printing-pod", "printing_pod", "care", "package", "rewards", "immigration", "side-screen" },
                 Description = "兼容入口：请使用 building_control domain=side_surface surface=facility kind=telepad action=list",
                 Hidden = true,
                 Parameters = RectParams(new Dictionary<string, McpToolParameter>
                 {
                     ["query"] = new McpToolParameter { Type = "string", Description = "按建筑、prefabId、状态或胜利条件筛选", Required = false },
-                    ["includeVictory"] = new McpToolParameter { Type = "boolean", Description = "是否包含胜利条件 checklist，默认 true", Required = false },
+                    ["includeVictory"] = new McpToolParameter { Type = "boolean", Description = "是否包含胜利条件 checklist，默认 false", Required = false },
                     ["limit"] = new McpToolParameter { Type = "integer", Description = "最多返回数量，默认 50，最大 100", Required = false }
                 }),
                 Handler = args =>
@@ -105,7 +105,7 @@ namespace OniMcp.Tools
                     int worldId = hasRect || ToolUtil.GetInt(args, "worldId").HasValue ? ToolUtil.ResolveWorldId(args) : -1;
                     string query = args["query"]?.ToString();
                     int limit = ToolUtil.ClampLimit(args, 50, 100);
-                    bool includeVictory = ToolUtil.GetBool(args, "includeVictory", true);
+                    bool includeVictory = ToolUtil.GetBool(args, "includeVictory", false);
                     var items = Components.Telepads.Items
                         .Where(telepad => telepad != null && MatchesTarget(telepad.gameObject, rect, worldId))
                         .Select(telepad => TelepadInfo(telepad, includeVictory))
@@ -117,7 +117,8 @@ namespace OniMcp.Tools
                     {
                         ["returned"] = items.Count,
                         ["worldId"] = worldId >= 0 ? (object)worldId : null,
-                        ["telepads"] = items
+                        ["telepads"] = items,
+                        ["printingRewards"] = PrintingRewardStatus(null)
                     });
                 }
             };
@@ -132,7 +133,7 @@ namespace OniMcp.Tools
                 Mode = "execute",
                 Risk = "low",
                 Aliases = new List<string> { "printing_pod_control", "telepad_open_screen" },
-                Tags = new List<string> { "story", "telepad", "printing-pod", "immigration", "side-screen" },
+                Tags = new List<string> { "story", "telepad", "printing-pod", "printing_pod", "care", "package", "rewards", "immigration", "side-screen" },
                 Description = "兼容入口：请使用 building_control domain=side_surface surface=facility kind=telepad action=list_rewards/claim/open_immigrants/open_colony_summary/open_skills/open_research",
                 Hidden = true,
                 Parameters = LookupParams(new Dictionary<string, McpToolParameter>

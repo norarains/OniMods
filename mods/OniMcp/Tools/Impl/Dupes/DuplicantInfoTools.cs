@@ -19,11 +19,11 @@ namespace OniMcp.Tools
                 Mode = "read",
                 Risk = "none",
                 Aliases = new List<string> { "duplicants_info_control", "dupe_info_control" },
-                Tags = new List<string> { "dupes", "duplicants", "detail", "attributes", "needs", "status", "stuck", "trapped", "navigation", "复制人", "属性", "需求", "被困", "状态" },
+                Tags = new List<string> { "dupes", "duplicants", "detail", "details", "attributes", "needs", "status", "stuck", "trapped", "navigation", "复制人", "属性", "需求", "被困", "状态" },
                 Description = "复制人基础只读信息聚合工具：action=detail 单个详情；action=attributes 属性/特性；action=needs 需求/压力/士气；action=status_check 状态/被困检查。",
                 Parameters = new Dictionary<string, McpToolParameter>
                 {
-                    ["action"] = new McpToolParameter { Type = "string", Description = "读取类型：detail、attributes、needs、status_check", Required = true, EnumValues = new List<string> { "detail", "attributes", "needs", "status_check" } },
+                    ["action"] = new McpToolParameter { Type = "string", Description = "读取类型：detail、attributes、needs、status_check", Required = true, EnumValues = new List<string> { "detail", "details", "attributes", "needs", "status_check" } },
                     ["id"] = new McpToolParameter { Type = "integer", Description = "复制人 InstanceID；detail 必填 id 或 name，其他 action 留空返回全部", Required = false },
                     ["name"] = new McpToolParameter { Type = "string", Description = "复制人名称；detail 必填 id 或 name，其他 action 留空返回全部", Required = false },
                     ["worldId"] = new McpToolParameter { Type = "integer", Description = "status_check：世界 ID；默认全部世界", Required = false },
@@ -41,6 +41,7 @@ namespace OniMcp.Tools
                     string action = (args["action"]?.ToString() ?? "").Trim().ToLowerInvariant();
                     switch (action)
                     {
+                        case "details":
                         case "detail":
                             return GetDupeDetails().Handler(args);
                         case "attributes":
@@ -73,7 +74,7 @@ namespace OniMcp.Tools
                     var dupe = ToolUtil.FindDupe(args);
                     if (dupe == null)
                         return CallToolResult.Error("Duplicant not found");
-                    return CallToolResult.Text(JsonConvert.SerializeObject(GetDupeDetail(dupe), McpJsonUtil.Settings));
+                    return CallToolResult.Text(JsonConvert.SerializeObject(GetDupeDetail(dupe, NormalizeDupeDetailMode(args["detailMode"]?.ToString()) == "full"), McpJsonUtil.Settings));
                 }
             };
         }
@@ -221,20 +222,6 @@ namespace OniMcp.Tools
                     }, McpJsonUtil.Settings));
                 }
             };
-        }
-
-        internal static Dictionary<string, object> GetDupeDetail(MinionIdentity dupe)
-        {
-            var pos = dupe.transform.GetPosition();
-            var schedulable = dupe.GetComponent<Schedulable>();
-            var schedule = schedulable?.GetSchedule();
-            var result = GetAttributeSummary(dupe);
-            result["position"] = new { x = Math.Round(pos.x, 2), y = Math.Round(pos.y, 2) };
-            result["worldId"] = dupe.GetMyWorldId();
-            result["schedule"] = schedule?.name;
-            result["currentScheduleBlock"] = schedule?.GetCurrentScheduleBlock()?.GroupId;
-            result["needs"] = GetNeedsSummary(dupe)["amounts"];
-            return result;
         }
 
         private static Dictionary<string, object> DupeRef(MinionIdentity dupe)
@@ -388,13 +375,10 @@ namespace OniMcp.Tools
 
             foreach (AttributeInstance attr in attrs)
             {
-                if (attr == null || attr.hide)
+                if (attr == null || attr.hide || !EssentialAttributeIds.Contains(attr.Id))
                     continue;
                 double value = Math.Round(attr.GetTotalValue(), 2);
                 double baseValue = Math.Round(attr.GetBaseValue(), 2);
-                if (Math.Abs(value) < 0.005d && Math.Abs(baseValue) < 0.005d)
-                    continue;
-
                 string id = attr.Id;
                 string name = CleanStatName(attr.Name, id);
                 result.Add(new Dictionary<string, object>

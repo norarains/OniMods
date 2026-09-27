@@ -247,6 +247,9 @@ namespace OniMcp.Core
 
     public class SchemaProperty
     {
+        [JsonProperty("items", NullValueHandling = NullValueHandling.Ignore)]
+        public SchemaProperty Items { get; set; }
+
         [JsonProperty("type")]
         public string Type { get; set; }
 

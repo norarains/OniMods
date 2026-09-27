@@ -14,6 +14,9 @@
     <Compile Include="../../mods/OniMcp/Tools/WorldEditor/WorldEditorGeneratedGlyphData.cs" Link="Source/WorldEditorGeneratedGlyphData.cs" />
     <Compile Include="../../mods/OniMcp/Core/DeferredToolCall.cs" Link="Source/DeferredToolCall.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Core/BoundedGameWindow.cs" Link="Source/BoundedGameWindow.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Build/PrefabIdentity.cs" Link="PrefabIdentity.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Core/ContinueResearchStation.cs" Link="ContinueResearchStation.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Core/ContinueStopEvents.cs" Link="ContinueStopEvents.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Core/GameContinuePolicy.cs" Link="Source/GameContinuePolicy.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Build/BuildMaterialBudget.cs" Link="Source/BuildMaterialBudget.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Build/BuildMaterialRequirements.cs" Link="Source/BuildMaterialRequirements.cs" />

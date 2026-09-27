@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Advance an already reviewed work batch; return to the agent on any replan trigger."""
+"""Advance an already reviewed work batch; return to the agent on any enabled stop event."""
 import argparse
 import json
 from pathlib import Path
@@ -48,18 +48,18 @@ def run_windows(bridge, target_cycles, max_seconds, window_seconds, speed, emit=
     deadline = time.monotonic() + max_seconds
     advanced = 0.0
     request_id = 10
-    first = True
     while time.monotonic() + 1 <= deadline and advanced < target_cycles * 600:
         seconds = min(window_seconds, deadline - time.monotonic())
-        result = call(bridge, request_id, "continue", seconds=seconds, speed=speed, resetMonitor=first)
+        result = call(bridge, request_id, "continue", seconds=seconds, speed=speed)
         request_id += 1
-        first = False
         emit(json.dumps(result, ensure_ascii=False))
         if result.get("isPaused") is not True:
             raise RuntimeError("continue did not confirm pause")
-        decision = result.get("recommendedAction") if result.get("schemaVersion") == 2 else result.get("decision")
-        if decision != "continue":
-            return 2 if decision in {"review", "replan", "urgent"} else 1
+        if result.get("schemaVersion") != 3:
+            return 1
+        reason = result.get("stopReason")
+        if reason != "duration_elapsed":
+            return 2 if reason == "event" else 1
         advanced += result.get("gameSecondsAdvanced", 0)
     return 0
 

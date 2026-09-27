@@ -5,7 +5,7 @@ using System.Linq;
 namespace OniMcp.Tools
 {
     // One vocabulary and threshold policy for continue, snapshots and diagnostics.
-    // A finding describes a current condition; acknowledging it never removes it.
+    // A finding describes a current condition; ignoring its stop event never removes it.
     internal sealed class ColonyFinding
     {
         internal string Id, Code, Severity, Message, Revision = "";
@@ -49,30 +49,48 @@ namespace OniMcp.Tools
                     dupeFinding("body_temperature", "critical", "Unsafe body temperature.");
                 if (dupe.SkillPoints > 0)
                 {
-                    dupeFinding("skill_points_available", "info", "Skill points available: " + dupe.SkillPoints + ". Review skills and morale.");
+                    dupeFinding("skill_points_available", "info", "Skill points available: " + dupe.SkillPoints + ".");
                     result[result.Count - 1].Revision = dupe.SkillPoints.ToString();
                 }
                 if ((sample.WorldId < 0 || dupe.WorldId == sample.WorldId) && dupe.UnexpectedIdle)
-                    dupeFinding("worker_idle", "warning", "Idle during work time; inspect errands and priorities.");
+                    dupeFinding("worker_idle", "warning", "Idle during work time.");
             }
             if (sample.InfrastructureKnown)
             {
                 if (sample.Beds < local) add("beds_short", "warning", "Fewer beds than local duplicants.", true, null, sample.WorldId);
                 if (local > 0 && sample.Toilets == 0) add("no_toilet", "warning", "No completed toilet in this world.", true, null, sample.WorldId);
-                if (local > 0 && sample.OxygenProducers == 0) add("no_oxygen_producer", "warning", "No completed oxygen producer; inspect passive oxygen reserves.", true, null, sample.WorldId);
+                if (local > 0 && sample.OxygenProducers == 0) add("no_oxygen_producer", "warning", "No completed oxygen producer; passive oxygen reserves unmeasured.", true, null, sample.WorldId);
             }
-            if (sample.PrintingReady) add("printing_pod_ready", "info", "Printing Pod choices ready; inspect care packages before claiming.", true, null, -1);
+            if (sample.PrintingReady) add("printing_pod_ready", "info", "Printing Pod choices ready.", true, null, -1);
             if (sample.AdvancedResearchBlocked)
                 add("advanced_research_skill_missing", "warning", sample.CanLearnAdvancedResearch
-                    ? "No local advanced researcher. A local duplicant has a skill point; inspect Researching1 eligibility and morale."
-                    : "No local advanced researcher. Waiting for a skill point; keep other work queued.",
+                    ? "Active advanced research has no local skilled researcher; a local duplicant meets Researching1 mastery conditions."
+                    : "Active advanced research has no local skilled researcher; no local duplicant currently meets Researching1 mastery conditions.",
                     sample.CanLearnAdvancedResearch, sample.AdvancedResearchBuildingId, sample.WorldId);
+            foreach (var station in sample.ResearchStations.Where(item => item.Required))
+            {
+                if (station.Powered == false)
+                    add("research_unpowered", "warning", "Research station has no power; circuit " + station.CircuitId + ".", true, station.Id, station.WorldId);
+                if (station.MissingMaterial)
+                    add("research_material_missing", "warning", "Research station storage is empty; delivery item " + station.DeliveryItem + ". Fetchability unverified.", true, station.Id, station.WorldId);
+                if (station.Operational == false && station.Powered != false)
+                    add("research_inoperable", "warning", "Research station inactive requirements: " + string.Join(",", station.FailedFlags) + ".", true, station.Id, station.WorldId);
+            }
             foreach (string alert in sample.Alerts.OrderBy(item => item, StringComparer.Ordinal))
                 add("hud", alert.StartsWith("DuplicantThreatening:", StringComparison.Ordinal) ? "critical" : "warning",
                     alert, true, null, -1);
             // Stable native HUD keys may contain localized text; coalesce exact duplicates only.
             foreach (var finding in result.Where(item => item.Code == "hud")) finding.Id += ":" + finding.Message;
             return result.GroupBy(item => item.Id).Select(group => group.First()).ToList();
+        }
+
+        internal static Dictionary<string, string[]> Delta(Dictionary<string, string> before, Dictionary<string, string> after)
+        {
+            return new Dictionary<string, string[]> {
+                ["added"] = after.Keys.Except(before.Keys).OrderBy(id => id).ToArray(),
+                ["resolved"] = before.Keys.Except(after.Keys).OrderBy(id => id).ToArray(),
+                ["changed"] = after.Keys.Where(id => before.ContainsKey(id) && before[id] != after[id]).OrderBy(id => id).ToArray()
+            };
         }
 
         internal static Dictionary<string, object> Serialize(ContinueSample sample, List<ColonyFinding> findings = null)
@@ -85,8 +103,9 @@ namespace OniMcp.Tools
                 {
                     ["available"] = sample.Available, ["vitals"] = "all_live_dupes",
                     ["foodAndWork"] = sample.WorldId < 0 ? "all_worlds_aggregate" : "selected_world", ["foodMaxAgeSeconds"] = 2, ["infrastructureMaxAgeSeconds"] = 2,
-                    ["notChecked"] = new[] { "local_atmosphere", "navigation", "resource_fetchability" }
+                    ["notChecked"] = new[] { "local_atmosphere", "navigation", "resource_fetchability", "full_utility_networks" }
                 },
+                ["researchStations"] = sample.ResearchStations.Select(station => station.ToDictionary()).ToList(),
                 ["metrics"] = new Dictionary<string, object>
                 {
                     ["dupes"] = sample.LocalDupeCount, ["foodKcal"] = Math.Round(sample.FoodKcal),

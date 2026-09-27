@@ -213,16 +213,7 @@ namespace OniMcp.Tools
             return GeneratedGlyphById.TryGetValue(baseId, out entry) ? entry : null;
         }
 
-        private static string StripCompleteSuffix(string id)
-        {
-            if (string.IsNullOrWhiteSpace(id))
-                return string.Empty;
-            if (id.EndsWith("UnderConstruction", StringComparison.OrdinalIgnoreCase))
-                return id.Substring(0, id.Length - "UnderConstruction".Length);
-            return id.EndsWith("Complete", StringComparison.OrdinalIgnoreCase)
-                ? id.Substring(0, id.Length - "Complete".Length)
-                : id;
-        }
+        private static string StripCompleteSuffix(string id) => PrefabIdentity.BaseId(id);
 
         private static readonly string[] OverlayViews =
         {

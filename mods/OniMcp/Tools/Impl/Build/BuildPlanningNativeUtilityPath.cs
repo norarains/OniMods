@@ -129,9 +129,9 @@ namespace OniMcp.Tools
                 result["segments"] = BuildPathSegments(path);
 
                 string networkError = null;
-                bool networkConnected = !IsCompletedUtilityPath(def, path)
-                    || RefreshAndValidateUtilityPathNetwork(def, path, out networkError);
-                result["networkConnected"] = networkConnected;
+                bool networkConnected = PersistUtilityPathConnections(def, path, out networkError);
+                result["connectionsPersisted"] = networkConnected;
+                result["networkConnected"] = networkConnected && IsCompletedUtilityPath(def, path);
                 result["networkError"] = networkError;
                 bool allConnected = after >= path.Count && networkConnected;
                 result["success"] = allConnected;

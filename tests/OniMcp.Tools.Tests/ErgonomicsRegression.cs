@@ -97,6 +97,17 @@ internal static class ErgonomicsRegression
         var wire = JObject.Parse("{failed:0,segments:[{from:[1,1],to:[5,1]}],path:[1,2,3,4,5],autoDigQueued:2,connectResult:{failed:0,results:[{valid:true}]}}");
         var result = WorldEditorResponsePolicy.Normalize(wire, true);
         Check(result["connectResult"] == null && result["segments"] != null && (int)result["autoDigQueued"] == 2, "successful wire details compress while keeping path and side effects");
+        var receipt = JObject.Parse("{valid:true,planned:true,prefabId:'Tile',id:123,anchor:{x:1,y:2,worldId:0},placement:{anchorDescription:'lower-left',footprintBounds:[1,2,1,2]},support:{valid:true,cells:[]},placementCheck:{valid:true,anchorMatches:true,worldMatches:true,footprintMatches:true},actualPlacement:{registeredFootprint:true,occupiedBounds:[1,2,1,2],occupiedCells:[123]},warnings:['liquid_adjacent'],materialSelection:{valid:true,requiredKg:100,selectedAvailableKg:1000}}");
+        var compactReceipt = WorldEditorResponsePolicy.Normalize(receipt, true);
+        Check((bool)compactReceipt["placementVerified"] && (int)compactReceipt["id"] == 123 && compactReceipt["occupiedBounds"] != null, "receipt retains object and verified occupancy");
+        Check(compactReceipt["placement"] == null && compactReceipt["support"] == null && compactReceipt["placementCheck"] == null, "successful placement uses a short receipt");
+        Check(compactReceipt["warnings"] != null && (int)compactReceipt["materialSelection"]["requiredKg"] == 100, "receipt preserves hazards and material budget");
+        receipt["support"]["warnings"] = new JArray("requires_planned_floor");
+        Check(WorldEditorResponsePolicy.Normalize(receipt, true)["support"] != null, "nested warning evidence is retained");
+        receipt["placementCheck"]["valid"] = false;
+        receipt["placementCheck"]["pending"] = true;
+        Check((bool)WorldEditorResponsePolicy.Normalize(receipt, true)["registrationPending"], "pending registration never claims verified placement");
+        Check(ToolBatchTools.CallMany().Parameters["calls"].Items.Type == "object", "batch schema requires object entries, not strings");
         wire["failed"] = 1;
         Check(WorldEditorResponsePolicy.Normalize(wire, true)["connectResult"] != null, "failed wiring retains child diagnostics");
     }

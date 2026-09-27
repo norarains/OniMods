@@ -12,7 +12,7 @@ namespace OniMcp.Tools
             switch (tool.Name)
             {
                 case "building_control":
-                    tool.Description = "Unified building entrypoint. Use action plus query, target, search, id, plan, or areaId for locating targets. Coordinate input is not accepted here; use world_editor map SEARCH/REPLACE patches for exact cells.";
+                    tool.Description = "Printing Pod care package rewards: domain=side_surface surface=facility kind=printing_pod action=list_rewards (claim requires confirm=true). Unified building entrypoint. Use action plus query, target, search, id, plan, or areaId for locating targets. Coordinate input is not accepted here; use world_editor map SEARCH/REPLACE patches for exact cells.";
                     Describe(tool, BuildingDescriptions());
                     break;
                 case "colony_control":
@@ -28,7 +28,7 @@ namespace OniMcp.Tools
                     Describe(tool, DupesDescriptions());
                     break;
                 case "game_control":
-                    tool.Description = "Unified game entrypoint. Autonomous play: plan a useful batch while paused, then domain=speed action=continue seconds=15. It advances, checks safety/work progress, and returns paused with recommendedAction=continue/review/urgent. On continue, repeat directly without extra reads or replanning; on review/urgent, inspect triggers and observation.findings. Set resetMonitor=true after planning. Direct calls only; no batch/program/task wrapper. Also supports manual speed, game state, saves, launch, DLC, sandbox, and UI.";
+                    tool.Description = "Unified game entrypoint. Autonomous play: plan a useful batch while paused, then domain=speed action=continue seconds=15. It advances the requested real-time window or stops for a configured event, then returns paused with stopReason, observation.findings, net changes and events. The caller decides whether to continue or act; a healthy round needs only another continue. Explicit ignoreEvents/unignoreEvents persist for this session and never hide findings; speed/stop_events reads or updates settings. Direct calls only; no batch/program/task wrapper. Also supports manual speed, game state, saves, launch, DLC, sandbox, and UI.";
                     Describe(tool, GameDescriptions());
                     break;
                 case "navigation_control":
@@ -215,9 +215,8 @@ namespace OniMcp.Tools
         {
             var d = CommonDescriptions();
             d["domain"] = "Game subsystem: launch, speed, state, save, dlc, sandbox, or ui.";
-            d["action"] = "Speed: continue (alias advance), time, pause, resume, set_speed. Prefer continue for autonomous work; it returns fresh safety/progress and pauses. Other actions depend on domain.";
-            d["seconds"] = "Continue window in real seconds, 1-20, default 15. Ends early on danger, unexpected idleness, finished work, or interruption.";
-            d["resetMonitor"] = "Set true on the first continue after planning or periodic review; refreshes tracked orders and acknowledges nonurgent findings already reported. New findings and urgent conditions are never waived. Otherwise omit.";
+            d["action"] = "Speed: continue (alias advance), stop_events, time, pause, resume, set_speed. Prefer continue for autonomous work; it returns fresh safety/progress and pauses. Other actions depend on domain.";
+            d["seconds"] = "Continue window in real seconds, 1-20, default 15. Ends early for enabled stop events or execution interruptions; ignored events stay visible in the result.";
             d["kind"] = "Sandbox or UI subtype.";
             d["uiDomain"] = "UI subsystem: action, feedback.";
             d["name"] = "Save name, or duplicant name for ui/feedback speech_bubble.";

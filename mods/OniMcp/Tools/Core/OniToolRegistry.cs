@@ -154,6 +154,7 @@ namespace OniMcp.Tools
                             Type = param.Value.Type,
                             Description = param.Value.Description,
                             Enum = param.Value.SchemaEnumValues,
+                            Items = param.Value.Items,
                             McpHeader = param.Value.McpHeader
                         };
                         if (param.Value.Required)

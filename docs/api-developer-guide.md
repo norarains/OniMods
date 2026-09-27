@@ -156,60 +156,63 @@ New integrations should discover the public aggregate entrypoints from `tools/li
 
 ### Bounded autonomous play
 
-Discover `capabilities.boundedContinue` once after connecting or restarting the mod.
-Plan and validate useful work while paused, then call directly:
+Discover `capabilities.boundedContinue` once after connecting or restarting. Plan
+and validate useful work while paused, then call directly:
 
 ```json
-{"name":"game_control","arguments":{"domain":"speed","action":"continue","seconds":15,"resetMonitor":true,"task":"Advance planned work and check safety"}}
+{"name":"game_control","arguments":{"domain":"speed","action":"continue","seconds":15,"task":"Advance the planned work batch"}}
 ```
 
-`advance` is an alias. `seconds` is real elapsed time, defaults to 15 and must be
-1–20; optional `speed=1..3` selects simulation speed. Omit `resetMonitor` on
-subsequent healthy calls. Set it after reviewing or changing the work plan to
-refresh tracked build/dig objects and the progress baseline. This is a direct
-legacy `tools/call` operation, not a batch/program/resource/protocol-task child.
-It requires a loaded paused game and does not support `dryRun`.
+`advance` is an alias. `seconds` is real elapsed time, defaults to 15, and must be
+1–20. Optional `speed=1..3` selects simulation speed. Every window refreshes tracked
+orders. This requires a loaded paused game and a direct `tools/call`; batch,
+program, resource and protocol-task children and `dryRun` are rejected.
 
-The HTTP result is deferred across Unity frames; the Unity thread never sleeps
-waiting for simulation. A frame-driven deadline owns the final pause independently
-of the client. Safety is sampled every 0.5 real seconds; food is cached for up to
-two seconds. No whole-grid scan runs in this loop. Other tool actions are rejected
-during the window except `speed/time` and `speed/pause`; explicit pause interrupts
-the window. Server shutdown, scene changes and monitor failures end the operation.
-A suspended/frozen game process can only execute its pause when Unity runs again.
+Schema 3 returns `stopReason`, `isPaused`, requested/elapsed real time,
+`gameSecondsAdvanced`, `observation`, `changes`, `events` and `ignoredEvents`.
+There is no recommendation or implicit acknowledgement/review horizon.
 
-Schema version 2 returns `isPaused`, elapsed real/simulation time,
-`recommendedAction`, `endedBy`, `triggers`, `observation` and `changes`.
+- `duration_elapsed`: the requested window finished.
+- `event`: an enabled event ended the window, possibly during preflight before
+  any time advanced. `events` identifies the events and associated finding IDs.
+- Other reasons identify explicit pause, external pause, context loss, monitoring
+  failure, server shutdown or failure to confirm pause.
 
-- `recommendedAction=continue`: repeat directly; no extra snapshot or map read.
-- `review`: keep paused, inspect the referenced finding or work transition, and
-  update the plan. The periodic review horizon is 300 simulation seconds.
-- `urgent`: keep paused and address the reported safety condition.
+The result completes the call. The agent decides whether the facts support
+another continue, a targeted read or careful planning. A healthy round needs only
+another direct continue; avoid redundant snapshots/maps and repeated planning.
 
-`endedBy` is the termination mechanism: `window_complete` means the deadline,
-`attention_required` means a monitoring trigger, `preflight` means no time was
-advanced, and interruption codes identify an explicit pause/context loss/failure.
-The response completes the call. Recommendations do not create a blocking protocol
-state. `triggers` explain why review was recommended, with finding IDs when applicable.
+`speed/stop_events` reads `defaultEvents` and `ignoredEvents` without advancing.
+Pass `ignoreEvents:["worker_idle"]` or `unignoreEvents:["worker_idle"]` there or on
+continue. Keys may be event codes or exact finding IDs. Changes are validated
+atomically and persist for this MCP session across windows, resolution/reappearance
+of findings, world changes and save loads. A new session starts with defaults.
+Ignoring affects stopping only; current findings remain visible and ignored events
+are marked `ignored:true`. Internal execution failures still terminate the window.
+`resetMonitor` was removed and is rejected with migration guidance.
 
 `observation.findings` is the canonical current-condition list, shared by paused
-snapshots and diagnostics. Stable IDs include scope/target; records carry severity,
-actionability and a short explanation. Coverage states freshness and unchecked
-navigation, local atmosphere and fetchability. Snapshot legacy alert counts and
-watch thresholds are projections/queries, not independent finding rules. Diagnostic
-`alerts` is a compatibility route to this observation. Raw HUD notification controls,
-targeted navigation assessments and historical reports retain their distinct purposes.
-Survival plans return `planningConstraints` for their requested horizon, separately
-from the shared observation.
+snapshots and diagnostics. IDs include scope/target; records carry severity,
+actionability and factual explanations. `researchStations` exposes relevant
+research type, remaining points, power/circuit, storage, failed operational flags,
+and delivery/research chore presence. Inactive stations do not report active-work
+blockers. Coverage explicitly leaves navigation, local atmosphere and resource
+fetchability unchecked. Raw HUD reads remain raw UI data; duplicate researcher HUD
+notifications are coalesced only when a matching semantic finding is available.
 
-`changes` identifies added/resolved/changed findings and work/food changes during
-the window. `resetMonitor=true` refreshes work tracking and acknowledges only findings
-already reported by that session. Acknowledged nonurgent conditions remain visible;
-new conditions, changed severity/actionability and urgent conditions still interrupt.
-Printing Pod choices and skill points are opportunities. A missing advanced researcher
-remains a pending finding even before a skill point is available. Research moving to
-a queued technology and construction ending while recurring work continues do not
-force replanning. Skill eligibility and morale still require a targeted check.
+`changes.added/resolved/changed` is the net delta from the previous returned
+continue observation; the first result compares with an empty baseline. The three
+sets are disjoint. `events` contains event types detected during the window, even
+if the condition resolved before the final sample. It is not a current-issues list.
+Food delta and work counters describe the current window; movement and removed
+orders do not establish completed construction. Verify completion at milestones.
+
+The HTTP result is deferred across Unity frames. A frame-driven deadline owns the
+final pause independently of the client. Vitals are sampled every 0.5 real seconds;
+food and research infrastructure are cached for up to two seconds. No whole-grid
+scan runs in this loop. Only `speed/time` and `speed/pause` are allowed while the
+window runs. A frozen process can execute the pause only when Unity resumes.
+After a lost response, establish state before advancing again; never replay blindly.
 
 Vitals cover all live duplicants; food, infrastructure and work cover the requested
 world. Food below 2 nominal cycles per dupe is a warning, below 1 is critical.

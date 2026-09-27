@@ -137,6 +137,10 @@ namespace OniMcp.Tools
 
                         if (includeDetails && consumers.Count < limit)
                             consumers.Add(PowerDeviceInfo(consumer.gameObject, "consumer", consumer.CircuitID, null, null, usedWatts, baseWatts, operational, false, consumer.IsPowered));
+                        if (!IsUnconnectedCircuit(consumer.CircuitID) && circuit.GeneratorCount == 0 && circuit.BatteryCount == 0 && diagnostics.Count < limit)
+                            diagnostics.Add(PowerIssueInfo(consumer.gameObject, "circuit_has_no_source", "Consumer belongs to a circuit with no registered generator or battery."));
+                        else if (!consumer.IsPowered && diagnostics.Count < limit && !IsUnconnectedCircuit(consumer.CircuitID))
+                            diagnostics.Add(PowerIssueInfo(consumer.gameObject, "consumer_unpowered", "Consumer is connected but currently unpowered."));
                         if (IsUnconnectedCircuit(consumer.CircuitID) && diagnostics.Count < limit)
                             diagnostics.Add(PowerIssueInfo(consumer.gameObject, "consumer_unconnected", "Consumer is on circuit -1; check its power input port cell for a built wire/blueprint and verify the wire is connected to a powered circuit."));
                     }
@@ -178,7 +182,7 @@ namespace OniMcp.Tools
                         ["issueCount"] = diagnostics.Count,
                         ["items"] = diagnostics,
                         ["next"] = diagnostics.Count == 0
-                            ? "No unconnected consumers detected in this summary."
+                            ? "No unconnected, unpowered or source-less consumers detected in this summary."
                             : "Read the reported /active/map/cell_X_Y.md through world_editor for exact port/wire state. Newly built networks may need a simulation tick before CircuitID refreshes; verify before replacing wires."
                     };
 

@@ -29,7 +29,7 @@ internal static class ContinueRegression
         return s;
     }
 
-    private static bool Has(ContinueDecision d, string code) => d.Reasons.Any(r => (string)r["code"] == code);
+    private static bool Has(ContinueEvents d, string code) => d.Items.Any(r => (string)r["code"] == code);
 
     private static void TestDecisions()
     {
@@ -38,15 +38,15 @@ internal static class ContinueRegression
         p.Reset(s);
         var next = Sample(15); next.Dupes[0].Cell++;
         var d = p.Observe(next);
-        Check(d.Decision == "continue" && d.Activity == 1, "healthy movement is a cheap continue signal");
+        Check(d.Stops == false && d.Activity == 1, "healthy movement is a cheap continue signal");
         Check(!d.WorkProgress && d.Completed == 0, "movement must not claim completed work");
         next = Sample(16); next.Dupes[0].Breath = 20;
-        Check(p.Observe(next).Decision == "urgent", "local low breath stops despite healthy food and stress");
+        Check(p.Observe(next).Stops, "local low breath stops despite healthy food and stress");
         next = Sample(17); next.Dupes[0].Health = 98;
         Check(Has(p.Observe(next), "health"), "damage stops early");
         next = Sample(18); next.Dupes.Clear();
         d = p.Observe(next);
-        Check(d.Decision == "urgent" && Has(d, "dupe_missing"), "a vanished dupe is not a green snapshot");
+        Check(d.Stops && Has(d, "dupe_missing"), "a vanished dupe is not a green snapshot");
         foreach (var field in new[] { "food", "stress", "temperature", "calories", "red", "invalid", "unknown" })
         {
             p.Reset(Sample()); next = Sample(1);
@@ -60,14 +60,14 @@ internal static class ContinueRegression
                 case "invalid": next.Dupes[0].Valid = false; break;
                 case "unknown": next.Available = false; break;
             }
-            Check(p.Observe(next).Decision != "continue", field + " must stop the fast path");
+            Check(p.Observe(next).Stops, field + " must stop the fast path");
         }
         p.Reset(Sample(0, false));
-        Check(p.Observe(Sample(200, false)).Decision == "continue", "scheduled rest is not stalled work");
+        Check(p.Observe(Sample(200, false)).Stops == false, "scheduled rest is not stalled work");
         next = Sample(201, false); next.Dupes[0].UnexpectedIdle = true;
-        Check(p.Observe(next).Decision == "continue", "brief chore transition gets a grace period");
+        Check(p.Observe(next).Stops == false, "brief chore transition gets a grace period");
         next = Sample(206, false); next.Dupes[0].UnexpectedIdle = true;
-        Check(p.Observe(next).Decision == "continue", "idle timer survives short continue windows");
+        Check(p.Observe(next).Stops == false, "idle timer survives short continue windows");
         next = Sample(212, false); next.Dupes[0].UnexpectedIdle = true;
         Check(Has(p.Observe(next), "worker_idle"), "persistent unexpected idle requests planning");
         p.Reset(Sample());
@@ -87,13 +87,13 @@ internal static class ContinueRegression
         next = Sample(31);
         Check(Has(p.Observe(next), "research_queue_empty"), "completed/changed research needs a decision");
         p.Reset(Sample(0, false));
-        Check(Has(p.Observe(Sample(300, false)), "review_due"), "bounded planning horizon prevents endless stale plans");
+        Check(!p.Observe(Sample(3000, false)).Stops, "no hidden review horizon interrupts the requested window");
         p.Reset(Sample(300, false));
-        Check(p.Observe(Sample(301, false)).Decision == "continue", "explicit review resets the horizon");
+        Check(p.Observe(Sample(301, false)).Stops == false, "explicit review resets the horizon");
         next = Sample(302, false); next.Alerts.Add("Bad: Power failure");
-        Check(p.Observe(next).Decision == "replan", "new negative HUD alert stops for diagnosis");
+        Check(p.Observe(next).Stops, "new negative HUD alert stops for diagnosis");
         next = Sample(303, false); next.Alerts.Add("DuplicantThreatening: Trapped"); p.Reset(next);
-        Check(p.Observe(next).Decision == "urgent", "review cannot waive a threatening alert");
+        Check(p.Observe(next).Stops, "review cannot waive a threatening alert");
     }
 
     private static void TestWindows()
@@ -123,9 +123,9 @@ internal static class ContinueRegression
         w.Start(10, () => paused = false); w.Tick();
         Check(paused && reason == "monitor_failed", "monitor exceptions pause before reporting failure");
         w = new BoundedGameWindow(() => time, () => paused = true,
-            () => "watch_triggered", (r, e) => reason = r);
+            () => "event", (r, e) => reason = r);
         w.Start(10, () => paused = false); w.Tick();
-        Check(paused && reason == "watch_triggered", "danger ends the window early");
+        Check(paused && reason == "event", "danger ends the window early");
         foreach (double invalid in new[] { 0, -1, 21, double.NaN, double.PositiveInfinity })
         {
             bool rejected = false;

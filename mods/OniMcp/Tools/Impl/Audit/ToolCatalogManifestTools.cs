@@ -165,7 +165,8 @@ namespace OniMcp.Tools
                             ["type"] = kv.Value.Type,
                             ["description"] = kv.Value.Description,
                             ["required"] = kv.Value.Required,
-                            ["enum"] = kv.Value.SchemaEnumValues
+                            ["enum"] = kv.Value.SchemaEnumValues,
+                            ["items"] = kv.Value.Items
                         }),
                 ["exampleArguments"] = ExampleArguments(tool)
             };

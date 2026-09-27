@@ -95,9 +95,11 @@ namespace OniMcp.Tools
                 }
                 if (matches.Count == 0)
                     matches = defs.Where(def => MapTokenPart(def.PrefabID).IndexOf(name, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+                matches = matches.GroupBy(def => PrefabIdentity.BaseId(def.PrefabID), StringComparer.OrdinalIgnoreCase)
+                    .Select(group => group.OrderBy(def => def.PrefabID.Length).First()).ToList();
                 if (matches.Count != 1)
                     return false;
-                prefabId = matches[0].PrefabID;
+                prefabId = PrefabIdentity.BaseId(matches[0].PrefabID);
                 return true;
             }
             return TryResolveBuildPrefabFromSymbol(symbol, out prefabId);

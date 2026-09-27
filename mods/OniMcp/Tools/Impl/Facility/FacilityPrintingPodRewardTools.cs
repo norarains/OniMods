@@ -39,14 +39,13 @@ namespace OniMcp.Tools
         {
             if (Immigration.Instance == null)
                 return CallToolResult.Error("Immigration system not available");
+            if (!Immigration.Instance.ImmigrantsAvailable)
+                return CallToolResult.Error("No printing pod rewards available right now");
 
             var rewards = CurrentCarePackages().ToList();
             bool initializedScreenForClaim = false;
             if (rewards.Count == 0)
             {
-                if (!Immigration.Instance.ImmigrantsAvailable)
-                    return CallToolResult.Error("No printing pod rewards available right now");
-
                 return CallToolResult.Error("No current claimable care-package reward is materialized yet. This tool no longer opens the immigrant screen automatically; wait for the reward list to appear or use action=open_immigrants manually.");
             }
 
@@ -74,6 +73,7 @@ namespace OniMcp.Tools
 
             telepad.OnAcceptDelivery(selected);
             Immigration.Instance.EndImmigration();
+            reward["claimable"] = false;
             bool screenClosed = CloseImmigrantScreen();
             return JsonResult(new Dictionary<string, object>
             {
@@ -82,7 +82,6 @@ namespace OniMcp.Tools
                 ["after"] = TelepadInfo(telepad, includeVictory: false),
                 ["selectedReward"] = reward,
                 ["priorityAction"] = priorityPlan["priorityAction"],
-                ["nextActions"] = priorityPlan["nextActions"],
                 ["printingRewards"] = PrintingRewardStatus(telepad),
                 ["initializedScreenForClaim"] = initializedScreenForClaim,
                 ["screenClosed"] = screenClosed
@@ -139,6 +138,8 @@ namespace OniMcp.Tools
 
         private static IEnumerable<CarePackageInfo> CurrentCarePackages()
         {
+            if (Immigration.Instance == null || !Immigration.Instance.ImmigrantsAvailable)
+                return Enumerable.Empty<CarePackageInfo>();
             var field = typeof(CarePackageContainer).GetField("containers", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
             var value = field == null ? null : field.GetValue(null) as IEnumerable<ITelepadDeliverableContainer>;
             if (value == null)
@@ -216,52 +217,21 @@ namespace OniMcp.Tools
             int x = Grid.IsValidCell(cell) ? Grid.CellColumn(cell) : 0;
             int y = Grid.IsValidCell(cell) ? Grid.CellRow(cell) : 0;
             int worldId = telepad == null ? (ClusterManager.Instance?.activeWorldId ?? 0) : telepad.gameObject.GetMyWorldId();
-            var sweepArgs = RewardAreaArgs("sweep", x, y, worldId);
-            var priorityArgs = RewardAreaArgs("set_area", x, y, worldId);
-            priorityArgs["domain"] = "priority";
-
             return new Dictionary<string, object>
             {
                 ["priority"] = PrintingPodRewardPriority,
-                ["reason"] = "printing_pod_reward_should_be_swept_before_survival_builds_depend_on_it",
                 ["reward"] = reward,
                 ["priorityAction"] = new Dictionary<string, object>
                 {
-                    ["tool"] = "orders_control",
-                    ["arguments"] = priorityArgs
-                },
-                ["nextActions"] = new[]
-                {
-                    new Dictionary<string, object>
+                    ["tool"] = "world_editor",
+                    ["arguments"] = new Dictionary<string, object>
                     {
-                        ["kind"] = "sweep_reward",
-                        ["tool"] = "orders_control",
-                        ["arguments"] = sweepArgs
-                    },
-                    new Dictionary<string, object>
-                    {
-                        ["kind"] = "set_reward_area_priority",
-                        ["tool"] = "orders_control",
-                        ["arguments"] = priorityArgs
+                        ["command"] = "edit", ["path"] = "/active/ops/orders.md",
+                        ["content"] = "<<<<<<< SEARCH\n=======\nsweep @(" + x + "," + y + "):" + PrintingPodRewardPriority + "\n>>>>>>> REPLACE",
+                        ["dryRun"] = true, ["worldId"] = worldId,
+                        ["task"] = "Preview sweeping the delivered care package"
                     }
                 }
-            };
-        }
-
-        private static Dictionary<string, object> RewardAreaArgs(string action, int x, int y, int worldId)
-        {
-            return new Dictionary<string, object>
-            {
-                ["domain"] = "area",
-                ["action"] = action,
-                ["x1"] = Math.Max(0, x - 1),
-                ["y1"] = Math.Max(0, y - 1),
-                ["x2"] = x + 1,
-                ["y2"] = y + 1,
-                ["worldId"] = worldId,
-                ["priority"] = PrintingPodRewardPriority,
-                ["dryRun"] = true,
-                ["detail"] = true
             };
         }
     }

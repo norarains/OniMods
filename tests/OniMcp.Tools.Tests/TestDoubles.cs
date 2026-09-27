@@ -27,6 +27,7 @@ namespace OniMcp.Tools
         public string Description { get; set; }
         public bool Required { get; set; }
         public List<string> EnumValues { get; set; }
+        public OniMcp.Core.SchemaProperty Items { get; set; }
     }
 
     public static class OniToolRegistry

@@ -86,7 +86,7 @@ namespace OniMcp.Tools
                 nextCalls.Add("building_control domain=planning action=parse_plan plan=\"藻类制氧机@基地\" worldId=0 limit=5");
                 nextCalls.Add("building_control domain=planning action=build_area plan=\"藻类制氧机@基地\" worldId=0 dryRun=true limit=5");
             }
-            nextCalls.Add("game_control domain=speed action=continue seconds=15 resetMonitor=true (only after reviewing findings and planning useful work)");
+            nextCalls.Add("game_control domain=speed action=continue seconds=15 (after inspecting findings and planning useful work)");
 
             bool hasCritical = findings.Any(item => item.Severity == "critical") || blockers.Any(item => string.Equals(item["severity"]?.ToString(), "critical", StringComparison.OrdinalIgnoreCase));
             var constructionPlan = ExtractConstructionPlan(foodAccessPlan);

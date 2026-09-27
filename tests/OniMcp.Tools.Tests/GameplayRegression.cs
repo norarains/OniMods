@@ -40,6 +40,11 @@ internal static class GameplayRegression
         Assets.BuildingDefs.Add(new TestBuildingDef { PrefabID = "Tile", Name = "Tile" });
         Assets.BuildingDefs.Add(new TestBuildingDef { PrefabID = "Tile", Name = "Tile" });
         Check(WorldEditorTools.ResolveBuildFixture("砖块:6#火") == "Tile", "generated display names resolve even with English runtime names and duplicate registration");
+        Assets.BuildingDefs.Add(new TestBuildingDef { PrefabID = "TileComplete", Name = "砖块" });
+        Assets.BuildingDefs.Add(new TestBuildingDef { PrefabID = "Tile", Name = "砖块" });
+        Check(WorldEditorTools.ResolveBuildFixture("砖块:5#火") == "Tile", "native and Complete aliases resolve to one prefab");
+        Check(PrefabIdentity.BaseId("RationBoxComplete(Clone)") == "RationBox", "runtime object names normalize before glyph lookup");
+        Check(PrefabIdentity.BaseId("TileUnderConstruction(Clone)") == "Tile", "blueprint instance names normalize");
         Assets.BuildingDefs.Clear();
     }
 

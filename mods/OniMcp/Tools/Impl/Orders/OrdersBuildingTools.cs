@@ -104,6 +104,7 @@ namespace OniMcp.Tools
                     ["capacityKg"] = new McpToolParameter { Type = "number", Description = "可选：目标储量上限 kg", Required = false },
                     ["refillMassKg"] = new McpToolParameter { Type = "number", Description = "可选：低于该质量时请求补料 kg", Required = false },
                     ["minimumMassKg"] = new McpToolParameter { Type = "number", Description = "可选：单次搬运最小质量 kg", Required = false },
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Validate proposed settings without changing delivery or requesting chores", Required = false },
                     ["requestNow"] = new McpToolParameter { Type = "boolean", Description = "是否立即请求一次搬运，默认 false", Required = false }
                 }),
                 Handler = args =>
@@ -115,29 +116,38 @@ namespace OniMcp.Tools
                     if (delivery == null)
                         return CallToolResult.Error("Target does not support manual delivery");
 
-                    if (args["paused"] != null)
-                        delivery.Pause(ToolUtil.GetBool(args, "paused", false), "Oni MCP manual delivery setting");
-                    float? capacity = ToolUtil.GetFloat(args, "capacityKg");
-                    if (capacity.HasValue)
-                        delivery.capacity = Math.Max(0f, capacity.Value);
-                    float? refill = ToolUtil.GetFloat(args, "refillMassKg");
-                    if (refill.HasValue)
-                        delivery.refillMass = Math.Max(0f, refill.Value);
-                    float? minimum = ToolUtil.GetFloat(args, "minimumMassKg");
-                    if (minimum.HasValue)
-                        delivery.MinimumMass = Math.Max(0f, minimum.Value);
-                    if (ToolUtil.GetBool(args, "requestNow", false))
-                        delivery.RequestDelivery();
-
-                    delivery.UpdateDeliveryState();
+                    bool dryRun = ToolUtil.GetBool(args, "dryRun", false);
+                    bool paused = args["paused"] == null ? delivery.IsPaused : ToolUtil.GetBool(args, "paused", false);
+                    float capacity = ToolUtil.GetFloat(args, "capacityKg") ?? delivery.capacity;
+                    float refill = ToolUtil.GetFloat(args, "refillMassKg") ?? delivery.refillMass;
+                    float minimum = ToolUtil.GetFloat(args, "minimumMassKg") ?? delivery.MinimumMass;
+                    foreach (float value in new[] { capacity, refill, minimum })
+                        if (float.IsNaN(value) || float.IsInfinity(value) || value < 0)
+                            return CallToolResult.Error("Delivery quantities must be finite and nonnegative.");
+                    if (minimum > capacity || refill > capacity)
+                        return CallToolResult.Error("minimumMassKg and refillMassKg must not exceed capacityKg.");
+                    bool request = ToolUtil.GetBool(args, "requestNow", false);
+                    if (request && paused) return CallToolResult.Error("requestNow requires delivery to be unpaused.");
+                    if (!dryRun)
+                    {
+                        if (args["paused"] != null) delivery.Pause(paused, "Oni MCP manual delivery setting");
+                        delivery.capacity = capacity;
+                        delivery.refillMass = refill;
+                        delivery.MinimumMass = minimum;
+                        if (request) delivery.RequestDelivery();
+                        delivery.UpdateDeliveryState();
+                    }
                     return CallToolResult.Text(JsonConvert.SerializeObject(new Dictionary<string, object>
                     {
                         ["id"] = go.GetComponent<KPrefabID>()?.InstanceID ?? go.GetInstanceID(),
                         ["name"] = ToolUtil.CleanName(go.GetProperName()),
-                        ["paused"] = delivery.IsPaused,
-                        ["capacityKg"] = Math.Round(delivery.capacity, 3),
-                        ["refillMassKg"] = Math.Round(delivery.refillMass, 3),
-                        ["minimumMassKg"] = Math.Round(delivery.MinimumMass, 3),
+                        ["dryRun"] = dryRun,
+                        ["applied"] = !dryRun,
+                        ["requestNow"] = request,
+                        ["paused"] = paused,
+                        ["capacityKg"] = Math.Round(capacity, 3),
+                        ["refillMassKg"] = Math.Round(refill, 3),
+                        ["minimumMassKg"] = Math.Round(minimum, 3),
                         ["requestedItemTag"] = delivery.RequestedItemTag.Name
                     }, McpJsonUtil.Settings));
                 }

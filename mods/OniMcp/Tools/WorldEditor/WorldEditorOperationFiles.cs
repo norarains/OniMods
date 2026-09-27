@@ -49,7 +49,7 @@ namespace OniMcp.Tools
             return IsOperationMarkdown(relative) && relative != "ops/tools.md";
         }
 
-        private static CallToolResult ReadOperationMarkdown(string path, string relative)
+        private static CallToolResult ReadOperationMarkdown(string path, string relative, bool includeSchema = false)
         {
             if (relative == "ops/tools.md")
                 return ReadOperationToolIndexMarkdown(path);
@@ -73,10 +73,16 @@ namespace OniMcp.Tools
             {
                 sb.AppendLine("- default: `" + toolName + "`");
                 McpTool tool;
-                if (OniToolRegistry.TryGetOperation(toolName, out tool))
+                if (includeSchema && OniToolRegistry.TryGetOperation(toolName, out tool))
                     sb.AppendLine("```json\n" + JsonConvert.SerializeObject(ToolSummary(tool), McpJsonUtil.Settings) + "\n```");
             }
             sb.AppendLine();
+            if (relative == "ops/build.md")
+            {
+                sb.AppendLine("Utility paths: edit `/active/infrastructure/power.oni` (Wire), liquid_conduits.oni, gas_conduits.oni, logic.oni or solid_conveyor.oni.");
+                sb.AppendLine("Grammar: `connect (x1,y1) -> (x2,y2) -> (x3,y3)`; axis-aligned legs only. Preview first; existing matching segments are reused.");
+                sb.AppendLine("Read `/active/infrastructure/power.md` for exact endpoint cells. Use includeHelp=true for the full typed schema.");
+            }
             sb.AppendLine("## Edit Commands");
             sb.AppendLine("```text");
             foreach (string line in OperationExamples(relative))

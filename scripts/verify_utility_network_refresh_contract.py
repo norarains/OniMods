@@ -73,9 +73,16 @@ def main() -> None:
 
     assert "EnsureCompletedUtilityNetworkRegistration" in completion
     assert "isolateConnections: true" in completion
+    blueprints = (BUILD / "BuildPlanningBlueprintConnections.cs").read_text(encoding="utf-8")
     for caller in (native, placement):
-        assert "IsCompletedUtilityPath(def, path)" in caller
-        assert "RefreshAndValidateUtilityPathNetwork(def, path" in caller
+        assert "PersistUtilityPathConnections(def, path, out networkError)" in caller
+    assert "IsCompletedUtilityPath(def, path)" in blueprints
+    assert "RefreshAndValidateUtilityPathNetwork(def, path, out error)" in blueprints
+    assert "pair.Value.Connections" in blueprints
+    assert "pair.Value.UpdateConnections(desired[pair.Key])" in blueprints
+    assert "desired[from] |= fromBit" in blueprints and "desired[to] |= toBit" in blueprints
+    assert "pair.Value.Connections != desired[pair.Key]" in blueprints
+    assert "ClearCell" not in blueprints
     assert '"utility_network_incomplete"' in placement
     assert 'result["networkConnected"]' in native
 

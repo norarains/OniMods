@@ -25,10 +25,11 @@ namespace OniMcp.Tools
                 {
                     ["call"] = "game_control domain=speed action=continue seconds=15",
                     ["maxRealSeconds"] = 20, ["returnsPaused"] = true,
-                    ["schemaVersion"] = 2,
-                    ["recommendedActions"] = new JArray("continue", "review", "urgent"),
+                    ["schemaVersion"] = 3,
+                    ["defaultStopEvents"] = new JArray(ContinueStopEvents.Defaults),
+                    ["settingsCall"] = "game_control domain=speed action=stop_events",
                     ["directOnly"] = true,
-                    ["policy"] = "Plan useful work once; repeat continue without extra reads while recommendedAction=continue. Review triggers and observation.findings; resetMonitor=true acknowledges only already reported nonurgent findings."
+                    ["policy"] = "Advances until duration_elapsed or an enabled event; returns facts, no recommendation. ignoreEvents/unignoreEvents persist per session, including across finding resolution and save loads. Ignored events remain visible. No implicit acknowledgement or review horizon."
                 },
                 ["stateRead"] = "world_editor command=read path=/active/index.md includeState=true",
                 ["symbolsRead"] = "world_editor command=symbols queries=[...]",

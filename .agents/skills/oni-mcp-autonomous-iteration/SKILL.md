@@ -42,7 +42,7 @@ Use this workflow for end-to-end ONI MCP server improvement, especially when the
 
 5. Optimize both planning and routine execution.
    - Follow [the two-speed play loop](../oni-play-loop/SKILL.md). Plan enough useful work for available workers, then use the advertised bounded continue operation.
-   - A healthy fast round must take one direct continue call, with no extra pause/snapshot/map call or repeated planning. Replan for the returned reasons or the bounded review horizon.
+   - A healthy fast round must take one direct continue call, with no extra pause/snapshot/map call or repeated planning. The agent decides whether the returned facts require planning; there is no server recommendation or implicit review horizon.
    - Global snapshot green/watch.alert=false alone is not an individual-health guarantee. Continue includes dupe vitals and work evidence; hazardous plans still need targeted preflight.
    - Test early stops, final pause, interrupted clients, failed monitoring, rest vs unexpected idle, and actual progress vs activity. Keep session evidence in /tmp; maintain reusable contracts in existing docs.
 
@@ -74,7 +74,7 @@ For a prepared work batch, the helper uses the same bounded operation through th
 python .agents/skills/oni-mcp-autonomous-iteration/scripts/survival_watch.py --target-cycles 1 --max-seconds 60 --poll-seconds 15 --speed 3
 ```
 
-It stops paused when continue requests replan/urgent or when its time/cycle budget ends. It does not plan work, load saves, waive hazards, or automatically reset a review request. The agent must plan between batches; a 100-cycle goal is not permission for a blind 100-cycle resume. The first helper call assumes the caller has reviewed the current work batch.
+This transport test helper stops on any enabled event, error or time/cycle budget. It does not plan, modify ignore settings, or acknowledge findings. During gameplay use native MCP calls so the agent can inspect every returned observation. A 100-cycle goal is not permission for a blind 100-cycle resume.
 
 Use these checks as a minimum smoke suite after a launch-related or planning-related change:
 

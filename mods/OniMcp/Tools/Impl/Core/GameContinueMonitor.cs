@@ -6,20 +6,26 @@ using UnityEngine;
 namespace OniMcp.Tools
 {
     // Cheap per-dupe samples every half second. Food is cached for two seconds;
-    // pending order objects are found after each planning reset, never by scanning Grid.
+    // pending order objects are found once per requested window, never by scanning Grid.
     internal sealed class GameContinueMonitor
     {
         private readonly int worldId;
-        private readonly Constructable[] builds;
-        private readonly Diggable[] digs;
+        private Constructable[] builds;
+        private Diggable[] digs;
         private readonly Dictionary<int, float> remainingWork = new Dictionary<int, float>();
         private double nextFoodRead, foodKcal, workProgress, nextInfrastructureRead;
         private int beds, toilets, oxygenProducers;
-        private int? advancedResearchBuildingId;
+        private string infrastructureResearchId;
+        private List<ContinueResearchStation> researchStations = new List<ContinueResearchStation>();
 
         internal GameContinueMonitor(int worldId)
         {
             this.worldId = worldId;
+            RefreshOrders();
+        }
+
+        internal void RefreshOrders()
+        {
             builds = UnityEngine.Object.FindObjectsByType<Constructable>(FindObjectsSortMode.None);
             digs = UnityEngine.Object.FindObjectsByType<Diggable>(FindObjectsSortMode.None);
         }
@@ -67,12 +73,12 @@ namespace OniMcp.Tools
                     sample.PendingIds.Add(item.GetInstanceID());
                     ReadWork(item.GetComponent<Workable>());
                 }
-            ReadInfrastructure(sample, wallSeconds, refreshFood);
             sample.PrintingReady = Immigration.Instance != null && Immigration.Instance.ImmigrantsAvailable;
             sample.ResearchQueueCount = Research.Instance?.GetResearchQueue()?.Count ?? 0;
             var research = Research.Instance?.GetActiveResearch();
             sample.ResearchId = research?.tech?.Id;
             sample.ResearchProgress = research == null ? 0 : research.GetTotalPercentageComplete() * 100.0;
+            ReadInfrastructure(sample, wallSeconds, refreshFood || sample.ResearchId != infrastructureResearchId);
             sample.WorkProgress = workProgress;
             return sample;
         }
@@ -91,7 +97,7 @@ namespace OniMcp.Tools
             bool idle = chore == null || (choreType ?? "").IndexOf("Idle", StringComparison.OrdinalIgnoreCase) >= 0;
             double stamina = DupeAmountUtil.AmountValueByName(dupe, "Stamina", -1);
             double calories = DupeAmountUtil.AmountValueByName(dupe, "Calories", -1);
-            bool personal = new[] { "Sleep", "Eat", "Toilet", "Recover", "Breathe", "Relax", "Shower" }
+            bool personal = new[] { "Sleep", "Eat", "Toilet", "Recover", "Breathe", "Relax", "Shower", "Narcolepsy" }
                 .Any(name => (choreType ?? "").IndexOf(name, StringComparison.OrdinalIgnoreCase) >= 0);
             if (consumer == null || health == null || string.IsNullOrEmpty(schedule)) sample.Available = false;
             var world = ClusterManager.Instance?.GetWorld(dupe.GetMyWorldId());
@@ -119,7 +125,8 @@ namespace OniMcp.Tools
             if (refresh || wallSeconds >= nextInfrastructureRead)
             {
                 beds = toilets = oxygenProducers = 0;
-                advancedResearchBuildingId = null;
+                researchStations = ResearchStationObservation.Read(worldId);
+                infrastructureResearchId = sample.ResearchId;
                 foreach (var building in Components.BuildingCompletes.Items)
                 {
                     if (building == null || (worldId >= 0 && building.GetMyWorldId() != worldId)) continue;
@@ -127,17 +134,21 @@ namespace OniMcp.Tools
                     if (id == "Bed" || id == "LuxuryBed") beds++;
                     if (id == "Outhouse" || id == "FlushToilet") toilets++;
                     if (id == "OxygenDiffuser" || id == "MineralDeoxidizer" || id == "Electrolyzer") oxygenProducers++;
-                    if (id == "AdvancedResearchCenter")
-                        advancedResearchBuildingId = building.GetComponent<KPrefabID>()?.InstanceID;
                 }
                 nextInfrastructureRead = wallSeconds + 2;
             }
             sample.InfrastructureKnown = true;
             sample.Beds = beds; sample.Toilets = toilets; sample.OxygenProducers = oxygenProducers;
-            sample.AdvancedResearchBuildingId = advancedResearchBuildingId;
+            sample.ResearchStations.AddRange(researchStations);
+            sample.AdvancedResearchBuildingId = researchStations.FirstOrDefault(station => station.ResearchType == "advanced" && station.Required)?.Id;
             var local = sample.Dupes.Where(dupe => worldId < 0 || dupe.WorldId == worldId).ToList();
             sample.AdvancedResearchBlocked = sample.AdvancedResearchBuildingId.HasValue && !local.Any(dupe => dupe.AdvancedResearchSkill);
-            sample.CanLearnAdvancedResearch = local.Any(dupe => dupe.SkillPoints > 0);
+            sample.CanLearnAdvancedResearch = Components.LiveMinionIdentities.Items.Any(dupe => dupe != null
+                && (worldId < 0 || dupe.GetMyWorldId() == worldId)
+                && dupe.GetComponent<MinionResume>() is MinionResume resume
+                && resume.CanMasterSkill(resume.GetSkillMasteryConditions("Researching1")));
+            if (sample.AdvancedResearchBlocked)
+                sample.Alerts.Remove("Bad: " + ToolUtil.CleanName(global::STRINGS.RESEARCH.MESSAGING.NO_RESEARCHER_SKILL));
         }
 
         private void ReadWork(Workable workable)

@@ -138,7 +138,9 @@ namespace OniMcp.Tools
 
                 if (item.ObstructedBy != null && item.ObstructedBy.Count > 0)
                 {
-                    bool utilityOverlap = IsOverlayUtilityPrefab(item.Id) && item.ObstructedBy.Any(IsBuildingOverlapObstruction);
+                    bool utilityOverlap = item.ObstructedBy.All(obstruction =>
+                        IsBuildingOverlapObstruction(obstruction) && (IsOverlayUtilityPrefab(item.Id)
+                            || IsOverlayUtilityPrefab(obstruction.Substring(obstruction.IndexOf(':') + 1).Split('@')[0])));
                     var conflict = new Dictionary<string, object>
                     {
                         ["type"] = utilityOverlap ? "utility_overlap" : "overlap",

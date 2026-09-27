@@ -134,6 +134,47 @@ namespace OniMcp.Tools
             }
         }
 
+        private static bool HasWarningEvidence(JToken token) => token is JContainer container
+            && container.Descendants().OfType<JProperty>().Any(property =>
+                new[] { "risks", "warnings", "obstructions", "missingSupportCells", "error" }.Contains(property.Name)
+                && property.Value.Type != JTokenType.Null
+                && (property.Value.HasValues || property.Value.Type == JTokenType.String && !string.IsNullOrEmpty(property.Value.ToString())));
+
+        private static void CompactPlacementReceipt(JObject output)
+        {
+            if (output["valid"]?.Type != JTokenType.Boolean || output["valid"].Value<bool>() != true
+                || output["prefabId"] == null || output["anchor"] == null) return;
+            // Keep every warning, side effect, material budget and unsuccessful check.
+            var check = output["placementCheck"] as JObject;
+            if (check != null && check["valid"]?.Value<bool>() == true)
+            {
+                output["placementVerified"] = true;
+                output["occupiedBounds"] = output["actualPlacement"]?["occupiedBounds"]?.DeepClone();
+                output.Remove("placementCheck");
+                output.Remove("actualPlacement");
+                output.Remove("actualAnchor");
+            }
+            else if (check != null && check["pending"]?.Value<bool>() == true)
+            {
+                output["placementVerified"] = false;
+                output["registrationPending"] = true;
+            }
+            if (output["placement"] is JObject placement && !HasWarningEvidence(placement))
+            {
+                if (output["footprintBounds"] == null && placement["footprintBounds"] != null)
+                    output["footprintBounds"] = placement["footprintBounds"].DeepClone();
+                output.Remove("placement");
+            }
+            if (output["support"] is JObject support && support["valid"]?.Value<bool>() == true && !HasWarningEvidence(support))
+            {
+                output["supportValidated"] = true;
+                output.Remove("support");
+            }
+            foreach (string field in new[] { "name", "x", "y", "worldId" }) output.Remove(field);
+            foreach (var property in output.Properties().Where(property => property.Value.Type == JTokenType.Null).ToList())
+                property.Remove();
+        }
+
         internal static JToken Normalize(JToken token, bool compact, int depth = 0)
         {
             if (token == null || depth > 40)
@@ -164,6 +205,7 @@ namespace OniMcp.Tools
                 {
                     CompactRepeatedDiagnostics(output);
                     CompactSuccessfulGeometry(output);
+                    CompactPlacementReceipt(output);
                 }
                 return output;
             }

@@ -39,7 +39,7 @@ namespace OniMcp.Tools
                     ["includeElements"] = new McpToolParameter { Type = "boolean", Description = "基础地图是否包含元素统计，默认 false", Required = false },
                     ["includeScreenshot"] = new McpToolParameter { Type = "boolean", Description = "是否保存并附带当前屏幕截图路径，默认 false；截图不保证覆盖指定区域，除非调用前已移动相机", Required = false },
                     ["encoding"] = new McpToolParameter { Type = "string", Description = "地图行编码：plain/rle/both，默认 plain", Required = false, EnumValues = new List<string> { "plain", "rle", "both" } },
-                    ["profile"] = new McpToolParameter { Type = "string", Description = "地图输出档位：standard/minimal/scan，默认 standard", Required = false, EnumValues = new List<string> { "standard", "minimal", "scan" } },
+                    ["profile"] = new McpToolParameter { Type = "string", Description = "地图输出档位：standard/minimal/scan，默认 minimal", Required = false, EnumValues = new List<string> { "standard", "minimal", "scan" } },
                     ["objectLimit"] = new McpToolParameter { Type = "integer", Description = "对象/稀疏格子最多返回多少项，默认 120，最大 500", Required = false },
                     ["label"] = new McpToolParameter { Type = "string", Description = "可选区域短标签；返回的 areaId 会记住这个标签", Required = false },
                     ["maxCells"] = new McpToolParameter { Type = "integer", Description = "最大导出格子数，默认 1600，硬上限 2500", Required = false },
@@ -47,10 +47,10 @@ namespace OniMcp.Tools
                     ["includeChunks"] = new McpToolParameter { Type = "boolean", Description = "大区域分块时内联每块的少量 base 内容预览，避免只拿到 areaId 列表；默认 false", Required = false },
                     ["chunkMaxCells"] = new McpToolParameter { Type = "integer", Description = "每块目标最大格子数，默认沿用 maxCells，硬上限 2500", Required = false },
                     ["chunkLimit"] = new McpToolParameter { Type = "integer", Description = "最多返回多少个块详情，默认 200，最大 1000", Required = false },
-                    ["compact"] = new McpToolParameter { Type = "boolean", Description = "是否紧凑输出；默认 false；开启后对象省略 null/空数组字段，图例为空时省略", Required = false },
+                    ["compact"] = new McpToolParameter { Type = "boolean", Description = "是否紧凑输出；默认 true；开启后对象省略 null/空数组字段，图例为空时省略", Required = false },
                     ["includeRows"] = new McpToolParameter { Type = "boolean", Description = "是否包含地图行数据；terrain/construction 默认 true，utilities/planning/all 默认 false", Required = false },
-                    ["includeObjects"] = new McpToolParameter { Type = "boolean", Description = "是否包含对象列表；默认 true", Required = false },
-                    ["includeAreaDescription"] = new McpToolParameter { Type = "boolean", Description = "是否包含自然语言区域描述和主要地形/液体区段，默认 true", Required = false }
+                    ["includeObjects"] = new McpToolParameter { Type = "boolean", Description = "是否包含对象列表；默认 false", Required = false },
+                    ["includeAreaDescription"] = new McpToolParameter { Type = "boolean", Description = "是否包含自然语言区域描述和主要地形/液体区段，默认 false", Required = false }
                 },
                 Handler = args =>
                 {
@@ -92,14 +92,14 @@ namespace OniMcp.Tools
                     bool includeDupes = TryGetBool(args, "includeDupes", true);
                     bool includeElements = TryGetBool(args, "includeElements", false);
                     string encoding = NormalizeEncoding(args["encoding"]?.ToString(), "plain");
-                    string profile = NormalizeProfile(args["profile"]?.ToString());
+                    string profile = NormalizeProfile(args["profile"]?.ToString() ?? "minimal");
                     if (profile == "scan" && args["encoding"] == null)
                         encoding = "rle";
                     int objectLimit = ClampInt(args, "objectLimit", 120, 0, 500);
-                    bool compact = TryGetBool(args, "compact", false);
+                    bool compact = TryGetBool(args, "compact", true);
                     bool includeRows = TryGetBool(args, "includeRows", preset == "terrain" || preset == "construction");
-                    bool includeObjects = TryGetBool(args, "includeObjects", true);
-                    bool includeAreaDescription = TryGetBool(args, "includeAreaDescription", true);
+                    bool includeObjects = TryGetBool(args, "includeObjects", false);
+                    bool includeAreaDescription = TryGetBool(args, "includeAreaDescription", false);
 
                     var overlayViews = ResolveSnapshotOverlays(args["overlays"], preset);
                     bool sparseOverlays = profile == "scan";

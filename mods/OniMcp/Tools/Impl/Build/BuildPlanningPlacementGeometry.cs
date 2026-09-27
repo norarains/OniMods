@@ -162,6 +162,7 @@ namespace OniMcp.Tools
                 ["derivedAnchorY"] = originY,
                 ["worldId"] = worldId,
                 ["registeredFootprint"] = registered,
+                ["registrationPending"] = !registered && go.GetComponent<Constructable>() != null && !go.GetComponent<Constructable>().isSpawned,
                 ["occupiedBounds"] = bounds,
                 ["occupiedCells"] = RegisteredBuildingOccupancy.Cells(go, cell, def),
                 ["note"] = "Anchor is derived from cells actually registered to this object; missing registration is not a successful placement."
@@ -179,9 +180,13 @@ namespace OniMcp.Tools
             bool footprintMatches = bounds != null && actual["occupiedCells"] is List<int> cells
                 && new HashSet<int>(cells).SetEquals(expected.Footprint.Select(point => point.Cell));
             bool valid = anchorMatches && worldMatches && footprintMatches;
+            bool pending = actual.TryGetValue("registrationPending", out var pendingValue) && Equals(pendingValue, true)
+                && worldMatches && Convert.ToInt32(actual["objectCell"]) == PlacementOriginCell(
+                    Assets.GetBuildingDef(expected.PrefabId), expected.AnchorX, expected.AnchorY, expected.Orientation);
             return new Dictionary<string, object>
             {
                 ["valid"] = valid,
+                ["pending"] = pending,
                 ["anchorMatches"] = anchorMatches,
                 ["footprintMatches"] = footprintMatches,
                 ["worldMatches"] = worldMatches,
@@ -191,7 +196,8 @@ namespace OniMcp.Tools
                 ["actualWorldId"] = actualWorld,
                 ["next"] = valid
                     ? "Placement verified against registered cells. Verify completed work at milestones."
-                    : "Cancel the misplaced blueprint before retrying from the expected anchor."
+                    : pending ? "Blueprint exists; native footprint registration awaits OnSpawn. Verify with a subsequent paused read after OnSpawn before retrying."
+                    : "Placement differs from the request. Inspect the returned object ID before any retry or cancellation."
             };
         }
 

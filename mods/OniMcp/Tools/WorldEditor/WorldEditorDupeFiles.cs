@@ -100,6 +100,8 @@ namespace OniMcp.Tools
             sb.AppendLine("Cell: " + cell);
             sb.AppendLine("Position: (" + x + "," + y + ")");
             sb.AppendLine();
+            sb.AppendLine("Current state: " + Newtonsoft.Json.JsonConvert.SerializeObject(DuplicantTools.GetDupeDetail(dupe)));
+            sb.AppendLine();
             sb.AppendLine("## Related Files");
             sb.AppendLine("- Schedule: /active/management/schedule.md");
             sb.AppendLine("- Priorities: /active/management/priorities.md");

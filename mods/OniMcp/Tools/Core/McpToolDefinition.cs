@@ -31,6 +31,7 @@ namespace OniMcp.Tools
         public bool Required { get; set; }
         public List<string> EnumValues { get; set; }
         public string McpHeader { get; set; }
+        public SchemaProperty Items { get; set; }
 
         public List<object> SchemaEnumValues
         {

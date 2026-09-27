@@ -12,7 +12,7 @@ namespace OniMcp.Tools
             sb.AppendLine();
             sb.AppendLine("## Infrastructure Reading Hints");
             sb.AppendLine("- The first connection glyph in a token describes that cell's real network edges: up/down/left/right.");
-            sb.AppendLine("- `*` means this cell has infrastructure but no detected neighbor edge; treat it as isolated or broken until verified.");
+            sb.AppendLine("- `*` marks a utility endpoint or an isolated segment. Use dirs= and connection details to distinguish them; the glyph alone does not establish a break.");
             sb.AppendLine("- `⌒`, `⊗`, `⊙`, and `⊗⊙` are prefixes on the same anchor token, not separate cells.");
             sb.AppendLine("- Bridge tokens keep both facts: `⌒xxx` marks a bridge/crossing anchor, while the leading line glyph still marks this cell's visible network edge.");
             sb.AppendLine("- Repair: use `open=DIR:(x,y)` as the missing-edge candidate; a lone `*` without open neighbors needs port/cell detail first.");

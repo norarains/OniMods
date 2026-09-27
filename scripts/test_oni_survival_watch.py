@@ -27,25 +27,28 @@ class FakeBridge:
 
 class BoundedWatchTests(unittest.TestCase):
     def test_healthy_windows_need_only_continue_calls(self):
-        bridge = FakeBridge([{"decision": "continue", "isPaused": True, "gameSecondsAdvanced": 30}] * 2)
+        bridge = FakeBridge([{"schemaVersion": 3, "stopReason": "duration_elapsed", "isPaused": True, "gameSecondsAdvanced": 30}] * 2)
         self.assertEqual(watch.run_windows(bridge, .1, 60, 15, 3, emit=lambda _: None), 0)
         self.assertEqual(len(bridge.calls), 2)
         self.assertTrue(all(c["name"] == "game_control" and c["arguments"]["action"] == "continue" for c in bridge.calls))
-        self.assertTrue(bridge.calls[0]["arguments"]["resetMonitor"])
-        self.assertFalse(bridge.calls[1]["arguments"]["resetMonitor"])
+        self.assertTrue(all("resetMonitor" not in c["arguments"] for c in bridge.calls))
 
-    def test_trigger_is_not_reset_or_retried(self):
-        for decision in ("urgent", "replan"):
-            bridge = FakeBridge([{"decision": decision, "isPaused": True}])
-            self.assertEqual(watch.run_windows(bridge, 100, 60, 15, 3, emit=lambda _: None), 2)
-            self.assertEqual(len(bridge.calls), 1)
+    def test_event_is_not_ignored_or_retried(self):
+        bridge = FakeBridge([{"schemaVersion": 3, "stopReason": "event", "isPaused": True}])
+        self.assertEqual(watch.run_windows(bridge, 100, 60, 15, 3, emit=lambda _: None), 2)
+        self.assertEqual(len(bridge.calls), 1)
+        self.assertNotIn("ignoreEvents", bridge.calls[0]["arguments"])
 
-    def test_version_two_recommendation(self):
-        bridge = FakeBridge([{"schemaVersion": 2, "recommendedAction": "continue", "isPaused": True, "gameSecondsAdvanced": 60}])
+    def test_ignored_event_does_not_override_deadline(self):
+        bridge = FakeBridge([{"schemaVersion": 3, "stopReason": "duration_elapsed", "isPaused": True,
+                             "events": [{"code": "printing_pod_ready", "ignored": True}], "gameSecondsAdvanced": 60}])
         self.assertEqual(watch.run_windows(bridge, .1, 60, 15, 3, emit=lambda _: None), 0)
-        for action in ("review", "urgent"):
-            bridge = FakeBridge([{"schemaVersion": 2, "recommendedAction": action, "isPaused": True}])
-            self.assertEqual(watch.run_windows(bridge, 1, 60, 15, 3, emit=lambda _: None), 2)
+
+    def test_old_contract_fails_closed_without_acknowledgement(self):
+        for result in ({"schemaVersion": 2, "recommendedAction": "continue", "isPaused": True},
+                       {"decision": "continue", "isPaused": True}):
+            bridge = FakeBridge([result])
+            self.assertEqual(watch.run_windows(bridge, 1, 60, 15, 3, emit=lambda _: None), 1)
             self.assertEqual(len(bridge.calls), 1)
 
     def test_timeout_does_not_replay_an_advance(self):
@@ -54,7 +57,7 @@ class BoundedWatchTests(unittest.TestCase):
             watch.run_windows(bridge, 1, 60, 15, 3, emit=lambda _: None)
         self.assertEqual(len(bridge.calls), 1)
 
-    def test_missing_pause_or_decision_stops(self):
+    def test_missing_pause_or_contract_stops(self):
         bridge = FakeBridge([{"decision": "continue", "isPaused": False}])
         with self.assertRaises(RuntimeError):
             watch.run_windows(bridge, 1, 60, 15, 3, emit=lambda _: None)

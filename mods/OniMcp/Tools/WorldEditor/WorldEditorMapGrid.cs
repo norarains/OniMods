@@ -184,7 +184,7 @@ if (symbol == '←' || symbol == '→' || symbol == '↑' || symbol == '↓') re
                         if (building != null)
                         {
                             var complete = building.GetComponent<BuildingComplete>();
-                            buildingId = complete != null ? complete.name : building.name;
+                            buildingId = building.GetComponent<Building>()?.Def?.PrefabID ?? building.GetComponent<KPrefabID>()?.PrefabTag.Name ?? building.name;
                             buildingName = building.GetProperName();
                         }
                         minion = Grid.Objects[cell, (int)ObjectLayer.Minion];

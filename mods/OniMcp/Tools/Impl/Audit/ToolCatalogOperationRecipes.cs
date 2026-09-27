@@ -42,6 +42,15 @@ namespace OniMcp.Tools
                 if (!args.HasValues) row["next"] = "Fill call.args.calls[0].args using this operation's schema (detail=full).";
                 rows.Add(row);
             }
+            if (new[] { "printing", "care", "reward", "telepad", "打印", "补给" }.Any(query.Contains)
+                && OniToolRegistry.TryGetTool("building_control", out var buildingTool))
+                rows.Add(new Dictionary<string, object> {
+                    ["name"] = "printing_pod_rewards", ["score"] = 100, ["directlyCallable"] = true,
+                    ["call"] = new JObject { ["tool"] = "building_control", ["args"] = new JObject {
+                        ["domain"] = "side_surface", ["surface"] = "facility", ["kind"] = "printing_pod",
+                        ["action"] = "list_rewards", ["task"] = "Inspect current Printing Pod choices"
+                    } }
+                });
             return rows.OrderByDescending(row => Convert.ToInt32(row["score"]))
                 .ThenBy(row => row["name"].ToString()).Take(limit).ToList();
         }

@@ -142,8 +142,9 @@ namespace OniMcp.Tools
                     bool hasRect = HasRectInput(args);
                     var rect = hasRect ? ToolUtil.GetRect(args) : null;
                     int worldId = hasRect || ToolUtil.GetInt(args, "worldId").HasValue ? ToolUtil.ResolveWorldId(args) : -1;
-                    string capability = NormalizeCapability(args["capability"]?.ToString());
+                    string capability = NormalizeCapability((args["capability"] ?? args["kind"])?.ToString());
                     string query = args["query"]?.ToString();
+                    int? targetId = ToolUtil.GetInt(args, "id");
                     int limit = Math.Max(1, Math.Min(ToolUtil.GetInt(args, "limit") ?? 100, 500));
 
                     var results = new List<Dictionary<string, object>>();
@@ -154,6 +155,8 @@ namespace OniMcp.Tools
                             continue;
                         int cell = Grid.PosToCell(go);
                         if (rect != null && !CellInRect(cell, rect, worldId))
+                            continue;
+                        if (targetId.HasValue && (go.GetComponent<KPrefabID>()?.InstanceID ?? go.GetInstanceID()) != targetId.Value)
                             continue;
                         if (!MatchesQuery(go, query))
                             continue;
@@ -261,6 +264,7 @@ namespace OniMcp.Tools
                     var rect = hasRect ? ToolUtil.GetRect(args) : null;
                     int worldId = hasRect || ToolUtil.GetInt(args, "worldId").HasValue ? ToolUtil.ResolveWorldId(args) : -1;
                     string query = args["query"]?.ToString();
+                    int? targetId = ToolUtil.GetInt(args, "id");
                     int limit = Math.Max(1, Math.Min(ToolUtil.GetInt(args, "limit") ?? 100, 500));
 
                     var results = new List<Dictionary<string, object>>();
@@ -271,6 +275,8 @@ namespace OniMcp.Tools
                             continue;
                         int cell = Grid.PosToCell(go);
                         if (rect != null && !CellInRect(cell, rect, worldId))
+                            continue;
+                        if (targetId.HasValue && (go.GetComponent<KPrefabID>()?.InstanceID ?? go.GetInstanceID()) != targetId.Value)
                             continue;
                         if (!MatchesQuery(go, query) || !IsAutomationControl(go))
                             continue;
