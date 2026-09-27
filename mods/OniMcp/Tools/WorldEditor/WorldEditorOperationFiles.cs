@@ -29,7 +29,7 @@ namespace OniMcp.Tools
             ["ops/storage.md"] = "",
             ["ops/power.md"] = "",
             ["ops/automation.md"] = "",
-            ["ops/farming.md"] = "",
+            ["ops/farming.md"] = "colony_control",
             ["ops/ranching.md"] = "",
             ["ops/rockets.md"] = "",
             ["ops/resources.md"] = "",
@@ -161,14 +161,8 @@ namespace OniMcp.Tools
         if (compiled.Count == 0)
             return CallToolResult.Error("No executable operation lines found. Add commands under ## Edit Commands.");
 
-        var previewLines = new JArray(compiled.Select(item => new JObject
-        {
-            ["line"] = item.Item1,
-            ["tool"] = item.Item2,
-            ["arguments"] = item.Item3
-        }));
         if (!WorldEditorExecutionAllowed(parentArgs))
-            return WorldEditorPreview("operation", "/active/" + relative, previewLines);
+            return PreviewOperations(relative, compiled);
 
         var results = new JArray();
         bool anyError = false;
@@ -183,7 +177,10 @@ namespace OniMcp.Tools
             bool semanticCoordinates = item.Item4;
             if (ToolUtil.GetBool(arguments, "dryRun", false) || !ToolUtil.GetBool(arguments, "confirm", false))
             {
-                results.Add(new JObject { ["line"] = line, ["tool"] = toolName, ["ok"] = true, ["preview"] = true, ["arguments"] = arguments });
+                var preview = PreviewOperation(line, toolName, arguments, semanticCoordinates);
+                results.Add(preview);
+                anyError |= !preview["ok"].Value<bool>();
+                if (anyError && stopOnError) break;
                 continue;
             }
 
@@ -348,6 +345,8 @@ namespace OniMcp.Tools
                 return false;
             }
             toolName = tool.Name;
+            if (relative == "ops/farming.md" && toolName == "colony_control" && arguments["domain"] == null)
+            { arguments["domain"] = "bio"; arguments["bioDomain"] = "farming"; }
             error = null;
             return true;
         }
@@ -455,7 +454,11 @@ namespace OniMcp.Tools
             else if (relative == "ops/automation.md")
                 yield return "call tool=building_control domain=config action=list target=\"sensor\"";
             else if (relative == "ops/farming.md")
-                yield return "call tool=read_control domain=world action=search pattern=\"植物\" limit=5";
+                {
+                yield return "call domain=bio bioDomain=farming action=list_planting limit=10";
+                yield return "call domain=bio bioDomain=farming action=batch_set_planting query=PlanterBox emptyOnly=true seedTag=BasicPlantSeed dryRun=true";
+                yield return "call domain=bio bioDomain=farming action=uproot id=<plantId> dryRun=true";
+            }
             else if (relative == "ops/ranching.md")
                 yield return "call tool=read_control domain=world action=search pattern=\"小动物\" limit=5";
             else if (relative == "ops/rockets.md")

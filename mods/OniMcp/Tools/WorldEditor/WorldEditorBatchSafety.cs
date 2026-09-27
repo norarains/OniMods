@@ -170,7 +170,7 @@ namespace OniMcp.Tools
 
         private static bool CameraSyncExplicitlyDisabled(JObject step)
         {
-            return ExplicitFalse(step, "syncView") && ExplicitFalse(step, "focusCamera");
+            return ExplicitFalse(step, "syncView");
         }
 
         private static bool ExplicitFalse(JObject step, string key)

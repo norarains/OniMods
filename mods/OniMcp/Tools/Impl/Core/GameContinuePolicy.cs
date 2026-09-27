@@ -26,7 +26,7 @@ namespace OniMcp.Tools
             var events = new ContinueEvents(settings ?? new ContinueStopEvents());
             Findings = ColonyObservation.Findings(sample);
             foreach (var finding in Findings)
-                if (finding.Code != "worker_idle")
+                if (finding.Code != "worker_idle" && finding.StopEligible)
                     events.Add(finding.Code, finding.TargetId, finding.Id);
             foreach (var dupe in sample.Dupes)
             {
@@ -80,6 +80,7 @@ namespace OniMcp.Tools
         internal readonly List<ContinueDupe> Dupes = new List<ContinueDupe>();
         internal readonly HashSet<int> PendingIds = new HashSet<int>();
         internal readonly HashSet<string> Alerts = new HashSet<string>();
+        internal readonly List<ColonyFinding> HudFindings = new List<ColonyFinding>();
         internal int PendingBuilds, PendingDigs;
         internal int LocalDupeCount => Dupes.Count(item => (WorldId < 0 || item.WorldId == WorldId));
         internal int Working => Dupes.Count(item => (WorldId < 0 || item.WorldId == WorldId) && item.Working);

@@ -8,13 +8,28 @@
 - 协议兼容: `2026-07-28` 无会话兼容路径 + `2025-11-25` / `2025-06-18` legacy initialize/session 路径
 - Legacy/default public tools: 7 entrypoints: `benchmark`, `world_editor`, `game_control`, `navigation_control`, `building_control`, `orders_control`, `server_control`
 - Modern `2026-07-28` `tools/list`: 当前只广告只读 `benchmark`
-- 旧聚合入口: 仅作为虚拟文件工作流的内部操作，不再注册为 MCP 工具
+- 旧聚合入口: 作为虚拟文件和 server_control batch 工作流的内部操作，不直接注册为 MCP 工具
 - `coordinate_control` 不属于当前公开运行时；普通聚合工具拒绝 raw coordinates
 - Tool descriptions: default-public tool descriptions and parameter descriptions are in English
 
 现代 `2026-07-28` 请求不使用 `initialize`，也不要求或返回 `Mcp-Session-Id`。每个请求携带 `_meta`、`MCP-Protocol-Version` 和 `Mcp-Method`；`resources/read` / `tools/call` 等有具体资源或工具名的请求还需匹配的 `Mcp-Name`。推荐先调用 `server/discover` 并以实际 capability 为准。
 
 Legacy `2025-11-25` / `2025-06-18` 客户端继续先调用 `initialize`，随后请求携带协商得到的 `Mcp-Session-Id` 和 `Mcp-Protocol-Version`。
+
+## 时间推进与返回信息
+
+`game_control domain=speed action=continue seconds=15` 推进指定的实际时间窗口，遇到启用的停止事件则提前暂停。返回 `stopReason`、`events` 和统一的 `observation.findings`；是否继续、规划或操作由调用方决定。正常工作窗口只需下一次 `continue`，无需重复读取快照。
+
+- 常驻 findings 包括复制人生命体征、食物、研究、建筑/建造缺料、打印舱、技能点，以及原生 HUD 的 Bad、BadMinor、Tutorial、DuplicantThreatening 通知和缓存的诊断警告。ONI 的黄色警告也会使用 Tutorial 类型。
+- 氧气生成不足附带原生日报的上一周期产量、消耗量和净值（kg）。这不代表局部空气可呼吸度；常驻监测不扫描房间气体，复制人状态异常时再定向查询。
+- `ignoreEvents` / `unignoreEvents` 接受事件类别或具体 finding ID。忽略只改变是否提前停止，不隐藏当前问题。
+- 仅补货不足的状态标记为 `refill_only`，仍返回但不触发停机；实际空研究站仍会停止，并保留同一个研究 finding ID。新出现的空管道/空手压泵状态需要持续两秒模拟时间才触发停止，确认期间返回 `pending_status_confirmation` 与 `stopEligible=false`，避免加载后的暂态造成零时间循环。
+
+内部聚合操作可通过 `server_control domain=batch action=call_many` 的 `calls` 使用。`responseMode=summary` 保留种植、收获、过滤器和队列等写入后状态，不重复输出同一份 text；完整读取使用 `responseMode=full`。
+
+生产队列、储存过滤器、用户菜单按钮、学习技能和智能电池阈值支持无副作用的 `dryRun`。生产批次先校验所有配方再修改队列。虚拟操作文件的预检返回 `validationLevel`：`native_preflight` 表示已调用支持预检的原生处理路径，`routing_and_syntax_only` 仅说明路由与语法通过。
+
+智能电池使用 `building_control domain=config action=set_battery_thresholds id=… lowThreshold=20 highThreshold=80 dryRun=true`；提交使用 `confirm=true`。配置读取及建筑实例文件均显示阈值、电量；实例文件可编辑 `Battery.LowThreshold` 和 `Battery.HighThreshold`。电力摘要中的 `generatorStoredEnergyEmpty` 指发电机内部储能为空，不能据此判断燃料是否耗尽。
 
 ## 定位与执行原则
 

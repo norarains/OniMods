@@ -61,7 +61,7 @@ EXPECTED_OPERATION_FILES = {
     "ops/storage.md": "",
     "ops/power.md": "",
     "ops/automation.md": "",
-    "ops/farming.md": "",
+    "ops/farming.md": "colony_control",
     "ops/ranching.md": "",
     "ops/rockets.md": "",
     "ops/resources.md": "",

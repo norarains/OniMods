@@ -91,14 +91,17 @@ namespace OniMcp.Tools
                 Description = "弃用警告：旧工具将在 0.3.0 移除；请改用 dupes_control domain=info action=attributes。获取一个或所有复制人的属性、兴趣倾向和已掌握技能",
                 Parameters = new Dictionary<string, McpToolParameter>
                 {
+                    ["query"] = new McpToolParameter { Type = "string", Description = "Attribute ID/name filter", Required = false },
+                    ["includeDetails"] = new McpToolParameter { Type = "boolean", Description = "Include all native attributes; default false", Required = false },
                     ["id"] = new McpToolParameter { Type = "integer", Description = "复制人 InstanceID，留空返回全部", Required = false },
                     ["name"] = new McpToolParameter { Type = "string", Description = "复制人名称，留空返回全部", Required = false }
                 },
                 Handler = args =>
                 {
                     var dupe = ToolUtil.FindDupe(args);
+                    if (dupe == null && (args["id"] != null || args["name"] != null)) return CallToolResult.Error("Duplicant not found");
                     var dupes = dupe != null ? new List<MinionIdentity> { dupe } : Components.LiveMinionIdentities.Items.Where(d => d != null).ToList();
-                    return CallToolResult.Text(JsonConvert.SerializeObject(dupes.Select(GetAttributeSummary).ToList(), McpJsonUtil.Settings));
+                    return CallToolResult.Text(JsonConvert.SerializeObject(dupes.Select(item => GetAttributeSummary(item, ToolUtil.GetBool(args, "includeDetails", false), args["query"]?.ToString())).ToList(), McpJsonUtil.Settings));
                 }
             };
         }

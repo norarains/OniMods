@@ -145,11 +145,13 @@ namespace OniMcp.Tools
                     ["recipeId"] = new McpToolParameter { Type = "string", Description = "目标 ComplexRecipe.id，可先用 production_recipes_list 查询", Required = true },
                     ["mode"] = new McpToolParameter { Type = "string", Description = "set、add、remove、infinite 或 clear，默认 set", Required = false, EnumValues = new List<string> { "set", "add", "remove", "infinite", "clear" } },
                     ["count"] = new McpToolParameter { Type = "integer", Description = "set/add/remove 的数量；set 默认 1，add/remove 默认 1", Required = false },
-                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "必须为 true，避免误改生产队列", Required = true }
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Validate without changing queue", Required = false },
+                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "Required for commits", Required = false }
                 }),
                 Handler = args =>
                 {
-                    if (!ToolUtil.GetBool(args, "confirm", false))
+                    bool dryRun = ToolUtil.GetBool(args, "dryRun", false);
+                    if (!dryRun && !ToolUtil.GetBool(args, "confirm", false))
                         return CallToolResult.Error("confirm=true is required to change a production queue");
 
                     var fabricator = FindFabricator(args);
@@ -166,17 +168,24 @@ namespace OniMcp.Tools
 
                     int before = fabricator.GetRecipeQueueCount(recipe);
                     string mode = (args["mode"]?.ToString() ?? "set").Trim().ToLowerInvariant();
-                    int requested = Math.Max(0, ToolUtil.GetInt(args, "count") ?? 1);
                     int next;
-                    if (!TryComputeQueueCount(before, mode, requested, out next))
-                        return CallToolResult.Error("mode must be set, add, remove, infinite or clear");
+                    try
+                    {
+                        var plan = ProductionQueuePlan.Create(new Dictionary<string, int> { [recipe.id] = before },
+                            new[] { new Newtonsoft.Json.Linq.JObject { ["recipeId"] = recipe.id, ["mode"] = mode,
+                                ["count"] = args["count"] ?? new Newtonsoft.Json.Linq.JValue(1) } },
+                            false, ComplexFabricator.MAX_QUEUE_SIZE, ComplexFabricator.QUEUE_INFINITE);
+                        next = plan.Counts[recipe.id];
+                    }
+                    catch (ArgumentException error) { return CallToolResult.Error(error.Message); }
 
-                    fabricator.SetRecipeQueueCount(recipe, next);
+                    if (!dryRun) fabricator.SetRecipeQueueCount(recipe, next);
 
                     return CallToolResult.Text(JsonConvert.SerializeObject(new Dictionary<string, object>
                     {
                         ["fabricator"] = TargetInfo(fabricator.gameObject),
                         ["recipe"] = RecipeInfo(fabricator, recipe, includeFabricator: false),
+                        ["dryRun"] = dryRun, ["committed"] = !dryRun, ["projectedCount"] = FormatQueueCount(next),
                         ["mode"] = mode,
                         ["before"] = FormatQueueCount(before),
                         ["after"] = FormatQueueCount(fabricator.GetRecipeQueueCount(recipe)),

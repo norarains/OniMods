@@ -9,6 +9,11 @@
     <StartupObject>BenchmarkMetadataRegressionEntry</StartupObject>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Build/ReachableWirePath.cs" Link="ReachableWirePath.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Build/ProductionQueuePlan.cs" Link="ProductionQueuePlan.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Build/BatteryThresholdPolicy.cs" Link="BatteryThresholdPolicy.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Core/SupplyStatusTiming.cs" Link="SupplyStatusTiming.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Core/HudFindingPolicy.cs" Link="HudFindingPolicy.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Core/ColonyObservation.cs" Link="Source/ColonyObservation.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Core/BuildingSupplyFinding.cs" Link="Source/BuildingSupplyFinding.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Shared/UtilityConnectionRead.cs" Link="Source/UtilityConnectionRead.cs" />

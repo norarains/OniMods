@@ -32,7 +32,7 @@ def bypass(prefab: str, virtual_file: bool, instant: bool, sandbox_allowed: bool
 
 def main() -> None:
     catalog = (BUILD / "BuildPlanningCatalog.cs").read_text(encoding="utf-8")
-    placement = (BUILD / "BuildPlanningActionPlacement.cs").read_text(encoding="utf-8")
+    placement = (BUILD / "BuildPlanningUtilityConnect.cs").read_text(encoding="utf-8")
     plan_one = (BUILD / "BuildPlanningPlanOne.cs").read_text(encoding="utf-8")
     refresh = (BUILD / "BuildPlanningUtilityNetworkRefresh.cs").read_text(encoding="utf-8")
 

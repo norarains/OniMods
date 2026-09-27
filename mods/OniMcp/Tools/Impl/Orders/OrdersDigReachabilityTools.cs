@@ -6,7 +6,7 @@ namespace OniMcp.Tools
 {
     public static partial class OrdersTools
 {
-        private static bool TryFindReachableWorkCell(int targetCell, int worldId, List<Navigator> navigators, out int workCell)
+        internal static bool TryFindReachableWorkCell(int targetCell, int worldId, List<Navigator> navigators, out int workCell)
         {
             workCell = -1;
             if (navigators == null || navigators.Count == 0 || !Grid.IsValidCell(targetCell))

@@ -27,6 +27,7 @@ namespace OniMcp.Tools
                     var status = new Dictionary<string, object>
                     {
                         ["loaded"] = server != null,
+                        ["assemblyVersion"] = typeof(ServerTools).Assembly.GetName().Version.ToString(),
                         ["endpoint"] = server?.EndpointUrl,
                         ["port"] = server?.Port ?? 0,
                         ["configPath"] = OniMcpOptions.ConfigPath,

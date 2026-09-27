@@ -68,7 +68,10 @@ namespace OniMcp.Tools
             if (includeArguments)
                 result["arguments"] = arguments;
             if (responseMode == "summary")
+            {
+                result.Remove("text");
                 result["summary"] = CompactSummaryObject(text, maxTextChars);
+            }
             if (responseMode == "full")
             {
                 // Keep one representation. JSON stays structured rather than being
@@ -186,11 +189,17 @@ namespace OniMcp.Tools
                 string command = arguments?["command"]?.ToString()?.Trim().ToLowerInvariant();
                 // zoom/read can synchronize a camera unless explicitly disabled.
                 return command == "symbols" || command == "pwd" || command == "ls"
-                    || (command == "read" && !ToolUtil.GetBool(arguments, "syncView", true));
+                    || ((command == "read" || command == "zoom") && !ToolUtil.GetBool(arguments, "syncView", true));
             }
 
             if (string.Equals(name, "building_control", StringComparison.OrdinalIgnoreCase))
-                return (new[] { "config", "configuration", "side_screen" }.Contains(domain)
+                return (new[] { "production", "queue", "fabricator", "crafting" }.Contains(domain)
+                    && new[] { "list", "list_fabricators", "fabricators", "list_recipes", "recipes", "mutant_seed_list", "list_mutant_seeds" }.Contains(action))
+                    || (new[] { "storage", "stores", "filter", "filters", "tile_selection", "receptacle" }.Contains(domain)
+                        && new[] { "list", "detail" }.Contains(action))
+                    || (new[] { "side_surface", "surface", "generic_surface" }.Contains(domain)
+                        && (arguments?["surface"]?.ToString() ?? "").Equals("user_menu", StringComparison.OrdinalIgnoreCase) && action == "list")
+                    || (new[] { "config", "configuration", "side_screen" }.Contains(domain)
                     && new[] { "list", "status", "list_automation", "automation", "get_access", "state_list" }.Contains(action))
                     || domain == "planning" && (
                     action == "parse_plan" || action == "parse_sequence" || action == "parse"

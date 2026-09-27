@@ -14,7 +14,7 @@ namespace OniMcp.Tools
         {
             "planResolution", "anchorResolution", "actionTemplate", "buildingCandidates",
             "materialCandidates", "tokenHint", "guidance", "placementPoint", "dragGuidance", "coordinateContract",
-            "next", "suggestion", "recommendedFollowUp", "priorityAction", "priorityPlan"
+            "next", "nextActions", "suggestion", "recommendedFollowUp", "priorityAction", "priorityPlan"
         };
 
         internal static bool IncludeHelp(JObject args)
@@ -85,14 +85,16 @@ namespace OniMcp.Tools
             {
                 if (!(output[listName] is JArray rows) || rows.Count < 2 || rows.Any(row => !(row is JObject)))
                     continue;
-                var common = rows[0]["materialSelection"];
-                if (common == null || !rows.All(row => JToken.DeepEquals(common, row["materialSelection"])))
-                    continue;
-                var shared = output["shared"] as JObject ?? new JObject();
-                shared[listName] = new JObject { ["materialSelection"] = common.DeepClone() };
-                output["shared"] = shared;
-                foreach (JObject row in rows)
-                    row.Remove("materialSelection");
+                foreach (string field in new[] { "materialSelection", "autoDig" })
+                {
+                    var common = rows[0][field];
+                    if (common == null || !rows.All(row => JToken.DeepEquals(common, row[field]))) continue;
+                    var shared = output["shared"] as JObject ?? new JObject();
+                    var sharedRow = shared[listName] as JObject ?? new JObject();
+                    sharedRow[field] = common.DeepClone(); shared[listName] = sharedRow;
+                    output["shared"] = shared;
+                    foreach (JObject row in rows) row.Remove(field);
+                }
             }
         }
 
@@ -164,6 +166,7 @@ namespace OniMcp.Tools
             {
                 if (output["footprintBounds"] == null && placement["footprintBounds"] != null)
                     output["footprintBounds"] = placement["footprintBounds"].DeepClone();
+                if (placement["intake"] is JObject intake) output["intake"] = intake.DeepClone();
                 output.Remove("placement");
             }
             if (output["support"] is JObject support && support["valid"]?.Value<bool>() == true && !HasWarningEvidence(support))
@@ -191,7 +194,19 @@ namespace OniMcp.Tools
         {
             if (!(output["autoDig"] is JObject dig) || HasWarningEvidence(dig)
                 || dig["failed"]?.Value<int>() != 0 || dig["skipped"]?.Value<int>() != 0) return;
+            if (dig["targetCount"]?.Value<int>() == 0 && dig["limitReached"]?.Value<bool>() != true)
+            {
+                output["autoDig"] = new JObject { ["enabled"] = dig["enabled"]?.DeepClone(),
+                    ["targetCount"] = 0, ["marked"] = 0 };
+                return;
+            }
             dig.Remove("note");
+            foreach (string key in new[] { "failed", "skipped", "alreadyMarked", "marked", "queued" })
+                if (dig[key]?.Type == JTokenType.Integer && dig[key].Value<int>() == 0) dig.Remove(key);
+            foreach (string key in new[] { "targets", "errors" })
+                if (dig[key] is JArray empty && empty.Count == 0) dig.Remove(key);
+            dig.Remove("maxCells");
+
             foreach (string name in new[] { "wouldMark", "uprootWouldMark", "uprootTargets", "uprootMarked", "alreadyUprootMarked", "truncatedTargets" })
                 if (dig[name]?.Type == JTokenType.Null || dig[name]?.Type == JTokenType.Integer && dig[name].Value<int>() == 0)
                     dig.Remove(name);

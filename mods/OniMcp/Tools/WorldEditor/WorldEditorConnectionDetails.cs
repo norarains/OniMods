@@ -45,7 +45,7 @@ namespace OniMcp.Tools
                     }
 
                     var endpoint = EndpointDetailLine(mode, cell);
-                if (!string.IsNullOrEmpty(endpoint))
+                if (!string.IsNullOrEmpty(endpoint) && !endpoints.Contains(endpoint))
                 {
                     endpointTotal++;
                     if (endpoints.Count < MaxEndpointDetailRows)
@@ -165,6 +165,7 @@ namespace OniMcp.Tools
 
             return "- " + CellCoord(cell)
                 + ": layer=" + layerName
+                + " " + LineConstructionState(cell, layers)
                 + " glyph=" + glyph
                 + " dirs=" + (dirs.Count == 0 ? "." : string.Join("", dirs.Select(d => d.Dir).ToArray()))
                 + " links=" + ConnectionLinkText(dirs)
@@ -261,13 +262,13 @@ int cell,
                 return null;
 
             if (mode == OverlayModes.Power.ID)
-                return PowerEndpointLine(cell, building);
+                return PowerEndpointLine(Grid.PosToCell(building), building);
             if (mode == OverlayModes.LiquidConduits.ID || mode == OverlayModes.GasConduits.ID)
-                return ConduitEndpointLine(mode, cell, go, building);
+                return ConduitEndpointLine(mode, Grid.PosToCell(building), go, building);
             if (mode == OverlayModes.Logic.ID)
-                return LogicEndpointLine(cell, go);
+                return LogicEndpointLine(Grid.PosToCell(building), go);
             if (mode == OverlayModes.SolidConveyor.ID)
-                return SolidEndpointLine(cell, go, building);
+                return SolidEndpointLine(Grid.PosToCell(building), go, building);
             return null;
         }
 

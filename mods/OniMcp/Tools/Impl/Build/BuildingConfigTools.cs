@@ -39,6 +39,8 @@ namespace OniMcp.Tools
                         case "set_toggle":
                         case "toggle":
                             return OrdersTools.SetBuildingToggle().Handler(args);
+                        case "set_battery_thresholds":
+                            return SetBatteryThresholds(args);
                         case "set_threshold":
                         case "threshold":
                             return SetThreshold().Handler(args);
@@ -129,7 +131,7 @@ namespace OniMcp.Tools
                         Type = "string",
                         Description = "过滤配置能力：any、automation、enabled、toggle、threshold、slider、direction、few_option、broadcast_receiver、radbolt_direction、capacity、checkbox、counter、time_range、light_color、door、access、manual_delivery、filterable、tree_filter、flat_filter、valve、limit_valve、timer、ribbon_bit、logic_ports，默认 any",
                         Required = false,
-                        EnumValues = new List<string> { "any", "automation", "enabled", "toggle", "threshold", "slider", "direction", "few_option", "broadcast_receiver", "radbolt_direction", "capacity", "checkbox", "counter", "time_range", "light_color", "door", "access", "manual_delivery", "filterable", "tree_filter", "flat_filter", "valve", "limit_valve", "timer", "ribbon_bit", "logic_ports" }
+                        EnumValues = new List<string> { "any", "automation", "battery_thresholds", "enabled", "toggle", "threshold", "slider", "direction", "few_option", "broadcast_receiver", "radbolt_direction", "capacity", "checkbox", "counter", "time_range", "light_color", "door", "access", "manual_delivery", "filterable", "tree_filter", "flat_filter", "valve", "limit_valve", "timer", "ribbon_bit", "logic_ports" }
                     },
                     ["query"] = new McpToolParameter { Type = "string", Description = "按名称或 prefabId 关键词筛选", Required = false },
                     ["limit"] = new McpToolParameter { Type = "integer", Description = "最多返回数量，默认 100，最大 500", Required = false }

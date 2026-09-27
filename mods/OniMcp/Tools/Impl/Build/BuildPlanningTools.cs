@@ -163,6 +163,7 @@ namespace OniMcp.Tools
             public int Width;
             public int Height;
             public Vector3 PlacementPoint;
+            public Dictionary<string, object> Intake;
             public List<FootprintCell> Footprint = new List<FootprintCell>();
 
             public Dictionary<string, object> ToDictionary()
@@ -178,6 +179,7 @@ namespace OniMcp.Tools
                     ["width"] = Width,
                     ["height"] = Height,
                     ["footprintCells"] = Footprint.Count,
+                    ["intake"] = Intake,
                     ["placementPoint"] = new
                     {
                         x = Math.Round(PlacementPoint.x, 3),

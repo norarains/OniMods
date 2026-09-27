@@ -126,35 +126,6 @@ namespace OniMcp.Tools
             return count;
         }
 
-        private static bool TryComputeQueueCount(int before, string mode, int requested, out int next)
-        {
-            switch (mode)
-            {
-                case "clear":
-                    next = 0;
-                    return true;
-                case "infinite":
-                    next = ComplexFabricator.QUEUE_INFINITE;
-                    return true;
-                case "add":
-                    next = before == ComplexFabricator.QUEUE_INFINITE
-                        ? ComplexFabricator.QUEUE_INFINITE
-                        : Mathf.Clamp(before + Math.Max(1, requested), 0, ComplexFabricator.MAX_QUEUE_SIZE);
-                    return true;
-                case "remove":
-                    next = before == ComplexFabricator.QUEUE_INFINITE
-                        ? Mathf.Max(0, ComplexFabricator.MAX_QUEUE_SIZE - Math.Max(1, requested))
-                        : Mathf.Clamp(before - Math.Max(1, requested), 0, ComplexFabricator.MAX_QUEUE_SIZE);
-                    return true;
-                case "set":
-                    next = Mathf.Clamp(requested, 0, ComplexFabricator.MAX_QUEUE_SIZE);
-                    return true;
-                default:
-                    next = before;
-                    return false;
-            }
-        }
-
         private static bool RecipeMatches(ComplexRecipe recipe, string query)
         {
             if (recipe == null)
@@ -275,7 +246,8 @@ namespace OniMcp.Tools
                 ["clearAll"] = new McpToolParameter { Type = "boolean", Description = "action=batch 时 true=先清空该制作站所有配方队列", Required = false },
                 ["forbid"] = new McpToolParameter { Type = "boolean", Description = "action=set_mutant_seeds 时 true=拒收突变种子，false=接受突变种子", Required = false },
                 ["accept"] = new McpToolParameter { Type = "boolean", Description = "action=mutant_seed_set 时 true=接受突变种子，false=拒收突变种子", Required = false },
-                ["confirm"] = new McpToolParameter { Type = "boolean", Description = "写队列或突变种子开关时必须为 true，避免误改生产状态", Required = false }
+                ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Preview without mutation", Required = false },
+                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "写队列或突变种子开关时必须为 true，避免误改生产状态", Required = false }
             }));
         }
 

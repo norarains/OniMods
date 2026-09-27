@@ -10,6 +10,8 @@ namespace OniMcp.Tools
     internal sealed class GameContinueMonitor
     {
         private readonly int worldId;
+        private static Game timingGame;
+        private static readonly Dictionary<int, SupplyStatusTiming> supplyTiming = new Dictionary<int, SupplyStatusTiming>();
         private Constructable[] builds;
         private Diggable[] digs;
         private readonly Dictionary<int, float> remainingWork = new Dictionary<int, float>();
@@ -54,12 +56,7 @@ namespace OniMcp.Tools
                 nextFoodRead = wallSeconds + 2;
             }
             sample.FoodKcal = foodKcal;
-            foreach (var notification in NotificationTools.GetNotifications(includePending: false))
-            {
-                string type = notification.Type.ToString();
-                if (notification.Type == NotificationType.Bad || notification.Type == NotificationType.DuplicantThreatening)
-                    sample.Alerts.Add(type + ": " + ToolUtil.CleanName(notification.titleText));
-            }
+            HudObservation.Read(sample);
             foreach (var item in builds)
                 if (item != null && (worldId < 0 || item.GetMyWorldId() == worldId))
                 {
@@ -80,6 +77,9 @@ namespace OniMcp.Tools
             sample.ResearchId = research?.tech?.Id;
             sample.ResearchProgress = research == null ? 0 : research.GetTotalPercentageComplete() * 100.0;
             ReadInfrastructure(sample, wallSeconds, refreshFood || sample.ResearchId != infrastructureResearchId);
+            if (timingGame != Game.Instance) { timingGame = Game.Instance; supplyTiming.Clear(); }
+            if (!supplyTiming.ContainsKey(worldId)) supplyTiming[worldId] = new SupplyStatusTiming();
+            supplyTiming[worldId].Apply(sample.BuildingSupplies, sample.GameSeconds);
             sample.WorkProgress = workProgress;
             return sample;
         }

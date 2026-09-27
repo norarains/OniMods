@@ -193,6 +193,7 @@ namespace OniMcp.Tools
                 case "拖地":
                     return new[] { "orders", "mop", "liquid", "water", "floor", "spill", "orders_control" };
                 case "build":
+                case "construction":
                 case "building":
                 case "建造":
                 case "建筑":
@@ -238,6 +239,8 @@ namespace OniMcp.Tools
                 case "储存":
                 case "仓库":
                     return new[] { "storage", "resources", "filters", "receptacle" };
+                case "planting":
+                case "uproot":
                 case "plant":
                 case "farm":
                 case "种植":

@@ -57,6 +57,7 @@ namespace OniMcp.Tools
                 Description = "兼容入口：请优先使用 building_control domain=side_surface surface=user_menu action=list。列出已映射的对象 UserMenu 按钮操作，包括清扫/移动/维修/堆肥/倒空/雕刻等非侧屏按钮",
                 Parameters = RectParams(new Dictionary<string, McpToolParameter>
                 {
+                    ["id"] = new McpToolParameter { Type = "integer", Description = "Exact target instance ID", Required = false },
                     ["query"] = new McpToolParameter { Type = "string", Description = "按对象名、prefabId、actionKey、说明或组件类型筛选", Required = false },
                     ["category"] = new McpToolParameter { Type = "string", Description = "按分类筛选，如 orders、resources、buildings、ranching、care", Required = false },
                     ["limit"] = new McpToolParameter { Type = "integer", Description = "最多返回对象数量，默认 100，最大 500", Required = false }
@@ -75,6 +76,7 @@ namespace OniMcp.Tools
 
                     var rows = AllCandidateObjects()
                         .Where(go => MatchesTarget(go, rect, worldId))
+                        .Where(go => !ToolUtil.GetInt(args, "id").HasValue || (go.GetComponent<KPrefabID>()?.InstanceID ?? go.GetInstanceID()) == ToolUtil.GetInt(args, "id").Value)
                         .Select(go => TargetActionsInfo(go, category))
                         .Where(info => ((List<Dictionary<string, object>>)info["actions"]).Count > 0)
                         .Where(info => MatchesQuery(info, query))
@@ -108,11 +110,13 @@ namespace OniMcp.Tools
                 Parameters = LookupParams(new Dictionary<string, McpToolParameter>
                 {
                     ["actionKey"] = new McpToolParameter { Type = "string", Description = "要执行的 actionKey，例如 toggle_compost、toggle_dump、allow_auto_repair", Required = true },
-                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "必须为 true，确认触发对象 UserMenu 操作", Required = true }
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Validate without invoking native buttons", Required = false },
+                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "必须为 true，确认触发对象 UserMenu 操作", Required = false }
                 }),
                 Handler = args =>
                 {
-                    if (!ToolUtil.GetBool(args, "confirm", false))
+                    bool dryRun = ToolUtil.GetBool(args, "dryRun", false);
+                    if (!dryRun && !ToolUtil.GetBool(args, "confirm", false))
                         return CallToolResult.Error("confirm=true is required for user menu actions");
 
                     var go = FindTarget(args);
@@ -125,16 +129,19 @@ namespace OniMcp.Tools
                         return CallToolResult.Error("actionKey is not available on target");
 
                     var before = TargetActionsInfo(go, "");
-                    string error = InvokeSpec(go, spec);
+                    var targetInfo = TargetInfo(go);
+                    string error = dryRun ? null : InvokeSpec(go, spec);
                     if (error != null)
                         return CallToolResult.Error(error);
 
                     return JsonResult(new Dictionary<string, object>
                     {
-                        ["target"] = TargetInfo(go),
-                        ["pressed"] = ActionInfo(spec),
+                        ["target"] = targetInfo,
+                        ["priority"] = MenuWorkPriority(go, spec, args, dryRun),
+                        ["dryRun"] = dryRun, ["committed"] = !dryRun,
+                        [dryRun ? "wouldPress" : "pressed"] = ActionInfo(spec),
                         ["before"] = before,
-                        ["after"] = TargetActionsInfo(go, "")
+                        ["after"] = go == null ? null : TargetActionsInfo(go, "")
                     });
                 }
             };
@@ -157,17 +164,28 @@ namespace OniMcp.Tools
                     ["items"] = new McpToolParameter { Type = "array", Description = "数组；每项支持 id 或 x/y/worldId，并提供 actionKey 或短字段 a", Required = true },
                     ["defaults"] = new McpToolParameter { Type = "object", Description = "合并到每项的默认参数；支持 actionKey/a、worldId/w，子项参数优先", Required = false },
                     ["defaultArguments"] = new McpToolParameter { Type = "object", Description = "defaults 的别名", Required = false },
-                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "必须为 true，确认批量触发对象 UserMenu 操作", Required = true }
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Validate without invoking native buttons", Required = false },
+                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "Required for commits", Required = false }
                 },
                 Handler = args =>
                 {
-                    if (!ToolUtil.GetBool(args, "confirm", false))
+                    bool dryRun = ToolUtil.GetBool(args, "dryRun", false);
+                    if (!dryRun && !ToolUtil.GetBool(args, "confirm", false))
                         return CallToolResult.Error("confirm=true is required for user menu batch actions");
                     var items = args["items"] as JArray;
                     if (items == null || items.Count == 0)
                         return CallToolResult.Error("items array is required");
 
                     var defaults = args["defaults"] as JObject ?? args["defaultArguments"] as JObject;
+                    // Validate the entire batch before invoking any native button.
+                    foreach (var token in items)
+                    {
+                        if (!(token is JObject raw)) return CallToolResult.Error("Each item must be an object; no actions executed");
+                        var candidate = MergeBatchDefaults(raw, defaults);
+                        var target = FindTarget(candidate);
+                        if (target == null || FindSpec(target, candidate["actionKey"]?.ToString()) == null)
+                            return CallToolResult.Error("Target or actionKey unavailable; no actions executed");
+                    }
                     var results = new List<Dictionary<string, object>>();
                     foreach (var token in items)
                     {
@@ -190,18 +208,22 @@ namespace OniMcp.Tools
                             results.Add(new Dictionary<string, object> { ["ok"] = false, ["error"] = "actionKey is not available on target", ["target"] = TargetInfo(go), ["input"] = item });
                             continue;
                         }
-                        string error = InvokeSpec(go, spec);
+                        var targetInfo = TargetInfo(go);
+                        string error = dryRun ? null : InvokeSpec(go, spec);
                         results.Add(new Dictionary<string, object>
                         {
                             ["ok"] = error == null,
                             ["error"] = error,
-                            ["target"] = TargetInfo(go),
-                            ["pressed"] = ActionInfo(spec)
+                            ["target"] = targetInfo,
+                            ["priority"] = MenuWorkPriority(go, spec, item, dryRun || error != null),
+                            [dryRun ? "wouldPress" : "pressed"] = ActionInfo(spec),
+                            ["after"] = go == null ? null : TargetActionsInfo(go, "")
                         });
                     }
 
                     return JsonResult(new Dictionary<string, object>
                     {
+                        ["dryRun"] = dryRun, ["committed"] = !dryRun,
                         ["requested"] = items.Count,
                         ["succeeded"] = results.Count(item => (bool)item["ok"]),
                         ["failed"] = results.Count(item => !(bool)item["ok"]),
@@ -240,6 +262,7 @@ namespace OniMcp.Tools
                     ["items"] = new McpToolParameter { Type = "array", Description = "action=batch 时数组；每项支持 id 或 x/y/worldId，并提供 actionKey 或短字段 a", Required = false },
                     ["defaults"] = new McpToolParameter { Type = "object", Description = "action=batch 时合并到每项的默认参数", Required = false },
                     ["defaultArguments"] = new McpToolParameter { Type = "object", Description = "defaults 的别名", Required = false },
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Validate without invoking native buttons", Required = false },
                     ["confirm"] = new McpToolParameter { Type = "boolean", Description = "action=press/batch 时必须为 true", Required = false }
                 },
                 Handler = args =>

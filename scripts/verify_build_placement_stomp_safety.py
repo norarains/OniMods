@@ -59,7 +59,7 @@ def main() -> int:
     plan_one = read("BuildPlanningPlanOne.cs")
     build_area = read("BuildPlanningActionBuildArea.cs")
     native_path = read("BuildPlanningNativeUtilityPath.cs")
-    placement = read("BuildPlanningActionPlacement.cs")
+    placement = read("BuildPlanningUtilityConnect.cs")
     geometry = read("BuildPlanningPlacementGeometry.cs")
     backwall_policy = read("BuildPlanningBackwallSupportPolicy.cs")
     overlay = (ROOT / "mods/OniMcp/Tools/Impl/World/WorldOverlayObjectSerialization.cs").read_text(encoding="utf-8")

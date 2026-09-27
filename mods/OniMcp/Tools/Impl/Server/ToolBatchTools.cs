@@ -71,7 +71,7 @@ namespace OniMcp.Tools
                     ["responseMode"] = new McpToolParameter
                     {
                         Type = "string",
-                        Description = "返回模式：summary=每项只返回状态和截断文本，full=完整内容，errors=只返回错误项；默认 summary",
+                        Description = "返回模式：summary=每项返回紧凑结构化结果与写入后状态，full=完整内容，errors=只返回错误项；默认 summary",
                         Required = false,
                         EnumValues = new List<string> { "full", "summary", "errors" }
                     },
@@ -84,7 +84,7 @@ namespace OniMcp.Tools
                     ["maxTextChars"] = new McpToolParameter
                     {
                         Type = "integer",
-                        Description = "summary/errors 模式下每项 text 最大字符数，默认 500，最大 4000",
+                        Description = "非结构化文本的最大字符数，默认 500，最大 4000",
                         Required = false
                     }
                 },

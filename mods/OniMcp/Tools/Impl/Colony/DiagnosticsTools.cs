@@ -277,8 +277,7 @@ namespace OniMcp.Tools
             return new Dictionary<string, object>
             {
                 ["observation"] = ColonyObservation.Serialize(sample, findings),
-                ["filter"] = query,
-                ["next"] = "Findings use the same IDs and severity policy as snapshot and continue. Use a target read for local atmosphere/navigation."
+                ["filter"] = query
             };
         }
 

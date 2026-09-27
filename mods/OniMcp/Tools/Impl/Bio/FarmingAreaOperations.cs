@@ -24,6 +24,7 @@ namespace OniMcp.Tools
                 Description = "兼容入口：请优先使用 colony_control domain=bio bioDomain=farming action=batch。按区域批量设置或取消种植请求；适合一次给多块农砖/种植箱安排同一种种子",
                 Parameters = RectParams(new Dictionary<string, McpToolParameter>
                 {
+                    ["id"] = new McpToolParameter { Type = "integer", Description = "Exact plant/plot instance ID", Required = false },
                     ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Validate selected plots without mutation.", Required = false },
                     ["seedTag"] = new McpToolParameter { Type = "string", Description = "种子 prefab/tag，例如 BasicPlantSeed；action=set 时必填", Required = false },
                     ["mutationTag"] = new McpToolParameter { Type = "string", Description = "植物突变/亚种 tag；未使用突变时留空", Required = false },
@@ -36,14 +37,14 @@ namespace OniMcp.Tools
                 }),
                 Handler = args =>
                 {
-                    if (!HasRectInput(args))
-                        return CallToolResult.Error("areaId or x1/y1/x2/y2 are required");
+                    if (!HasRectInput(args) && !ToolUtil.GetInt(args, "id").HasValue && string.IsNullOrWhiteSpace(args["query"]?.ToString()))
+                        return CallToolResult.Error("Select targets with id, query, or areaId");
                     bool dryRun = ToolUtil.GetBool(args, "dryRun", false);
                     if (!dryRun && !ToolUtil.GetBool(args, "confirm", false))
                         return CallToolResult.Error("confirm=true is required to batch change planting requests");
 
-                    var rect = ToolUtil.GetRect(args);
-                    int cells = RectCellCount(rect);
+                    var rect = HasRectInput(args) ? ToolUtil.GetRect(args) : null;
+                    int cells = rect == null ? 0 : RectCellCount(rect);
                     if (!dryRun && cells > 100 && !ToolUtil.GetBool(args, "confirm", false))
                         return CallToolResult.Error("confirm=true is required when changing planting requests in more than 100 cells");
 
@@ -83,7 +84,8 @@ namespace OniMcp.Tools
                     foreach (var plot in Components.BuildingCompletes.Items
                                  .Select(building => building?.GetComponent<PlantablePlot>())
                                  .Where(plot => plot != null && ToolUtil.GameObjectMatchesWorld(plot.gameObject, worldId))
-                                 .Where(plot => CellInRect(Grid.PosToCell(plot.gameObject), rect, worldId))
+                                 .Where(plot => rect == null || CellInRect(Grid.PosToCell(plot.gameObject), rect, worldId))
+                                 .Where(plot => !ToolUtil.GetInt(args, "id").HasValue || (plot.GetComponent<KPrefabID>()?.InstanceID ?? plot.GetInstanceID()) == ToolUtil.GetInt(args, "id").Value)
                                  .Where(plot => PlantingMatches(plot, query))
                                  .Take(limit))
                     {
@@ -211,6 +213,8 @@ namespace OniMcp.Tools
                 Description = "兼容入口：请优先使用 colony_control domain=bio bioDomain=farming action=uproot。按区域标记或取消铲除植物",
                 Parameters = RectParams(new Dictionary<string, McpToolParameter>
                 {
+                    ["query"] = new McpToolParameter { Type = "string", Description = "Plant name or prefab filter in the selected world", Required = false },
+                    ["id"] = new McpToolParameter { Type = "integer", Description = "Exact plant/plot instance ID", Required = false },
                     ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Preview uproot markers and priority changes without mutation.", Required = false },
                     ["action"] = new McpToolParameter { Type = "string", Description = "mark 或 cancel，默认 mark", Required = false, EnumValues = new List<string> { "mark", "cancel" } },
                     ["priority"] = new McpToolParameter { Type = "integer", Description = "铲除差事优先级 1-9，默认 5", Required = false },
@@ -219,10 +223,10 @@ namespace OniMcp.Tools
                 }),
                 Handler = args =>
                 {
-                    if (!HasRectInput(args))
-                        return CallToolResult.Error("areaId or x1/y1/x2/y2 are required");
+                    if (!HasRectInput(args) && !ToolUtil.GetInt(args, "id").HasValue && string.IsNullOrWhiteSpace(args["query"]?.ToString()))
+                        return CallToolResult.Error("Select targets with id, query, or areaId");
 
-                    var rect = ToolUtil.GetRect(args);
+                    var rect = HasRectInput(args) ? ToolUtil.GetRect(args) : null;
                     bool dryRun = ToolUtil.GetBool(args, "dryRun", false);
                     if (!dryRun && !ToolUtil.GetBool(args, "confirm", false))
                         return CallToolResult.Error("confirm=true is required to change uproot orders");
@@ -239,9 +243,14 @@ namespace OniMcp.Tools
                         if (go == null || !ToolUtil.GameObjectMatchesWorld(go, worldId))
                             continue;
                         int cell = Grid.PosToCell(go);
-                        if (!CellInRect(cell, rect, worldId))
+                        if (rect != null && !CellInRect(cell, rect, worldId))
                             continue;
 
+                        if (ToolUtil.GetInt(args, "id").HasValue && (go.GetComponent<KPrefabID>()?.InstanceID ?? go.GetInstanceID()) != ToolUtil.GetInt(args, "id").Value) continue;
+                        string query = args["query"]?.ToString();
+                        if (!string.IsNullOrWhiteSpace(query) && ToolUtil.CleanName(go.GetProperName()).IndexOf(query, StringComparison.OrdinalIgnoreCase) < 0
+                            && go.name.IndexOf(query, StringComparison.OrdinalIgnoreCase) < 0) continue;
+                        if (!ToolUtil.VisibleCellAllowed(cell, true)) continue;
                         if (mark)
                         {
                             if (!uprootable.CanUproot())

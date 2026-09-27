@@ -51,8 +51,7 @@ namespace OniMcp.Tools
                     ["status"] = "no_connected_power_source",
                     ["input"] = CellCoordDictionary(inputCell),
                     ["planned"] = 0,
-                    ["failed"] = 0,
-                    ["next"] = "Connect a power producer/output first, provide fromQuery/fromX/fromY for a powered source, or pass autoConnectPower=false."
+                    ["failed"] = 0
                 };
             }
 
@@ -63,23 +62,14 @@ namespace OniMcp.Tools
                     ["input"] = CellCoordDictionary(inputCell), ["source"] = CellCoordDictionary(sourceCell),
                     ["planned"] = 0, ["reused"] = 1, ["failed"] = 0, ["autoDigQueued"] = 0
                 };
-            var path = new List<CellCoord>();
-            string pathError;
-            if (!AddManhattanSegment(path, CellCoordFromCell(sourceCell), CellCoordFromCell(inputCell), maxCells, out pathError))
-            {
-                return new Dictionary<string, object>
-                {
-                    ["enabled"] = true,
-                    ["status"] = "path_too_large",
-                    ["input"] = CellCoordDictionary(inputCell),
-                    ["source"] = CellCoordDictionary(sourceCell),
-                    ["error"] = pathError,
-                    ["pathCells"] = path.Count,
-                    ["maxCells"] = maxCells,
-                    ["planned"] = 0,
-                    ["failed"] = 1
+            var path = FindReachablePowerRoute(sourceCell, inputCell, worldId, maxCells);
+            if (path == null)
+                return new Dictionary<string, object> {
+                    ["enabled"] = true, ["status"] = "no_reachable_wire_route", ["failed"] = 1, ["planned"] = 0,
+                    ["input"] = CellCoordDictionary(inputCell), ["source"] = CellCoordDictionary(sourceCell),
+                    ["reachability"] = "no_visible_currently_reachable_route_within_search_budget",
+                    ["searchCellLimit"] = 4096, ["maxCells"] = maxCells
                 };
-            }
 
             var wireArgs = new JObject
             {
@@ -95,8 +85,7 @@ namespace OniMcp.Tools
                 ["autoUprootObstructions"] = false,
                 ["nativePathPlacement"] = false,
                 ["priority"] = ToolUtil.GetInt(args, "priority") ?? 5,
-                ["points"] = new JArray(new JArray(Grid.CellColumn(sourceCell), Grid.CellRow(sourceCell)),
-                    new JArray(Grid.CellColumn(inputCell), Grid.CellRow(inputCell)))
+                ["points"] = new JArray(path.Select(point => new JArray(point.x, point.y)))
             };
 
             var connectResult = AutoConnectUtility().Handler(wireArgs);
@@ -127,7 +116,8 @@ namespace OniMcp.Tools
                 ["dryRun"] = IsDryRun(args),
                 ["input"] = CellCoordDictionary(inputCell),
                 ["source"] = CellCoordDictionary(sourceCell),
-                ["pathMode"] = "continuous_manhattan_path",
+                ["pathMode"] = "visible_reachable_route",
+                ["reachability"] = "existing_wire_or_currently_reachable_work_cell",
                 ["pathCells"] = path.Count,
                 ["planned"] = GetInt(connectPayload, "planned"),
                 ["reused"] = GetInt(connectPayload, "reusedExisting"),

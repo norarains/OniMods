@@ -28,11 +28,13 @@ namespace OniMcp.Tools
                     ["defaults"] = new McpToolParameter { Type = "object", Description = "合并到每项的默认队列参数；支持 mode/m、count/c，子项参数优先", Required = false },
                     ["defaultArguments"] = new McpToolParameter { Type = "object", Description = "defaults 的别名", Required = false },
                     ["clearAll"] = new McpToolParameter { Type = "boolean", Description = "true=先清空该制作站所有配方队列", Required = false },
-                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "必须为 true，避免误改生产队列", Required = true }
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Validate every recipe before changing any queue; preview only.", Required = false },
+                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "Required for commits", Required = false }
                 }),
                 Handler = args =>
                 {
-                    if (!ToolUtil.GetBool(args, "confirm", false))
+                    bool dryRun = ToolUtil.GetBool(args, "dryRun", false);
+                    if (!dryRun && !ToolUtil.GetBool(args, "confirm", false))
                         return CallToolResult.Error("confirm=true is required to change production queues");
 
                     var fabricator = FindFabricator(args);
@@ -46,62 +48,28 @@ namespace OniMcp.Tools
 
                     var defaults = args["defaults"] as JObject ?? args["defaultArguments"] as JObject;
                     var before = QueueSummary(fabricator);
-                    var changes = new List<Dictionary<string, object>>();
-                    if (clearAll)
+                    ProductionQueuePlan plan;
+                    try
                     {
+                        plan = ProductionQueuePlan.Create(fabricator.GetRecipes().ToDictionary(recipe => recipe.id,
+                            recipe => fabricator.GetRecipeQueueCount(recipe)),
+                            items.Select(token => token is JObject item ? MergeQueueDefaults(item, defaults) : null),
+                            clearAll, ComplexFabricator.MAX_QUEUE_SIZE, ComplexFabricator.QUEUE_INFINITE);
+                    }
+                    catch (ArgumentException error) { return CallToolResult.Error(error.Message + "; queue unchanged"); }
+                    var projected = plan.Counts;
+                    var changes = plan.Changes;
+
+                    if (!dryRun)
                         foreach (var recipe in fabricator.GetRecipes())
-                        {
-                            int oldCount = fabricator.GetRecipeQueueCount(recipe);
-                            if (oldCount == 0)
-                                continue;
-                            fabricator.SetRecipeQueueCount(recipe, 0);
-                            changes.Add(new Dictionary<string, object>
-                            {
-                                ["recipeId"] = recipe.id,
-                                ["mode"] = "clear",
-                                ["before"] = FormatQueueCount(oldCount),
-                                ["after"] = 0
-                            });
-                        }
-                    }
-
-                    foreach (var token in items)
-                    {
-                        var rawItem = token as JObject;
-                        if (rawItem == null)
-                            return CallToolResult.Error("Each items entry must be an object");
-
-                        var item = MergeQueueDefaults(rawItem, defaults);
-                        string recipeId = item["recipeId"]?.ToString();
-                        if (string.IsNullOrWhiteSpace(recipeId))
-                            return CallToolResult.Error("Each item requires recipeId or r");
-                        var recipe = fabricator.GetRecipe(recipeId.Trim());
-                        if (recipe == null)
-                            return CallToolResult.Error("recipeId is not available on this fabricator: " + recipeId);
-
-                        string mode = (item["mode"]?.ToString() ?? "set").Trim().ToLowerInvariant();
-                        int requested = Math.Max(0, ToolUtil.GetInt(item, "count") ?? 1);
-                        int oldCount = fabricator.GetRecipeQueueCount(recipe);
-                        int next;
-                        if (!TryComputeQueueCount(oldCount, mode, requested, out next))
-                            return CallToolResult.Error("mode must be set, add, remove, infinite or clear");
-
-                        fabricator.SetRecipeQueueCount(recipe, next);
-                        changes.Add(new Dictionary<string, object>
-                        {
-                            ["recipeId"] = recipe.id,
-                            ["name"] = SafeRecipeName(recipe, includeAmounts: false),
-                            ["mode"] = mode,
-                            ["requested"] = requested,
-                            ["before"] = FormatQueueCount(oldCount),
-                            ["after"] = FormatQueueCount(fabricator.GetRecipeQueueCount(recipe)),
-                            ["changed"] = oldCount != fabricator.GetRecipeQueueCount(recipe)
-                        });
-                    }
+                            if (fabricator.GetRecipeQueueCount(recipe) != projected[recipe.id])
+                                fabricator.SetRecipeQueueCount(recipe, projected[recipe.id]);
 
                     return CallToolResult.Text(JsonConvert.SerializeObject(new Dictionary<string, object>
                     {
                         ["fabricator"] = TargetInfo(fabricator.gameObject),
+                        ["dryRun"] = dryRun, ["committed"] = !dryRun,
+                        ["projectedQueue"] = projected.Where(pair => pair.Value != 0).ToDictionary(pair => pair.Key, pair => FormatQueueCount(pair.Value)),
                         ["before"] = before,
                         ["changes"] = changes,
                         ["queue"] = QueueSummary(fabricator)
@@ -168,7 +136,7 @@ namespace OniMcp.Tools
 
                     bool forbid = ToolUtil.GetBool(args, "forbid", false);
                     bool before = fabricator.ForbidMutantSeeds;
-                    fabricator.ForbidMutantSeeds = forbid;
+                    if (!ToolUtil.GetBool(args, "dryRun", false)) fabricator.ForbidMutantSeeds = forbid;
 
                     return CallToolResult.Text(JsonConvert.SerializeObject(new Dictionary<string, object>
                     {

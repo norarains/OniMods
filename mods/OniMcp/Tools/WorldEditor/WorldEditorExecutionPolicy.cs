@@ -43,8 +43,7 @@ namespace OniMcp.Tools
                 ["applied"] = 0,
                 ["route"] = route,
                 ["path"] = path,
-                ["details"] = details ?? new JObject(),
-                ["next"] = "repeat with dryRun=false confirm=true after reviewing this preview"
+                ["details"] = details ?? new JObject()
             });
         }
 
@@ -113,7 +112,7 @@ namespace OniMcp.Tools
             JObject obj = ParseWorldEditorResult(result);
             if (obj == null || ToolUtil.GetBool(obj, "dryRun", false) || ToolUtil.GetBool(obj, "preview", false))
                 return 0;
-            foreach (string key in new[] { "planned", "succeeded", "marked", "executedCells", "applied", "changed" })
+            foreach (string key in new[] { "planned", "succeeded", "marked", "executedCells", "applied", "changed", "cancelled", "canceled", "triggeredObjects" })
             {
                 int value = ResultFieldInt(obj, key);
                 if (value > 0)

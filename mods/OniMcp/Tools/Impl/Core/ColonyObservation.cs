@@ -12,8 +12,9 @@ namespace OniMcp.Tools
         internal int WorldId;
         internal int? TargetId;
         internal bool Actionable = true;
+        internal bool StopEligible = true;
         internal Dictionary<string, object> Details;
-        internal string Signature => Severity + ":" + Actionable + ":" + Revision;
+        internal string Signature => Severity + ":" + Actionable + ":" + StopEligible + ":" + Revision;
         internal Dictionary<string, object> ToDictionary()
         {
             var result = new Dictionary<string, object>
@@ -23,6 +24,7 @@ namespace OniMcp.Tools
             ["actionable"] = Actionable, ["message"] = Message
             };
             if (Details != null) result["details"] = Details;
+            if (!StopEligible) result["stopEligible"] = false;
             return result;
         }
     }
@@ -85,19 +87,32 @@ namespace OniMcp.Tools
             foreach (var supply in sample.BuildingSupplies)
             {
                 // Keep the established research event key without reporting the same empty station twice.
-                if (sample.ResearchStations.Any(station => station.Id == supply.Id && station.Required && station.MissingMaterial))
+                var station = sample.ResearchStations.FirstOrDefault(item => item.Id == supply.Id && item.Required);
+                var supplyFinding = supply.ToFinding();
+                if (station != null)
                 {
-                    var existing = result.First(item => item.Code == "research_material_missing" && item.TargetId == supply.Id);
-                    existing.Details = supply.ToFinding().Details;
+                    var existing = result.FirstOrDefault(item => item.Code == "research_material_missing" && item.TargetId == supply.Id);
+                    if (existing == null)
+                    {
+                        supplyFinding.Code = "research_material_missing";
+                        supplyFinding.Id = supplyFinding.Code + ":" + supply.WorldId + ":" + supply.Id;
+                        result.Add(supplyFinding);
+                    }
+                    else
+                    {
+                        existing.Details = supplyFinding.Details;
+                        existing.Revision = supplyFinding.Revision;
+                    }
                     continue;
                 }
-                result.Add(supply.ToFinding());
+                result.Add(supplyFinding);
             }
             foreach (string alert in sample.Alerts.OrderBy(item => item, StringComparer.Ordinal))
                 add("hud", alert.StartsWith("DuplicantThreatening:", StringComparison.Ordinal) ? "critical" : "warning",
                     alert, true, null, -1);
             // Stable native HUD keys may contain localized text; coalesce exact duplicates only.
             foreach (var finding in result.Where(item => item.Code == "hud")) finding.Id += ":" + finding.Message;
+            result.AddRange(sample.HudFindings);
             return result.GroupBy(item => item.Id).Select(group => group.First()).ToList();
         }
 
@@ -120,6 +135,7 @@ namespace OniMcp.Tools
                 {
                     ["available"] = sample.Available, ["vitals"] = "all_live_dupes",
                     ["buildingSupply"] = "visible_native_shortage_statuses_in_selected_world",
+                    ["hud"] = "active_notifications_and_cached_native_diagnostic_warnings",
                     ["foodAndWork"] = sample.WorldId < 0 ? "all_worlds_aggregate" : "selected_world", ["foodMaxAgeSeconds"] = 2, ["infrastructureMaxAgeSeconds"] = 2,
                     ["notChecked"] = new[] { "local_atmosphere", "navigation", "resource_fetchability", "full_utility_networks" }
                 },

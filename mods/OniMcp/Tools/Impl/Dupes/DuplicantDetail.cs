@@ -16,7 +16,7 @@ namespace OniMcp.Tools
         {
             var position = dupe.transform.GetPosition();
             var schedule = dupe.GetComponent<Schedulable>()?.GetSchedule();
-            var result = full ? GetAttributeSummary(dupe) : GetCompactDupeDiagnosticDetails(dupe);
+            var result = full ? GetAttributeSummary(dupe, true) : GetCompactDupeDiagnosticDetails(dupe);
             result["id"] = dupe.GetComponent<KPrefabID>()?.InstanceID ?? -1;
             result["name"] = dupe.GetProperName();
             result["position"] = new { x = Math.Round(position.x, 2), y = Math.Round(position.y, 2) };

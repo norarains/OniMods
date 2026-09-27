@@ -156,7 +156,15 @@ namespace OniMcp.Tools
                             ["clearQueue"] = clearQueue
                         }, McpJsonUtil.Settings));
 
+                    if (!clearQueue)
+                    {
+                        var append = typeof(Research).GetMethod("AddTechToQueue", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                        if (append == null) return CallToolResult.Error("Native research queue append is unavailable; queue unchanged");
+                        append.Invoke(Research.Instance, new object[] { tech });
+                    }
                     Research.Instance.SetActiveResearch(tech, clearQueue);
+                    if (!Research.Instance.GetResearchQueue().Any(item => item.tech.Id == tech.Id) && !IsComplete(tech))
+                        return CallToolResult.Error("Native research queue did not contain requested technology after update: " + tech.Id);
 
                     var active = Research.Instance.GetActiveResearch();
                     var queue = Research.Instance.GetResearchQueue();

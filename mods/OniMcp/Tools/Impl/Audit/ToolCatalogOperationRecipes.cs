@@ -30,6 +30,12 @@ namespace OniMcp.Tools
                     args["action"] = query.Contains("list") || query.Contains("列表") ? "list" : "status";
                     if (args["action"].ToString() == "list") { args["includeComplete"] = false; args["limit"] = 10; }
                 }
+                if (name == "colony_control" && new[] { "plant", "farm", "seed", "uproot", "种植", "铲除" }.Any(query.Contains))
+                {
+                    args["domain"] = "bio"; args["bioDomain"] = "farming";
+                    args["action"] = query.Contains("seed") ? "seed_catalog" : "list_planting";
+                    args["limit"] = 10;
+                }
                 row["call"] = new JObject
                 {
                     ["tool"] = "server_control",

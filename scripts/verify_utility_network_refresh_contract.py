@@ -25,7 +25,7 @@ def main() -> None:
     refresh = (BUILD / "BuildPlanningUtilityNetworkRefresh.cs").read_text(encoding="utf-8")
     completion = (BUILD / "BuildPlanningInstantCompletion.cs").read_text(encoding="utf-8")
     native = (BUILD / "BuildPlanningNativeUtilityPath.cs").read_text(encoding="utf-8")
-    placement = (BUILD / "BuildPlanningActionPlacement.cs").read_text(encoding="utf-8")
+    placement = (BUILD / "BuildPlanningUtilityConnect.cs").read_text(encoding="utf-8")
 
     exact = body(refresh, "private static bool IsExactConnectionUtilityPrefab")
     for prefab in ("LogicWire", "Wire", "LiquidConduit", "GasConduit", "SolidConduit"):

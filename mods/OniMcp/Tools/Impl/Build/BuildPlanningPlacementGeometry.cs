@@ -39,6 +39,7 @@ namespace OniMcp.Tools
                 ["width"] = width,
                 ["height"] = height,
                 ["footprintCells"] = width * height,
+                ["intake"] = PumpIntakeInfo(def),
                 ["singleCellDragSafe"] = width == 1 && height == 1,
                 ["dragGuidance"] = width == 1 && height == 1
                     ? "Use world_editor map SEARCH/REPLACE tokens with :priority for repeated tiles, ladders, or buildings; raw anchors are not public aggregate parameters."
@@ -61,7 +62,8 @@ namespace OniMcp.Tools
                 Width = layout.Width,
                 Height = layout.Height,
                 PlacementPoint = BuildPlacementPosition(cell, def, orientation),
-                Footprint = FootprintCells(def, x, y, worldId, orientation).ToList()
+                Footprint = FootprintCells(def, x, y, worldId, orientation).ToList(),
+                Intake = PumpIntakeInfo(def, PlacementOriginCell(def, x, y, orientation))
             };
         }
 

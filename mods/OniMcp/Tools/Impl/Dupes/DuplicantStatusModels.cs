@@ -7,7 +7,7 @@ namespace OniMcp.Tools
 {
     public static partial class DuplicantTools
 {
-        private static Dictionary<string, object> GetAttributeSummary(MinionIdentity dupe)
+        private static Dictionary<string, object> GetAttributeSummary(MinionIdentity dupe, bool full = false, string query = null)
         {
             var resume = dupe.GetComponent<MinionResume>();
             var attributes = new List<Dictionary<string, object>>();
@@ -17,6 +17,9 @@ namespace OniMcp.Tools
                 foreach (AttributeInstance attr in attrs)
                 {
                     if (attr == null || attr.hide) continue;
+                    if (!string.IsNullOrWhiteSpace(query))
+                    { if (attr.Id.IndexOf(query, StringComparison.OrdinalIgnoreCase) < 0 && attr.Name.IndexOf(query, StringComparison.OrdinalIgnoreCase) < 0) continue; }
+                    else if (!full && !EssentialAttributeIds.Contains(attr.Id) && attr.Id != "QualityOfLife" && attr.Id != "QualityOfLifeExpectation") continue;
                     attributes.Add(new Dictionary<string, object>
                     {
                         ["id"] = attr.Id,
@@ -40,6 +43,7 @@ namespace OniMcp.Tools
                 ["id"] = dupe.GetComponent<KPrefabID>()?.InstanceID ?? -1,
                 ["name"] = dupe.GetProperName(),
                 ["profession"] = attrs?.GetProfession()?.Name,
+                ["morale"] = MoraleInfo(dupe),
                 ["suggestedRole"] = GuessRole(dupe),
                 ["availableSkillPoints"] = resume?.AvailableSkillpoints ?? 0,
                 ["skillsMastered"] = mastered,
@@ -67,6 +71,7 @@ namespace OniMcp.Tools
             {
                 ["id"] = dupe.GetComponent<KPrefabID>()?.InstanceID ?? -1,
                 ["name"] = dupe.GetProperName(),
+                ["morale"] = MoraleInfo(dupe),
                 ["amounts"] = amounts
             };
         }

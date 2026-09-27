@@ -116,9 +116,9 @@ namespace OniMcp.Tools
             {
                 "ok", "valid", "dryRun", "committed", "planned", "wouldMark", "marked", "changed",
                 "queued", "triggeredObjects", "returned", "matched", "executed", "succeeded", "failed",
-                "skipped", "status", "reasonCode", "next", "tokenHint", "count", "total", "areaId", "worldId", "rect", "size", "cells", "prefabId",
+                "skipped", "status", "reasonCode", "count", "total", "areaId", "worldId", "rect", "size", "cells", "prefabId",
                 "x", "y", "error", "message", "previewToken", "cycle", "paused", "isPaused",
-                "speed", "alertLevel", "profile", "summary", "delta", "baseline", "deltaHandle", "unchanged"
+                "id", "requestedSeed", "seedTag", "hasActiveRequest", "harvestWhenReady", "markedForHarvest", "cancelled", "wouldChange", "wouldPress", "pressed", "validationLevel", "speed", "alertLevel", "profile", "summary", "delta", "baseline", "deltaHandle", "unchanged"
             })
             {
                 if (source[key] != null && IsCompactScalarOrSmallArray(source[key]))
@@ -129,7 +129,7 @@ namespace OniMcp.Tools
             {
                 if (summary[property.Name] != null)
                     continue;
-                if (property.Name == "observation" || property.Name == "findings" || property.Name == "planningConstraints")
+                if (new[] { "observation", "findings", "planningConstraints", "before", "after", "projectedTags", "acceptedTags", "projectedQueue", "queue", "changes", "selected", "target", "fabricator", "plots", "failures" }.Contains(property.Name))
                     summary[property.Name] = property.Value.DeepClone();
                 else if (property.Value is JArray arr)
                     summary[property.Name + "Count"] = arr.Count;

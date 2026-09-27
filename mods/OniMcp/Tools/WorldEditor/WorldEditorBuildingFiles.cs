@@ -135,7 +135,7 @@ namespace OniMcp.Tools
             {
                 sb.AppendLine("## Planting");
                 sb.AppendLine("- Requested seed: " + (plot.requestedEntityTag.IsValid ? plot.requestedEntityTag.Name : "none") + "; request active: " + (plot.GetActiveRequest != null));
-                sb.AppendLine("- Set seed through /active/ops/farming.md: `call action=set id=" + config["id"] + " seedTag=<seed> dryRun=true`; commit with confirm=true.");
+                sb.AppendLine("- Set seed through /active/ops/farming.md: `call domain=bio bioDomain=farming action=set_planting id=" + config["id"] + " seedTag=<seed> dryRun=true`; commit with confirm=true.");
                 sb.AppendLine("- Inventory counts do not prove fetchability. Use resources/search_items for the selected seed when delivery stalls.");
             }
             if (priority != null)
@@ -152,6 +152,8 @@ namespace OniMcp.Tools
             var lines = new SortedDictionary<string, string>(StringComparer.Ordinal);
             AddValue(lines, "Enabled", config["enabled"]);
             AddValue(lines, "Toggle", config["toggle"]);
+            AddValue(lines, "Battery.LowThreshold", config["battery"]?["lowThreshold"]);
+            AddValue(lines, "Battery.HighThreshold", config["battery"]?["highThreshold"]);
             foreach (JObject item in config["thresholds"] as JArray ?? new JArray())
             {
                 string component = item["component"]?.ToString();
@@ -196,7 +198,11 @@ namespace OniMcp.Tools
         {
             if (!TryBuildBuildingSetter(relative, search, replacement, out JObject request, out string error))
                 return CallToolResult.Error(error);
-            return JsonResult(new JObject { ["ok"] = true, ["phase"] = "preflight", ["request"] = request });
+            if (request["action"]?.ToString() == "set_battery_thresholds")
+            {
+                return BuildingConfigTools.PreviewBatteryThresholds(request);
+            }
+            return JsonResult(new JObject { ["ok"] = true, ["phase"] = "preflight", ["validationLevel"] = "routing_and_syntax_only", ["request"] = request });
         }
 
         private static CallToolResult ApplyBuildingDetailEdit(JObject args, string relative, string search, string replacement)
@@ -257,6 +263,8 @@ namespace OniMcp.Tools
         {
             error = null;
             if (key == "Enabled") return SetBoolRequest(request, "set_enabled", "enabled", value, out error);
+            if (key == "Battery.LowThreshold") return SetFloatRequest(request, "set_battery_thresholds", "lowThreshold", value, out error);
+            if (key == "Battery.HighThreshold") return SetFloatRequest(request, "set_battery_thresholds", "highThreshold", value, out error);
             if (key == "Toggle") return SetBoolRequest(request, "set_toggle", "on", value, out error);
             if (key == "Valve.Flow") return SetFloatRequest(request, "set_valve_flow", "flowKgPerSecond", value, out error);
             if (key == "LimitValve.Limit") return SetFloatRequest(request, "set_limit_valve", "limit", value, out error);

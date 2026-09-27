@@ -245,7 +245,7 @@ namespace OniMcp.Tools
                 ? ResolvePowerConnectionSymbol(cell)
                 : ResolveUtilityConnectionSymbol(cell, layers);
             var dirs = ConnectionDirections(cell, layers, mode == OverlayModes.Power.ID);
-            string text = "glyph=" + glyph
+            string text = LineConstructionState(cell, layers) + " glyph=" + glyph
                 + " dirs=" + (dirs.Count == 0 ? "." : string.Join("", dirs.Select(d => d.Dir).ToArray()))
                 + " links=" + ConnectionLinkText(dirs)
                  + " open=" + OpenAdjacentConnectionText(cell, layers, dirs)

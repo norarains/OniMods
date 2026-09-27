@@ -298,7 +298,7 @@ if (symbol == '←' || symbol == '→' || symbol == '↑' || symbol == '↓') re
             {
                 string info = GetPowerInfo(building);
                 if (!string.IsNullOrEmpty(info))
-                    details.Add("- " + MapTokenPart(StripLinkTags(string.IsNullOrEmpty(buildingName) ? buildingId : buildingName)) + "@(" + x + "," + y + "): " + info);
+                    details.Add("- " + MapTokenPart(StripLinkTags(string.IsNullOrEmpty(buildingName) ? buildingId : buildingName)) + "@" + CellCoord(Grid.PosToCell(building)) + ": " + info);
             }
         }
 

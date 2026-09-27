@@ -62,6 +62,16 @@ namespace OniMcp.Tools
                     ["disabled"] = new McpToolParameter { Type = "boolean", Description = "domain=diagnostic action=set_auto_disinfect 时 true=全局禁用自动消毒", Required = false },
                     ["applyNow"] = new McpToolParameter { Type = "boolean", Description = "domain=diagnostic action=set_auto_disinfect 时是否立即同步现有对象，默认 true", Required = false },
                     ["force"] = new McpToolParameter { Type = "boolean", Description = "允许执行对应底层强制操作，按 action 解释", Required = false },
+                    ["harvestWhenReady"] = new McpToolParameter { Type = "boolean", Description = "Enable automatic harvest when ripe", Required = false },
+                    ["areaId"] = new McpToolParameter { Type = "string", Description = "World-bound area handle", Required = false },
+                    ["priority"] = new McpToolParameter { Type = "integer", Description = "Work priority 1-9", Required = false },
+                    ["clearQueue"] = new McpToolParameter { Type = "boolean", Description = "Research: replace queue if true (default); append with prerequisites if false", Required = false },
+                    ["removeOccupant"] = new McpToolParameter { Type = "boolean", Description = "Whether to order removal of existing plot occupant", Required = false },
+                    ["plantingAction"] = new McpToolParameter { Type = "string", Description = "set or cancel planting requests", Required = false },
+                    ["emptyOnly"] = new McpToolParameter { Type = "boolean", Description = "Select only unoccupied plots", Required = false },
+                    ["seedTag"] = new McpToolParameter { Type = "string", Description = "Farming seed prefab/tag", Required = false },
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Preview supported research and farming changes without mutation", Required = false },
+                    ["id"] = new McpToolParameter { Type = "string", Description = "Target technology ID or plant/plot instance ID (numeric string accepted)", Required = false },
                     ["confirm"] = new McpToolParameter { Type = "boolean", Description = "写操作确认，按 action 解释", Required = false }
                 },
                 Handler = args =>

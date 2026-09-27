@@ -61,10 +61,10 @@ namespace OniMcp.Tools
                 ["wattsUsed"] = wattsUsed.HasValue ? (object)Round(wattsUsed.Value, 1) : null,
                 ["wattsRating"] = wattsRating.HasValue ? (object)Round(wattsRating.Value, 1) : null,
                 ["operational"] = operational,
-                ["empty"] = empty,
                 ["powered"] = powered,
                 ["isConnected"] = !IsUnconnectedCircuit(circuitId)
             };
+            if (role == "generator") result["storedEnergyEmpty"] = empty;
             return result;
         }
 

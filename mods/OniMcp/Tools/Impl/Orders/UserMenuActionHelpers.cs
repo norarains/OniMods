@@ -268,6 +268,19 @@ namespace OniMcp.Tools
             return CallToolResult.Text(JsonConvert.SerializeObject(payload, McpJsonUtil.Settings));
         }
 
+        private static Dictionary<string, object> MenuWorkPriority(GameObject go, ActionSpec spec, JObject args, bool dryRun)
+        {
+            var priority = go == null ? null : go.GetComponent<Prioritizable>();
+            bool requested = args["priority"] != null || spec.ActionKey == "uproot";
+            if (priority == null) return new Dictionary<string, object> { ["supported"] = false };
+            int value = Math.Max(1, Math.Min(9, ToolUtil.GetInt(args, "priority") ?? 7));
+            if (requested && !dryRun)
+                priority.SetMasterPriority(new PrioritySetting(PriorityScreen.PriorityClass.basic, value));
+            var result = new Dictionary<string, object> { ["supported"] = true, ["actual"] = priority.GetMasterPriority().priority_value };
+            if (requested && dryRun) result["projected"] = value;
+            return result;
+        }
+
         private class ActionSpec
         {
             public string ActionKey { get; set; }

@@ -46,6 +46,7 @@ namespace OniMcp.Tools
                     return CallToolResult.Text(JsonConvert.SerializeObject(new Dictionary<string, object>
                     {
                         ["dupe"] = dupe == null ? null : DupeRef(dupe),
+                        ["morale"] = dupe == null ? null : MoraleInfo(dupe),
                         ["returned"] = skills.Count,
                         ["skills"] = skills
                     }, McpJsonUtil.Settings));
@@ -70,11 +71,13 @@ namespace OniMcp.Tools
                     ["name"] = new McpToolParameter { Type = "string", Description = "复制人名称", Required = false },
                     ["skillId"] = new McpToolParameter { Type = "string", Description = "技能 ID，例如 Farming1、Mining1", Required = true },
                     ["force"] = new McpToolParameter { Type = "boolean", Description = "绕过技能点/前置条件并作为授予技能记录，默认 false", Required = false },
-                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "确认修改复制人技能，必须为 true", Required = true }
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Validate skill learning without spending points or changing mastery", Required = false },
+                    ["confirm"] = new McpToolParameter { Type = "boolean", Description = "Required for commits", Required = false }
                 },
                 Handler = args =>
                 {
-                    if (!ToolUtil.GetBool(args, "confirm", false))
+                    bool dryRun = ToolUtil.GetBool(args, "dryRun", false);
+                    if (!dryRun && !ToolUtil.GetBool(args, "confirm", false))
                         return CallToolResult.Error("confirm=true is required");
                     var dupe = ToolUtil.FindDupe(args);
                     if (dupe == null)
@@ -101,15 +104,17 @@ namespace OniMcp.Tools
                     if (!force && !resume.CanMasterSkill(conditions))
                         return CallToolResult.Error("Cannot master skill: " + string.Join(", ", conditions.Select(c => c.ToString()).ToArray()));
 
-                    if (force)
-                        resume.GrantSkill(skill.Id);
-                    else
-                        resume.MasterSkill(skill.Id);
+                    if (!dryRun)
+                    {
+                        if (force) resume.GrantSkill(skill.Id);
+                        else resume.MasterSkill(skill.Id);
+                    }
 
                     return CallToolResult.Text(JsonConvert.SerializeObject(new Dictionary<string, object>
                     {
-                        ["changed"] = true,
-                        ["forceGranted"] = force,
+                        ["dryRun"] = dryRun, ["committed"] = !dryRun,
+                        ["changed"] = !dryRun,
+                        ["forceGranted"] = force && !dryRun,
                         ["dupe"] = DupeRef(dupe),
                         ["skill"] = SkillToDictionary(skill, resume),
                         ["availableSkillPoints"] = resume.AvailableSkillpoints
@@ -138,6 +143,7 @@ namespace OniMcp.Tools
                     ["limit"] = new McpToolParameter { Type = "integer", Description = "list: 返回数量，默认 100，最大 300", Required = false },
                     ["skillId"] = new McpToolParameter { Type = "string", Description = "learn: 技能 ID，例如 Farming1、Mining1", Required = false },
                     ["force"] = new McpToolParameter { Type = "boolean", Description = "learn: 绕过技能点/前置条件并作为授予技能记录，默认 false", Required = false },
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Validate skill learning without spending points or changing mastery", Required = false },
                     ["confirm"] = new McpToolParameter { Type = "boolean", Description = "learn: 确认修改复制人技能，必须为 true", Required = false }
                 },
                 Handler = args =>
@@ -313,6 +319,7 @@ namespace OniMcp.Tools
                 result["canMaster"] = resume.CanMasterSkill(conditions);
                 result["conditions"] = conditions.Select(item => item.ToString()).ToList();
                 result["granted"] = resume.HasBeenGrantedSkill(skill.Id);
+                result["morale"] = MoraleInfo(resume.GetComponent<MinionIdentity>(), resume.HasMasteredSkill(skill.Id) ? null : skill);
             }
 
             return result;

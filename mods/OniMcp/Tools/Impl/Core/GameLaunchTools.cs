@@ -79,22 +79,12 @@ namespace OniMcp.Tools
                 ["activeSaveUsable"] = hasActiveSave,
                 ["canStart"] = canStart,
                 ["blockers"] = blockers,
-                ["next"] = LaunchNextHint(alreadyInGame, canStart),
                 ["isPaused"] = SpeedControlScreen.Instance != null ? SpeedControlScreen.Instance.IsPaused : (bool?)null,
                 ["speed"] = SpeedControlScreen.Instance != null ? (object)(SpeedControlScreen.Instance.GetSpeed() + 1) : null,
                 ["candidateCount"] = saves.Count,
                 ["saves"] = saves
             };
             return CallToolResult.Text(JsonConvert.SerializeObject(result, McpJsonUtil.Settings));
-        }
-
-        private static string LaunchNextHint(bool alreadyInGame, bool canStart)
-        {
-            if (alreadyInGame)
-                return "Game is already loaded. Use colony_control domain=snapshot action=get, or pass forceLoad=true to reload another save intentionally.";
-            return canStart
-                ? "Call game_control domain=launch action=start confirm=true. Pass index/path to choose a save."
-                : "Wait for ONI main menu save services or pass a valid save path under the ONI save root.";
         }
 
         private static CallToolResult Start(JObject args)
@@ -120,7 +110,6 @@ namespace OniMcp.Tools
                     ["activeSaveFile"] = SaveLoader.GetActiveSaveFilePath(),
                     ["resumeRequested"] = ToolUtil.GetBool(args, "resume", true),
                     ["speedRequested"] = Math.Max(1, Math.Min(ToolUtil.GetInt(args, "speed") ?? 1, 3)),
-                    ["next"] = "Dry run only; no save load or speed/pause change was applied."
                 }, McpJsonUtil.Settings));
             }
 
@@ -136,7 +125,6 @@ namespace OniMcp.Tools
                     ["target"] = target,
                     ["activeSaveFile"] = SaveLoader.GetActiveSaveFilePath(),
                     ["speed"] = speedResult,
-                    ["next"] = "Game was already initialized; pass forceLoad=true to load target save anyway."
                 }, McpJsonUtil.Settings));
             }
 

@@ -10,6 +10,7 @@ namespace OniMcp.Tools
         internal int Id, WorldId, X, Y;
         internal string PrefabId;
         internal bool Construction;
+        internal bool ConfirmationPending;
         internal readonly SortedSet<string> Statuses = new SortedSet<string>(StringComparer.Ordinal);
         internal readonly SortedSet<string> Messages = new SortedSet<string>(StringComparer.Ordinal);
         internal readonly SortedDictionary<string, double> Missing = new SortedDictionary<string, double>(StringComparer.Ordinal);
@@ -25,13 +26,15 @@ namespace OniMcp.Tools
         internal ColonyFinding ToFinding()
         {
             string code = Construction ? "construction_material_missing" : "building_material_missing";
+            bool refill = Statuses.Count == 1 && Statuses.Contains("MaterialsUnavailableForRefill");
             return new ColonyFinding {
                 Id = code + ":" + WorldId + ":" + Id, Code = code, WorldId = WorldId, TargetId = Id,
-                Severity = "warning", Message = string.Join("; ", Messages),
+                Severity = refill || ConfirmationPending ? "info" : "warning", StopEligible = !refill && !ConfirmationPending, Message = string.Join("; ", Messages),
                 // Changes in the kind of shortage matter; small delivery mass changes should not churn deltas.
                 Revision = string.Join(",", Statuses) + ":" + string.Join(",", Missing.Keys),
                 Details = new Dictionary<string, object> {
                     ["prefabId"] = PrefabId, ["x"] = X, ["y"] = Y,
+                    ["supplyState"] = ConfirmationPending ? "pending_status_confirmation" : refill ? "refill_only" : "shortage",
                     ["statusIds"] = Statuses.ToArray(), ["missingAmounts"] = Missing
                 }
             };

@@ -33,6 +33,7 @@ internal static class Program
             Handler = args => { calls++; return CallToolResult.Text("ok"); }
         };
         ErgonomicsRegression.Run();
+        LiveAuditRegression.Run();
         GameplayRegression.Run();
         AuditRegression.Run();
         ContinueRegression.Run();

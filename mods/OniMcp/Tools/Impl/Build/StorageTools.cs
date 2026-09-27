@@ -84,6 +84,7 @@ namespace OniMcp.Tools
                 Description = "兼容入口：请优先使用 building_control domain=storage action=set_filter。设置储存建筑的资源过滤标签；默认替换当前过滤器，也可 add/remove",
                 Parameters = StorageLookupParams(new Dictionary<string, McpToolParameter>
                 {
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Preview filter changes without mutation", Required = false },
                     ["tags"] = new McpToolParameter { Type = "array", Description = "资源 Tag 列表，如 Dirt、Algae、SandStone", Required = true },
                     ["mode"] = new McpToolParameter { Type = "string", Description = "replace、add、remove，默认 replace", Required = false, EnumValues = new List<string> { "replace", "add", "remove" } }
                 }),
@@ -99,10 +100,12 @@ namespace OniMcp.Tools
                         return CallToolResult.Error("Selected building does not expose TreeFilterable");
 
                     var tags = ParseTags(args["tags"]);
-                    if (tags.Count == 0)
+                    if (args["tags"] == null)
                         return CallToolResult.Error("tags must contain at least one resource tag");
 
                     string mode = (args["mode"]?.ToString() ?? "replace").ToLowerInvariant();
+                    if (mode != "replace" && mode != "add" && mode != "remove")
+                        return CallToolResult.Error("mode must be replace, add or remove");
                     var next = new HashSet<Tag>(filterable.GetTags());
                     if (mode == "replace")
                         next.Clear();
@@ -115,8 +118,13 @@ namespace OniMcp.Tools
                             next.Add(tag);
                     }
 
-                    filterable.UpdateFilters(next);
-                    return CallToolResult.Text(JsonConvert.SerializeObject(target.ToDictionary(includeItems: false), McpJsonUtil.Settings));
+                    bool dryRun = ToolUtil.GetBool(args, "dryRun", false);
+                    if (!dryRun) filterable.UpdateFilters(next);
+                    target.AcceptedTags = filterable.GetTags().Select(tag => tag.Name).OrderBy(tag => tag).ToList();
+                    var result = target.ToDictionary(includeItems: false);
+                    result["dryRun"] = dryRun; result["committed"] = !dryRun;
+                    result["projectedTags"] = next.Select(tag => tag.Name).OrderBy(tag => tag).ToArray();
+                    return CallToolResult.Text(JsonConvert.SerializeObject(result, McpJsonUtil.Settings));
                 }
             };
         }
@@ -146,6 +154,7 @@ namespace OniMcp.Tools
                     ["y"] = new McpToolParameter { Type = "integer", Description = "action=detail/set_filter 时的建筑所在格子 Y", Required = false },
                     ["query"] = new McpToolParameter { Type = "string", Description = "action=detail/set_filter 时按本地化名或 prefabId 查找", Required = false },
                     ["name"] = new McpToolParameter { Type = "string", Description = "query 的别名", Required = false },
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Preview filter changes without mutation", Required = false },
                     ["tags"] = new McpToolParameter { Type = "array", Description = "action=set_filter 时资源 Tag 列表，如 Dirt、Algae、SandStone", Required = false },
                     ["mode"] = new McpToolParameter { Type = "string", Description = "action=set_filter 时为 replace、add、remove，默认 replace", Required = false, EnumValues = new List<string> { "replace", "add", "remove" } }
                 },
@@ -193,6 +202,7 @@ namespace OniMcp.Tools
                     ["y2"] = new McpToolParameter { Type = "integer", Description = "区域终点 Y", Required = false },
                     ["worldId"] = new McpToolParameter { Type = "integer", Description = "世界 ID", Required = false },
                     ["tag"] = new McpToolParameter { Type = "string", Description = "domain=filter action=set kind=single 时的目标 tag/元素", Required = false },
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Preview filter changes without mutation", Required = false },
                     ["tags"] = new McpToolParameter { Type = "array", Description = "domain=storage/filter 写入时的 tag 列表", Required = false },
                     ["itemTag"] = new McpToolParameter { Type = "string", Description = "domain=tile_selection action=set 时的目标物品 tag", Required = false },
                     ["entityTag"] = new McpToolParameter { Type = "string", Description = "domain=receptacle action=request 时的实体 tag", Required = false },

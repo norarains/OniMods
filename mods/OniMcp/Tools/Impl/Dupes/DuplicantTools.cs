@@ -56,6 +56,7 @@ namespace OniMcp.Tools
                     ["itemId"] = new McpToolParameter { Type = "integer", Description = "domain=assignable action=set_slot 时的物品 InstanceID", Required = false },
                     ["detailMode"] = new McpToolParameter { Type = "string", Description = "info/detail and status_check: compact (default) or full; full includes all native attributes", Required = false, EnumValues = new List<string> { "compact", "full" } },
                     ["includeDetails"] = new McpToolParameter { Type = "boolean", Description = "部分 info/side_screen 读取动作是否包含更多细节", Required = false },
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Preview supported operations, including skill learning, without mutation", Required = false },
                     ["confirm"] = new McpToolParameter { Type = "boolean", Description = "底层写入、移动、强制动作或批量动作按原 control 要求确认", Required = false }
                 },
                 Handler = args =>

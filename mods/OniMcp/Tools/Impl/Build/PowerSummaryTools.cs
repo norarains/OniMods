@@ -70,7 +70,7 @@ namespace OniMcp.Tools
 
                     int generatorCount = 0;
                     int generatorOperational = 0;
-                    int generatorEmpty = 0;
+                    int generatorStoredEnergyEmpty = 0;
                     float generatorWatts = 0f;
                     float generatorStoredJ = 0f;
 
@@ -84,7 +84,7 @@ namespace OniMcp.Tools
                         if (operational)
                             generatorOperational++;
                         if (generator.IsEmpty)
-                            generatorEmpty++;
+                            generatorStoredEnergyEmpty++;
 
                         float rating = ToolUtil.SafeFloat(generator.WattageRating);
                         float stored = ToolUtil.SafeFloat(generator.JoulesAvailable);
@@ -156,7 +156,7 @@ namespace OniMcp.Tools
                             ["batteryStoredPercent"] = batteryCapacityJ > 0f ? Round(batteryStoredJ / batteryCapacityJ * 100f, 2) : 0,
                             ["generatorCount"] = generatorCount,
                             ["generatorOperational"] = generatorOperational,
-                            ["generatorEmpty"] = generatorEmpty,
+                            ["generatorStoredEnergyEmpty"] = generatorStoredEnergyEmpty,
                             ["generatorWatts"] = Round(generatorWatts, 1),
                             ["generatorStoredJ"] = Round(generatorStoredJ, 1),
                             ["consumerCount"] = consumerCount,
@@ -180,10 +180,7 @@ namespace OniMcp.Tools
                     result["diagnostics"] = new Dictionary<string, object>
                     {
                         ["issueCount"] = diagnostics.Count,
-                        ["items"] = diagnostics,
-                        ["next"] = diagnostics.Count == 0
-                            ? "No unconnected, unpowered or source-less consumers detected in this summary."
-                            : "Read the reported /active/map/cell_X_Y.md through world_editor for exact port/wire state. Newly built networks may need a simulation tick before CircuitID refreshes; verify before replacing wires."
+                        ["items"] = diagnostics
                     };
 
                     if (includeDetails)

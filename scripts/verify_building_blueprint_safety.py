@@ -34,7 +34,7 @@ def verify_building_blueprint_safety(
     build_root = root / "mods" / "OniMcp" / "Tools" / "Impl" / "Build"
     paths = {
         "native": build_root / "BuildPlanningNativeUtilityPath.cs",
-        "placement": build_root / "BuildPlanningActionPlacement.cs",
+        "placement": build_root / "BuildPlanningUtilityConnect.cs",
         "plan_one": build_root / "BuildPlanningPlanOne.cs",
         "materials": build_root / "BuildPlanningMaterials.cs",
     }

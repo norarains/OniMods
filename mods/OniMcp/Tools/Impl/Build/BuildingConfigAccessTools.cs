@@ -151,6 +151,8 @@ namespace OniMcp.Tools
         {
             return LookupParams(RectParams(new Dictionary<string, McpToolParameter>
             {
+                ["lowThreshold"] = new McpToolParameter { Type = "number", Description = "Smart battery green threshold (percent)", Required = false },
+                ["highThreshold"] = new McpToolParameter { Type = "number", Description = "Smart battery red threshold (percent)", Required = false },
                 ["action"] = new McpToolParameter { Type = "string", Description = "list/list_automation/set_enabled/set_toggle/set_threshold/set_slider/set_valve_flow/set_limit_valve/set_logic_timer/set_logic_ribbon_bit/set_door_state/get_access/set_access/copy_settings/batch_set/batch_set_automation/state_list/state_set/visual；兼容 operation", Required = false },
                 ["operation"] = new McpToolParameter { Type = "string", Description = "兼容旧参数；优先使用 action", Required = false },
                 ["items"] = new McpToolParameter { Type = "array", Description = "action=batch_set/batch_set_automation 的批量操作数组", Required = false },
@@ -286,6 +288,8 @@ namespace OniMcp.Tools
         private static Dictionary<string, object> BuildConfigInfo(GameObject go)
         {
             var capabilities = new List<string>();
+            var smartBattery = go.GetComponent<BatterySmart>();
+            if (smartBattery != null) capabilities.Add("battery_thresholds");
             var thresholds = go.GetComponents<Component>().OfType<IThresholdSwitch>().Select(ThresholdInfo).ToList();
             var sliders = SliderControlInfos(go);
             if (go.GetComponent<BuildingEnabledButton>() != null)
@@ -342,6 +346,7 @@ namespace OniMcp.Tools
 
             var result = TargetInfo(go);
             result["capabilities"] = capabilities;
+            if (smartBattery != null) result["battery"] = SmartBatteryInfo(smartBattery);
             var enabledButton = go.GetComponent<BuildingEnabledButton>();
             if (enabledButton != null)
                 result["enabled"] = enabledButton.IsEnabled;
