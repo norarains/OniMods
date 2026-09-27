@@ -62,19 +62,19 @@ namespace OniMcp.Tools
                     return ReadOperationMarkdown(path, relative, WorldEditorResponsePolicy.IncludeHelp(args));
 
                 if (relative == "infrastructure/power.oni")
-                    return ReadEditableTemplate(path, "Use exactly: connect (x1,y1) -> (x2,y2) [-> (x3,y3) ...]. This file builds Wire; diagonal legs are not accepted. Read /active/infrastructure/power.md for current connections.");
+                    return ReadEditableTemplate(path, "Use exactly: connect (x1,y1) -> (x2,y2) [-> (x3,y3) ...]. Default Wire; choose outer prefabId/material/priority. Diagonal legs are not accepted. Read /active/infrastructure/power.md for current connections.");
                 if (relative == "infrastructure/power_ports.oni")
                     return CallToolResult.Error("power_ports.oni is hidden from world_editor because broad port scans are crash-prone. Use /active/infrastructure/power.md or /active/map/cell_X_Y.md for low-token anchors.");
                 if (relative == "infrastructure/rooms.oni")
                     return ReadTools.ControlRead().Handler(Child(args, "infrastructure", "rooms"));
                 if (relative == "infrastructure/liquid_conduits.oni")
-                    return ReadEditableTemplate(path, "Use exactly: connect (x1,y1) -> (x2,y2) [-> (x3,y3) ...]. This file builds LiquidConduit.");
+                    return ReadEditableTemplate(path, "Use exactly: connect (x1,y1) -> (x2,y2) [-> (x3,y3) ...]. Default LiquidConduit; choose outer prefabId/material/priority (e.g. InsulatedLiquidConduit for liquid).");
                 if (relative == "infrastructure/gas_conduits.oni")
-                    return ReadEditableTemplate(path, "Use exactly: connect (x1,y1) -> (x2,y2) [-> (x3,y3) ...]. This file builds GasConduit.");
+                    return ReadEditableTemplate(path, "Use exactly: connect (x1,y1) -> (x2,y2) [-> (x3,y3) ...]. Default GasConduit; choose outer prefabId/material/priority.");
                 if (relative == "infrastructure/logic.oni")
-                    return ReadEditableTemplate(path, "Use exactly: connect (x1,y1) -> (x2,y2) [-> (x3,y3) ...]. This file builds LogicWire.");
+                    return ReadEditableTemplate(path, "Use exactly: connect (x1,y1) -> (x2,y2) [-> (x3,y3) ...]. Default LogicWire; choose outer prefabId/material/priority.");
                 if (relative == "infrastructure/solid_conveyor.oni")
-                    return ReadEditableTemplate(path, "Use exactly: connect (x1,y1) -> (x2,y2) [-> (x3,y3) ...]. This file builds SolidConduit.");
+                    return ReadEditableTemplate(path, "Use exactly: connect (x1,y1) -> (x2,y2) [-> (x3,y3) ...]. Default SolidConduit; choose outer prefabId/material/priority.");
                 if (relative == "buildings/warnings.md") return ColonyQuery.ReadWarnings(CopyPayload(args));
                 if (relative == "buildings/index.md")
                     return CallToolResult.Text(ReadBuildingIndexMarkdown(args));

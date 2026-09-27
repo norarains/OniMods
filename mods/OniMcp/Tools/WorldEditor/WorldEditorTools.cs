@@ -351,6 +351,8 @@ namespace OniMcp.Tools
                 ["kind"] = new McpToolParameter { Type = "string", Description = "sandbox subtype: read, area, entity, or map_designate.", Required = false },
                 ["force"] = new McpToolParameter { Type = "boolean", Description = "Forwarded sandbox force request; requires allowForce=true.", Required = false },
                 ["element"] = new McpToolParameter { Type = "string", Description = "Forwarded sandbox element ID.", Required = false },
+                ["material"] = new McpToolParameter { Type = "string", Description = "Construction material, default auto." },
+                ["priority"] = new McpToolParameter { Type = "integer", Description = "Construction priority 1–9, default 5." },
                 ["prefabId"] = new McpToolParameter { Type = "string", Description = "Building variant for infrastructure plans, or sandbox entity prefab ID.", Required = false },
                 ["storyId"] = new McpToolParameter { Type = "string", Description = "Forwarded sandbox story trait ID.", Required = false },
                 ["id"] = new McpToolParameter { Type = "integer", Description = "Exact object or duplicant InstanceID for targeted reads and edits.", Required = false },

@@ -23,7 +23,7 @@ namespace OniMcp.Tools
             var rows = new List<FactRow>();
             var groups = new Dictionary<string, AggregateGroup>(StringComparer.Ordinal);
             if (plan.Aggregates && plan.GroupBy == null) groups[""] = new AggregateGroup(plan, JValue.CreateNull());
-            foreach (var row in dataset.Rows())
+            foreach (var row in dataset.IndexedRows?.Invoke(plan.Where) ?? dataset.Rows())
             {
                 budget();
                 if (++scanned > MaxScan) throw new ArgumentException("Query scan budget exceeded; no partial aggregate returned.");

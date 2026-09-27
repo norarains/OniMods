@@ -24,14 +24,10 @@ namespace OniMcp.Tools
                 Parameters = RectParams(new Dictionary<string, McpToolParameter>
                 {
                     ["worldId"] = new McpToolParameter { Type = "integer", Description = "世界 ID，默认当前激活世界", Required = false },
-                    ["label"] = new McpToolParameter { Type = "string", Description = "可选短标签，例如 oxygen_room_candidate", Required = false }
+                    ["label"] = new McpToolParameter { Type = "string", Description = "可选短标签，例如 oxygen_room_candidate", Required = false },
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "Validate without creating a handle." }
                 }),
-                Handler = args =>
-                {
-                    int worldId = ToolUtil.GetInt(args, "worldId") ?? ClusterManager.Instance?.activeWorldId ?? 0;
-                    var handle = AreaHandleRegistry.Define(ToolUtil.GetRect(args), worldId, args["label"]?.ToString());
-                    return CallToolResult.Text(JsonConvert.SerializeObject(handle.ToDictionary(), McpJsonUtil.Settings));
-                }
+                Handler = AreaDefinition.Define
             };
         }
 

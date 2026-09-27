@@ -9,6 +9,15 @@
     <StartupObject>BenchmarkMetadataRegressionEntry</StartupObject>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../mods/OniMcp/Tools/WorldEditor/WorldEditorOperationReceipts.cs" Link="Source/WorldEditorOperationReceipts.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/World/AreaDefinition.cs" Link="Source/AreaDefinition.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Build/PowerConnectionReadiness.cs" Link="Source/PowerConnectionReadiness.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/WorldEditor/OperationArguments.cs" Link="Source/OperationArguments.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/WorldEditor/AreaOperation.cs" Link="Source/AreaOperation.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/WorldEditor/WorldEditorOperationPreflight.cs" Link="Source/WorldEditorOperationPreflight.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Build/BuildPlanningPortSafety.cs" Link="Source/BuildPlanningPortSafety.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Build/TemperatureSampleReadiness.cs" Link="Source/TemperatureSampleReadiness.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Build/PlannedAccessChain.cs" Link="Source/PlannedAccessChain.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Query/QueryArguments.cs" Link="Source/QueryArguments.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Query/FactQuery*.cs" Link="Source/%(Filename)%(Extension)" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Core/ContinueObservationFreshness.cs" Link="Source/ContinueObservationFreshness.cs" />

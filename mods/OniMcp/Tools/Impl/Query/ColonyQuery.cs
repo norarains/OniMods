@@ -48,6 +48,8 @@ namespace OniMcp.Tools
                     F("cellReachable", "boolean", cost:"navigation")
                 }), OrderRows)
             };
+            foreach (string name in new[] { "buildings", "building_warnings", "ports" })
+                result[name].IndexedRows = predicate => IndexedBuildingRows(predicate, name == "building_warnings");
             result["building_warnings"].Required = row => (row.Get("statuses") as JArray)?.Count > 0;
             return result;
         }

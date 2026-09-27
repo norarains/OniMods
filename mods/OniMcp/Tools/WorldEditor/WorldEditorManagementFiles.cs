@@ -299,53 +299,8 @@ namespace OniMcp.Tools
             return space < 0 ? line : line.Substring(0, space);
         }
 
-        private static JObject ParseCommandKeyValues(string line)
-        {
-            var result = new JObject();
-            foreach (var token in TokenizeCommand(line).Skip(1))
-            {
-                int eq = token.IndexOf('=');
-                if (eq <= 0)
-                    continue;
-                string key = token.Substring(0, eq).Trim();
-                string value = token.Substring(eq + 1).Trim().Trim('"');
-                bool boolValue;
-                int intValue;
-                if (bool.TryParse(value, out boolValue))
-                    result[key] = boolValue;
-                else if (int.TryParse(value, out intValue))
-                    result[key] = intValue;
-                else
-                    result[key] = value;
-            }
-            return result;
-        }
+        private static JObject ParseCommandKeyValues(string line) => OperationArguments.Parse(line);
 
-        private static IEnumerable<string> TokenizeCommand(string line)
-        {
-            var current = new StringBuilder();
-            bool quoted = false;
-            foreach (char c in line ?? string.Empty)
-            {
-                if (c == '"')
-                {
-                    quoted = !quoted;
-                    current.Append(c);
-                    continue;
-                }
-                if (char.IsWhiteSpace(c) && !quoted)
-                {
-                    if (current.Length > 0)
-                    {
-                        yield return current.ToString();
-                        current.Length = 0;
-                    }
-                    continue;
-                }
-                current.Append(c);
-            }
-            if (current.Length > 0)
-                yield return current.ToString();
-        }
+        private static IEnumerable<string> TokenizeCommand(string line) => OperationArguments.Tokens(line);
     }
 }

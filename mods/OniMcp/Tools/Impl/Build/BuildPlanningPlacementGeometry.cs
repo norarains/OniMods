@@ -94,6 +94,7 @@ namespace OniMcp.Tools
 
             var obstructions = FindFootprintObstructions(placement, ignored);
             AddBackwallFoundationFailure(placement, obstructions);
+            obstructions.AddRange(FindBuildingPortConflicts(ResolveBuildingDefForPlacement(placement), placement, ignored));
 
             if (invalid.Count == 0 && obstructions.Count == 0)
                 return FootprintValidation.Success();

@@ -13,6 +13,7 @@ internal static class Program
 
     private static void Main()
     {
+        MaintenanceRegression.Run();
         QueryContractRegression.Run();
         OniToolRegistry.Tools["ok"] = new McpTool
         {

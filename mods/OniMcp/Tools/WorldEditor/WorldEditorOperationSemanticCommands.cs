@@ -10,7 +10,7 @@ namespace OniMcp.Tools
         static bool IsSemanticOperationHead(string head)
         {
             head = NormalizeSemanticHead(head);
-            return IsMoveHead(head) || IsCaptureHead(head) || TrySemanticOrderAction(head, out _, out _);
+            return head == "area" || IsMoveHead(head) || IsCaptureHead(head) || TrySemanticOrderAction(head, out _, out _);
         }
 
         static bool TryParseSemanticOperationLine(
@@ -28,6 +28,13 @@ namespace OniMcp.Tools
             if (!IsSemanticOperationHead(head))
                 return false;
 
+            if (head == "area")
+            {
+                if (relative != "ops/read.md" && relative != "ops/any.md")
+                { error = "Use /active/ops/read.md for area definitions"; return false; }
+                try { arguments = AreaOperation.Parse(line); toolName = "read_control"; return true; }
+                catch (ArgumentException ex) { error = ex.Message; return false; }
+            }
             if (IsCaptureHead(head))
                 return TryParseCaptureOperation(line, out toolName, out arguments, out error);
             if (TrySemanticOrderAction(head, out string action, out bool designation))

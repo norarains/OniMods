@@ -9,7 +9,6 @@ namespace OniMcp.Tools
     {
         private static readonly FieldInfo FetchListField = typeof(ManualDeliveryKG).GetField("fetchList", BindingFlags.Instance | BindingFlags.NonPublic);
         private static readonly FieldInfo ChoreField = typeof(ResearchCenter).GetField("chore", BindingFlags.Instance | BindingFlags.NonPublic);
-        private static readonly FieldInfo CircuitDirtyField = typeof(CircuitManager).GetField("dirty", BindingFlags.Instance | BindingFlags.NonPublic);
 
         internal static List<ContinueResearchStation> Read(int worldId)
         {
@@ -39,7 +38,7 @@ namespace OniMcp.Tools
                     Required = required > earned, RemainingPoints = Math.Max(0, required - earned),
                     Operational = operational?.IsOperational, Powered = powerPending ? (bool?)null : consumer?.IsPowered,
                     PowerNetworkPending = powerPending,
-                    CircuitId = consumer == null ? (int?)null : consumer.CircuitID == ushort.MaxValue ? -1 : consumer.CircuitID,
+                    CircuitId = consumer == null || powerPending ? (int?)null : consumer.CircuitID == ushort.MaxValue ? -1 : consumer.CircuitID,
                     HasPowerSource = consumer == null || powerPending ? (bool?)null : sourceCircuits.Contains(consumer.CircuitID),
                     StoredKg = Math.Round(storage?.MassStored() ?? 0f, 2),
                     MissingMaterial = storage != null && storage.MassStored() <= 0,
@@ -56,12 +55,6 @@ namespace OniMcp.Tools
         }
 
         private static bool PowerNetworkPending(EnergyConsumer consumer)
-        {
-            var manager = Game.Instance?.circuitManager;
-            if (manager == null) return true;
-            return (Game.Instance.electricalConduitSystem?.IsDirty ?? true)
-                || (CircuitDirtyField?.GetValue(manager) is bool dirty && dirty)
-                || (Grid.IsValidCell(consumer.PowerCell) && manager.GetCircuitID(consumer.PowerCell) != consumer.CircuitID);
-        }
+            => PowerConnectionReadiness.Pending(consumer, consumer.CircuitID);
     }
 }

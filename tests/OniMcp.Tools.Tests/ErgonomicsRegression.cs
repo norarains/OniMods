@@ -291,8 +291,8 @@ namespace UnityEngine
         public T GetComponent<T>() where T : class => Components.Values.OfType<T>().FirstOrDefault();
     }
 }
-internal sealed class BuildingDef { internal string PrefabID { get; set; } internal ObjectLayer ReplacementLayer { get; set; } = global::ObjectLayer.NumLayers; internal int ObjectLayer { get; set; } internal int WidthInCells { get; set; } internal int HeightInCells { get; set; } internal UnityEngine.GameObject BuildingComplete { get; set; } }
-internal static class Grid
+internal sealed partial class BuildingDef { internal string PrefabID { get; set; } internal ObjectLayer ReplacementLayer { get; set; } = global::ObjectLayer.NumLayers; internal int ObjectLayer { get; set; } internal int WidthInCells { get; set; } internal int HeightInCells { get; set; } internal UnityEngine.GameObject BuildingComplete { get; set; } }
+internal static partial class Grid
 {
     internal const int WidthInCells = 1024, HeightInCells = 8;
     internal static int PosToCell(UnityEngine.GameObject go) => go.Cell;

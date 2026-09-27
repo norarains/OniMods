@@ -51,7 +51,9 @@ def main() -> int:
     assert "[ThreadStatic]" in building_control
     assert "internal static bool IsVirtualFileEditContext" in building_control
     internal_route = method_body(building_control, "internal static CallToolResult ControlBuildingFromVirtualFile")
-    ordered(internal_route, "virtualFileEditDepth++", "try", "ControlBuilding().Handler(forwarded)", "finally", "virtualFileEditDepth--")
+    assert "WithVirtualFileContext(() => ControlBuilding().Handler(forwarded))" in internal_route
+    internal_scope = method_body(building_control, "internal static CallToolResult WithVirtualFileContext")
+    ordered(internal_scope, "virtualFileEditDepth++", "try", "action()", "finally", "virtualFileEditDepth--")
     assert "&& !IsVirtualFileEditContext" in building_control
     assert "_virtualFileEdit" not in building_control and "_virtualFileEdit" not in completion
 
@@ -134,7 +136,7 @@ def main() -> int:
         assert required in parser
     assert 'var points = ParsePathPoints(args["points"])' in auto_connect
     assert 'args["plan"]' not in method_body(auto_connect, "private static List<CellCoord> ResolveUtilityPath")
-    assert "This file builds LogicWire" in reads
+    assert "Default LogicWire; choose outer prefabId/material/priority" in reads
 
     syntax = re.compile(r"^connect\s+\(\s*-?\d+\s*,\s*-?\d+\s*\)(?:\s*(?:->|→)\s*\(\s*-?\d+\s*,\s*-?\d+\s*\)){1,}$", re.I)
     for valid in ("connect (124,149) -> (125,149)", "CONNECT (-1,2) → (3,4) -> (3,8)"):

@@ -72,6 +72,9 @@ namespace OniMcp.Tools
                     ["rewardIndex"] = new McpToolParameter { Type = "integer", Description = "Reward index for side_surface surface=facility kind=printing_pod action=claim.", Required = false },
                     ["confirm"] = new McpToolParameter { Type = "boolean", Description = "Confirmation for dangerous or batch writes, following each child tool's rules.", Required = false },
                     ["unit"] = new McpToolParameter { Type = "string", Description = "set_threshold input: native (default; temperatures K), K, C, F, or display." },
+                    ["enabled"] = new McpToolParameter { Type = "boolean", Description = "set_enabled target state." },
+                    ["value"] = new McpToolParameter { Type = "number", Description = "set_slider target value." },
+                    ["index"] = new McpToolParameter { Type = "integer", Description = "set_slider index, default 0." },
                     ["threshold"] = new McpToolParameter { Type = "number", Description = "set_threshold target value in unit." },
                     ["activateAbove"] = new McpToolParameter { Type = "boolean", Description = "Threshold direction: above=true, below=false." },
                     ["component"] = new McpToolParameter { Type = "string", Description = "Threshold/slider component selector." },
@@ -157,10 +160,15 @@ namespace OniMcp.Tools
         internal static CallToolResult ControlBuildingFromVirtualFile(JObject args)
         {
             var forwarded = args == null ? new JObject() : (JObject)args.DeepClone();
+            return WithVirtualFileContext(() => ControlBuilding().Handler(forwarded));
+        }
+
+        internal static CallToolResult WithVirtualFileContext(Func<CallToolResult> action)
+        {
             virtualFileEditDepth++;
             try
             {
-                return ControlBuilding().Handler(forwarded);
+                return action();
             }
             finally
             {

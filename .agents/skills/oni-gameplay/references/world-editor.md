@@ -41,7 +41,7 @@ Convenience forwards also support game speed, camera/view/overlay, and screensho
 | `/active/ops/tools.md` | Current public typed operation files and tools | read only |
 | `/active/ops/orders.md` | Dig, mop, sweep, disinfect, harvest, cancel, deconstruct, attack, capture | one command |
 | `/active/ops/build.md` | Semantic coordinate-free build plans | one command |
-| `/active/ops/{game,colony,read,search,dupes,navigation,server,...}.md` | Typed tool calls | one command |
+| `/active/ops/{game,colony,read,dupes,navigation,server,...}.md` | Typed tool calls | one command |
 | `/active/management/{schedule,priorities,dupes,food,skills,research}.md` | Panel snapshots plus edit commands | one command |
 | `/active/dupes/<name>.md` | Per-duplicant detail | supported field edits such as `Name:` |
 | `/active/buildings/index.md` | Completed building parameter index | read only |
@@ -197,9 +197,10 @@ Append `?format=json` only when machine-readable state is necessary.
 
 ### Plan files
 
-- `/active/buildings/plans.oni`: preview routes to `parse_plan`; confirmed execution routes to `building_control planning build_area`.
-- `/active/infrastructure/*.oni`: explicit utility plans route to `auto_connect`.
-- `/active/ops/build.md`: submit one explicit `auto_connect` command when the utility change is better expressed as a typed operation.
+- `/active/buildings/plans.oni`: preview and commit use native `build_area` validation.
+- `/active/infrastructure/*.oni`: `connect (x1,y1) -> (x2,y2)` with outer `prefabId`, `material`, `priority` selects the utility variant and work settings; axis-aligned legs only.
+- `/active/ops/build.md`: typed `auto_connect` accepts JSON points and runs native preflight. Supported order previews also validate native state.
+- `/active/ops/read.md`: `area label=module x1=10 y1=20 x2=15 y2=25 worldId=0`; preview checks bounds, confirm returns an areaId for query `in_area`.
 
 ### Blueprints
 

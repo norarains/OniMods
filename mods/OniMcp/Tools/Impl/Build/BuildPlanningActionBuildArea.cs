@@ -133,6 +133,7 @@ namespace OniMcp.Tools
                         previews.Add(preview);
                     }
 
+                    AddLadderAccessDependencies(def, previews, ToolUtil.ResolveWorldId(args));
                     var failedPreviews = previews.Where(item => !(item.ContainsKey("valid") && (bool)item["valid"])).ToList();
                     var hardFailedPreviews = previews.Where(item => !(item.ContainsKey("valid") && (bool)item["valid"]) && !IsAutoDiggableFailure(item)).ToList();
                     bool plannedFootprintOverlap = failedPreviews.Any(item =>

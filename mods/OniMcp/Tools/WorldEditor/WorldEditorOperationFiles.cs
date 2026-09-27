@@ -76,10 +76,12 @@ namespace OniMcp.Tools
                     sb.AppendLine("```json\n" + JsonConvert.SerializeObject(ToolSummary(tool), McpJsonUtil.Settings) + "\n```");
             }
             sb.AppendLine();
+            if (relative == "ops/read.md")
+                sb.AppendLine("Named area: `area label=module x1=10 y1=20 x2=15 y2=25 worldId=0`; preview then confirm creates an areaId for in_area('a1').");
             if (relative == "ops/build.md")
             {
                 sb.AppendLine("Utility paths: edit `/active/infrastructure/power.oni` (Wire), liquid_conduits.oni, gas_conduits.oni, logic.oni or solid_conveyor.oni.");
-                sb.AppendLine("Grammar: `connect (x1,y1) -> (x2,y2) -> (x3,y3)`; axis-aligned legs only. Preview first; existing matching segments are reused.");
+                sb.AppendLine("Grammar: `connect (x1,y1) -> (x2,y2) -> (x3,y3)`; axis-aligned legs only. Set outer prefabId/material/priority to choose variant, material and work priority. Preview first; existing matching segments are reused.");
                 sb.AppendLine("Read `/active/infrastructure/power.md` for exact endpoint cells. Use includeHelp=true for the full typed schema.");
             }
             sb.AppendLine("## Edit Commands");
@@ -184,7 +186,7 @@ namespace OniMcp.Tools
             }
 
             CallToolResult result = RunWithWorldEditorInstantBuildScope(arguments,
-                () => OniToolRegistry.CallToolFromWorldEditor(toolName, arguments, semanticCoordinates));
+                () => ExecuteValidatedOperation(toolName, arguments, semanticCoordinates));
             bool failed = WorldEditorResultFailed(result, arguments);
             anyError = anyError || failed;
             partial = partial || ResultReportsPartial(result);
@@ -207,6 +209,7 @@ namespace OniMcp.Tools
                 resultItem["arguments"] = arguments;
                 resultItem["result"] = TrimOperationText(text, 12000);
             }
+            AppendOperationReceiptFacts(resultItem, ParseWorldEditorResult(result));
             results.Add(resultItem);
             if (failed && stopOnError)
                 break;
@@ -241,51 +244,11 @@ namespace OniMcp.Tools
                 return CallToolResult.Error("Operation preflight failed for `" + line + "`: " + error);
             if (!ToolCallMiddleware.TryGetTaskDescription(arguments, out _))
                 return CallToolResult.Error("Operation preflight failed for `" + line + "`: task is required");
-            compiled.Add(new JObject { ["line"] = line, ["tool"] = toolName, ["arguments"] = arguments });
+            var preview = PreviewOperation(line, toolName, arguments, semanticCoordinates);
+            if (!preview["ok"].Value<bool>()) return CallToolResult.Error(JsonResultText(preview));
+            compiled.Add(preview);
         }
         return JsonResult(new JObject { ["ok"] = true, ["phase"] = "preflight", ["commands"] = compiled });
-    }
-
-    private static string SummarizeOperationResult(string text)
-    {
-        if (string.IsNullOrWhiteSpace(text))
-            return "ok";
-        try
-        {
-            var token = JToken.Parse(text);
-            var obj = token as JObject;
-            if (obj == null)
-                return "ok";
-            var parts = new List<string>();
-            AddSummaryPart(parts, obj, "planned");
-            AddSummaryPart(parts, obj, "marked");
-            foreach (string key in new[] { "changed", "applied", "succeeded", "count", "matched", "dryRun", "committed", "markedForHarvest", "harvestWhenReady", "canBeHarvested", "target", "id" })
-                AddSummaryPart(parts, obj, key);
-            AddSummaryPart(parts, obj, "executedCells");
-            AddSummaryPart(parts, obj, "remainingCells");
-            AddSummaryPart(parts, obj, "failed");
-            AddSummaryPart(parts, obj, "pathCells");
-            AddSummaryPart(parts, obj, "prefabId");
-            AddSummaryPart(parts, obj, "action");
-            return parts.Count == 0 ? "ok" : string.Join(", ", parts);
-        }
-        catch
-        {
-            return TrimOperationText(text, 500);
-        }
-    }
-
-    private static void AddSummaryPart(List<string> parts, JObject obj, string key)
-    {
-        if (obj[key] != null)
-            parts.Add(key + "=" + obj[key]);
-    }
-
-    private static string TrimOperationText(string text, int max)
-    {
-        if (string.IsNullOrEmpty(text) || text.Length <= max)
-            return text ?? string.Empty;
-        return text.Substring(0, max) + "...";
     }
 
         private static IEnumerable<string> ExtractOperationCommandLines(string text)
@@ -321,7 +284,8 @@ namespace OniMcp.Tools
             if (!string.IsNullOrWhiteSpace(error))
                 return false;
 
-            arguments = ParseCommandKeyValues(line);
+            try { arguments = ParseCommandKeyValues(line); }
+            catch (ArgumentException ex) { error = ex.Message; return false; }
             toolName = arguments["tool"]?.ToString();
             if (string.IsNullOrWhiteSpace(toolName))
                 toolName = OperationFileTools[relative];

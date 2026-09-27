@@ -154,6 +154,7 @@ int cell = Grid.XYToCell(x, y);
                     ["actualAnchor"] = null,
                     ["valid"] = true,
                     ["dryRun"] = true,
+                    ["priority"] = System.Math.Max(1, System.Math.Min(9, ToolUtil.GetInt(args, "priority") ?? 5)),
                     ["prefabId"] = prefabId,
                     ["name"] = ToolUtil.CleanName(def.Name),
                     ["x"] = x,
@@ -266,7 +267,8 @@ int cell = Grid.XYToCell(x, y);
                     ["nativeAutoDigTargets"] = nativeDigs,
                 ["actionable"] = GetBool(workAccess, "hasCurrentConstructionAccess"),
                 ["instantCompletion"] = instantCompletion,
-                ["id"] = go.GetComponent<KPrefabID>()?.InstanceID ?? -1
+                ["id"] = go.GetComponent<KPrefabID>()?.InstanceID ?? -1,
+                ["priority"] = go.GetComponent<Prioritizable>()?.GetMasterPriority().priority_value
             }, placedPowerAutoConnect, true);
         }
     }

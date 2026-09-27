@@ -62,13 +62,6 @@ namespace OniMcp.Tools
             return conflicts;
         }
 
-        private sealed class BridgeEndpointTarget
-        {
-            public int Cell;
-            public ObjectLayer Layer;
-            public string Role;
-        }
-
         private static bool UsesNativeBridgeEndpointRegistration(BuildingDef def)
         {
             return def != null && (def.BuildLocationRule == BuildLocationRule.Conduit
@@ -186,18 +179,6 @@ namespace OniMcp.Tools
             foreach (var port in ports.inputPortInfo)
                 yield return BridgeEndpointTargetForOffset(anchorCell, placement.Orientation,
                     port.cellOffset, def.ObjectLayer, "logic_input");
-        }
-
-        private static BridgeEndpointTarget BridgeEndpointTargetForOffset(
-            int anchorCell, Orientation orientation, CellOffset offset, ObjectLayer layer, string role)
-        {
-            var rotated = Rotatable.GetRotatedCellOffset(offset, orientation);
-            return new BridgeEndpointTarget
-            {
-                Cell = Grid.OffsetCell(anchorCell, rotated),
-                Layer = layer,
-                Role = role
-            };
         }
 
         private static IEnumerable<FootprintCell> PlacementSafetyFootprint(

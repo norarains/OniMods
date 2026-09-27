@@ -25,9 +25,9 @@ namespace OniMcp.Tools
             }
         }
 
-        private static IEnumerable<FactRow> BuildingRows(bool warnings)
+        private static IEnumerable<FactRow> BuildingRows(bool warnings, IEnumerable<GameObject> candidates = null)
         {
-            foreach (var go in GameControlTools.BuildingReadCandidates(true))
+            foreach (var go in candidates ?? GameControlTools.BuildingReadCandidates(true))
             {
                 int cell = Grid.PosToCell(go);
                 if (!ToolUtil.VisibleCellAllowed(cell, true)) continue;

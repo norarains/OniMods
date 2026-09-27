@@ -112,6 +112,7 @@ namespace OniMcp.Tools
             JObject obj = ParseWorldEditorResult(result);
             if (obj == null || ToolUtil.GetBool(obj, "dryRun", false) || ToolUtil.GetBool(obj, "preview", false))
                 return 0;
+            if (obj["areaId"] != null && ToolUtil.GetBool(obj, "committed", false)) return 1;
             foreach (string key in new[] { "planned", "succeeded", "marked", "executedCells", "applied", "changed", "cancelled", "canceled", "triggeredObjects" })
             {
                 int value = ResultFieldInt(obj, key);

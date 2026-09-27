@@ -35,6 +35,7 @@ namespace OniMcp.Tools
         internal readonly Dictionary<string, FactField> Fields;
         internal readonly Func<IEnumerable<FactRow>> Rows;
         internal Func<FactRow, bool> Required;
+        internal Func<FactPredicate, IEnumerable<FactRow>> IndexedRows;
         internal FactDataset(string name, IEnumerable<FactField> fields, Func<IEnumerable<FactRow>> rows)
         { Name = name; Fields = fields.ToDictionary(f => f.Name, StringComparer.OrdinalIgnoreCase); Rows = rows; }
         internal FactField Field(string name)

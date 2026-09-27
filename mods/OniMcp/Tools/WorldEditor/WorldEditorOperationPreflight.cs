@@ -15,11 +15,21 @@ namespace OniMcp.Tools
             if (!HasNativeOperationPreview(tool, args)) return row;
             var previewArgs = (JObject)args.DeepClone();
             previewArgs["dryRun"] = true; previewArgs["confirm"] = false;
-            var result = OniToolRegistry.CallToolFromWorldEditor(tool, previewArgs, coordinates);
+            var result = ExecuteValidatedOperation(tool, previewArgs, coordinates);
             row["validationLevel"] = "native_preflight";
             row["ok"] = !WorldEditorResultFailed(result, previewArgs);
             row["result"] = WorldEditorResponsePolicy.Body(result);
             return row;
+        }
+
+        private static CallToolResult ExecuteValidatedOperation(string tool, JObject args, bool coordinates)
+        {
+            // Capability and coordinate validation happen before either entry.
+            // Retain normal registry middleware while entering the file context
+            // required by semantic build_area operations.
+            Func<CallToolResult> run = () => OniToolRegistry.CallToolFromWorldEditor(tool, args, coordinates);
+            return tool == "building_control" && args["domain"]?.ToString() == "planning"
+                ? BuildingControlTools.WithVirtualFileContext(run) : run();
         }
 
         // Explicitly audited dry-run handlers. An arbitrary schema flag is not proof of purity.
@@ -27,7 +37,8 @@ namespace OniMcp.Tools
         {
             string domain = args["domain"]?.ToString(), action = args["action"]?.ToString();
             if (tool == "building_control")
-                return domain == "production" && new[] { "set", "batch" }.Contains(action)
+                return domain == "planning" && new[] { "build_area", "auto_connect", "repair_line" }.Contains(action)
+                    || domain == "production" && new[] { "set", "batch" }.Contains(action)
                     || domain == "storage" && action == "set_filter"
                     || domain == "config" && action == "set_battery_thresholds"
                     || domain == "side_surface" && args["surface"]?.ToString() == "user_menu" && new[] { "press", "batch" }.Contains(action);
@@ -35,6 +46,10 @@ namespace OniMcp.Tools
                 return domain == "management" && args["kind"]?.ToString() == "research" && action == "set"
                     || domain == "bio" && args["bioDomain"]?.ToString() == "farming"
                         && new[] { "set_planting", "batch_set_planting", "uproot", "set_harvestable" }.Contains(action);
+            if (tool == "read_control") return domain == "area" && action == "define";
+            if (tool == "orders_control")
+                return domain == "area" && new[] { "dig", "mop", "sweep", "disinfect", "harvest", "cancel" }.Contains(action)
+                    || domain == "designation" && new[] { "deconstruct", "attack" }.Contains(action);
             return tool == "dupes_control" && domain == "skill" && action == "learn";
         }
 

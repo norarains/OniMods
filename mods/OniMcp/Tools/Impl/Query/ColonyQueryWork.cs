@@ -44,7 +44,7 @@ namespace OniMcp.Tools
         {
             foreach (var item in UnityEngine.Object.FindObjectsByType<Constructable>(FindObjectsSortMode.None))
                 if (item != null && ToolUtil.VisibleCellAllowed(Grid.PosToCell(item), true)) yield return OrderRow(item.gameObject, "construction", item);
-            foreach (var item in UnityEngine.Object.FindObjectsByType<Diggable>(FindObjectsSortMode.None))
+            foreach (var item in Components.Diggables.Items)
                 if (item != null && ToolUtil.VisibleCellAllowed(Grid.PosToCell(item), true)) yield return OrderRow(item.gameObject, "dig", item);
             foreach (var item in UnityEngine.Object.FindObjectsByType<Deconstructable>(FindObjectsSortMode.None))
                 if (item != null && item.IsMarkedForDeconstruction() && ToolUtil.VisibleCellAllowed(Grid.PosToCell(item), true)) yield return OrderRow(item.gameObject, "deconstruction", item);

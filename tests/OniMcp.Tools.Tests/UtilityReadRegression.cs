@@ -49,7 +49,7 @@ internal enum ObjectLayer
     GasConduit, GasConduitTile, ReplacementGasConduit,
     SolidConduit, SolidConduitTile, ReplacementSolidConduit,
     Wire, WireTile, ReplacementWire, LogicWire, LogicWireTile, ReplacementLogicWire,
-    TravelTubeTile, ReplacementTravelTube, Building, NumLayers
+    TravelTubeTile, ReplacementTravelTube, Building, WireConnectors, LiquidConnection, GasConnection, SolidConnection, NumLayers
 }
 internal sealed class BuildingComplete : KMonoBehaviour { }
 internal sealed class Building { internal BuildingDef Def { get; set; } }
