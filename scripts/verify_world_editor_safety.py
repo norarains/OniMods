@@ -85,7 +85,11 @@ def verify_execution_policy() -> None:
     require(policy, 'ToolUtil.GetBool(obj, "dryRun", false) || ToolUtil.GetBool(obj, "preview", false)', "previews never count as applied mutations")
     require(edits, "PreflightSingleEditBlock", "all-block preflight")
     require(edits, "WorldEditorExecutionAllowed(args)", "top-level edit gate")
-    require(edits, 'relative == "buildings/plans.oni" ? "build_area" : "auto_connect"', "real build dry-run preflight")
+    build_commands = source("mods/OniMcp/Tools/WorldEditor/WorldEditorBuildCommands.cs")
+    require(build_commands, 'preview["action"] = connectionFile ? "auto_connect" : "build_area"', "typed build dry-run preflight")
+    require(build_commands, 'preview["dryRun"] = true', "typed build preview cannot write")
+    require(build_commands, 'preview["confirm"] = false', "typed build preview clears confirmation")
+    forbid(build_commands, "LooksLikeConnection", "typed building plans cannot be routed by prefab text")
     require(
         source("mods/OniMcp/Tools/Entry/BuildingControlTools.cs"),
         'action == "build_area"',

@@ -56,9 +56,9 @@ internal enum ObjectLayer
     GasConduit, GasConduitTile, ReplacementGasConduit,
     SolidConduit, SolidConduitTile, ReplacementSolidConduit,
     Wire, WireTile, ReplacementWire, LogicWire, LogicWireTile, ReplacementLogicWire,
-    TravelTubeTile, ReplacementTravelTube, Building, WireConnectors, LiquidConnection, GasConnection, SolidConnection, NumLayers
+    TravelTubeTile, ReplacementTravelTube, Building, WireConnectors, LiquidConnection, GasConnection, SolidConnection, FoundationTile, NumLayers
 }
-internal sealed class BuildingComplete : KMonoBehaviour { }
+internal sealed partial class BuildingComplete : KMonoBehaviour { }
 internal sealed class Building { internal BuildingDef Def { get; set; } }
 internal interface IHaveUtilityNetworkMgr { TestUtilityNetwork GetNetworkManager(); }
 internal sealed class TestUtilityProvider : IHaveUtilityNetworkMgr

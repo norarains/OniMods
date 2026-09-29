@@ -40,6 +40,7 @@ def main() -> int:
     building_control = (ROOT / "mods/OniMcp/Tools/Entry/BuildingControlTools.cs").read_text(encoding="utf-8")
     sandbox = (ROOT / "mods/OniMcp/Tools/WorldEditor/WorldEditorSandboxPolicy.cs").read_text(encoding="utf-8")
     edits = (ROOT / "mods/OniMcp/Tools/WorldEditor/WorldEditorEdits.cs").read_text(encoding="utf-8")
+    edits += (ROOT / "mods/OniMcp/Tools/WorldEditor/WorldEditorBuildCommands.cs").read_text(encoding="utf-8")
     reads = (ROOT / "mods/OniMcp/Tools/WorldEditor/WorldEditorReadSearch.cs").read_text(encoding="utf-8")
     auto_connect = (build / "BuildPlanningAutoConnect.cs").read_text(encoding="utf-8")
 
@@ -59,7 +60,7 @@ def main() -> int:
 
     planning = method_body(plan_one, "private static Dictionary<string, object> TryPlanOne")
     ordered(planning, "IsAuthorizedVirtualFileInstantBuild(args)", "if (completedImmediately)",
-            "TryBuildVirtualFileInstantBuild", "else", "def.TryPlace", "SetPriority(go",
+            "TryBuildVirtualFileInstantBuild", "else", "TryPlaceNativeBlueprint", "SetPriority(go",
             '["blueprintPlaced"] = !completedImmediately', '["buildingCompleted"] = completedImmediately')
 
     complete = method_body(completion, "private static bool TryBuildVirtualFileInstantBuild")

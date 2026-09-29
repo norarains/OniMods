@@ -43,10 +43,10 @@ def main() -> None:
     exact = body(refresh, "private static bool IsExactConnectionUtilityPrefab")
     assert "UtilityPrefabPolicy.IsLinear(prefabId)" in exact
     policy = (ROOT / "mods/OniMcp/Tools/Shared/UtilityPrefabPolicy.cs").read_text()
-    for prefab in ("LogicWire", "Wire", "WireRefined", "WireHighWattage", "WireRefinedHighWattage",
+    for prefab in ("LogicWire", "Wire", "WireRefined", "HighWattageWire", "WireRefinedHighWattage",
                    "LiquidConduit", "InsulatedLiquidConduit", "GasConduit", "InsulatedGasConduit", "SolidConduit"):
         assert f'["{prefab}"]' in policy
-    for invalid in ("LiquidConduitInsulated", "GasConduitInsulated"):
+    for invalid in ("LiquidConduitInsulated", "GasConduitInsulated", "WireHighWattage"):
         assert f'["{invalid}"]' not in policy
     assert "IsExactConnectionUtilityPrefab(def.PrefabID)" not in scoped
     for prefab in ("LogicWire", "Wire", "LiquidConduit", "GasConduit", "SolidConduit"):

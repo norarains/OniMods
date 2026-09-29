@@ -250,14 +250,5 @@ namespace OniMcp.Tools
             }
             return string.Empty;
         }
-
-
-        private static bool LooksLikeConnection(string text)
-        {
-            string lower = (text ?? string.Empty).ToLowerInvariant();
-            return lower.Contains("connect") || lower.Contains("wire") || lower.Contains("pipe")
-                || lower.Contains("conduit") || text.Contains("连接") || text.Contains("电线") || text.Contains("管");
-        }
-
     }
 }

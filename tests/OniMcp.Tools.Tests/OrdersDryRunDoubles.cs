@@ -33,7 +33,11 @@ namespace UnityEngine
     public static class Object
     {
         internal static readonly List<object> Registered = new List<object>();
-        internal static T[] FindObjectsByType<T>(FindObjectsSortMode order) => Registered.OfType<T>().ToArray();
+        internal static T[] FindObjectsByType<T>(FindObjectsSortMode order)
+        {
+            if (typeof(T) == typeof(BuildingUnderConstruction)) OniMcp.Tools.BuildPlanningTools.PersistCalls++;
+            return Registered.OfType<T>().ToArray();
+        }
     }
 }
 

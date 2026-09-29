@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json.Linq;
+using UnityEngine;
 
 namespace OniMcp.Tools
 {
@@ -10,14 +11,17 @@ namespace OniMcp.Tools
     {
         internal static readonly HashSet<string> Placed = new HashSet<string>();
         internal static readonly List<string> Requested = new List<string>();
-        internal static readonly List<string> PersistedPath = new List<string>();
+        private static readonly List<System.Tuple<int, int>> PlacementGridCells = new List<System.Tuple<int, int>>();
         internal static string SelectedMaterial, SelectedPrefab;
         internal static int UiCalls, PersistCalls, FailAt;
         internal static bool Conflict, NetworkFails;
         internal static float Available;
         internal static void ResetPlacement()
         {
-            Placed.Clear(); Requested.Clear(); PersistedPath.Clear(); UiCalls = PersistCalls = 0;
+            foreach (var item in PlacementGridCells) Grid.Objects[item.Item1, item.Item2] = null;
+            PlacementGridCells.Clear();
+            UnityEngine.Object.Registered.RemoveAll(item => item is BuildingUnderConstruction);
+            Placed.Clear(); Requested.Clear(); UiCalls = PersistCalls = 0;
             SelectedMaterial = SelectedPrefab = null;
             FailAt = -1; Conflict = NetworkFails = false; Available = 1000;
         }
@@ -44,7 +48,7 @@ namespace OniMcp.Tools
         private static bool IsDryRun(JObject args) => ToolUtil.GetBool(args, "dryRun", false);
         private static string DefaultUtilityPrefab(string type) => "GasConduit";
         private static BuildingDef ResolveBuildingDef(string id, out string resolved, out string error)
-        { resolved = id; error = null; return new BuildingDef { PrefabID = id }; }
+        { resolved = id; error = null; return PlacementDef(id); }
         private static string BuildAvailabilityError(BuildingDef def, JObject args) => null;
         private static bool IsLinearUtilityPrefab(string id) => UtilityPrefabPolicy.IsLinear(id);
         private static List<CellCoord> ResolveUtilityPath(JObject args, int max, out string error)
@@ -80,7 +84,11 @@ namespace OniMcp.Tools
                 return new Dictionary<string, object> { ["valid"] = false, ["planned"] = false, ["error"] = "placement unavailable" };
             bool present = Placed.Contains(key);
             bool planned = !IsDryRun(args) && !present;
-            if (planned) Placed.Add(key);
+            if (planned)
+            {
+                Placed.Add(key);
+                CreateUtilityBlueprintFixture(PlacementDef(prefab), x, y);
+            }
             return new Dictionary<string, object> { ["valid"] = true, ["planned"] = planned, ["alreadyPresent"] = present };
         }
         private static int GetAutoDigInt(Dictionary<string, object> result, string key) => 0;
@@ -88,11 +96,6 @@ namespace OniMcp.Tools
         private static bool GetBool(Dictionary<string, object> result, string key)
             => result.TryGetValue(key, out var value) && value is bool flag && flag;
         private static bool EqualsIgnoreCase(string a, string b) => string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
-        private static bool PersistUtilityPathConnections(BuildingDef def, List<CellCoord> path, out string error)
-        {
-            PersistCalls++; PersistedPath.AddRange(path.Select(point => point.Key));
-            error = NetworkFails ? "network incomplete" : null; return !NetworkFails;
-        }
         private static bool IsCompletedUtilityPath(BuildingDef def, List<CellCoord> path) => false;
         private static object BuildPathSegments(List<CellCoord> path) => path;
     }

@@ -6,6 +6,50 @@ namespace OniMcp.Tools
 {
     public static partial class BuildPlanningTools
     {
+        private static GameObject TryPlaceNativeBlueprint(BuildingDef def, Vector3 position,
+            Orientation orientation, IList<Tag> elements, string facadeId, GameObject replacementTarget, out string error)
+        {
+            error = null;
+            var blueprint = replacementTarget != null
+                ? def.TryReplaceTile(null, position, orientation, elements, facadeId)
+                : def.TryPlace(null, position, orientation, elements, facadeId);
+            if (blueprint != null && replacementTarget != null)
+                PreserveUtilityReplacementConnections(def, blueprint, replacementTarget, out error);
+            return blueprint;
+        }
+
+        private static bool PreserveUtilityReplacementConnections(
+            BuildingDef def, GameObject blueprint, GameObject source, out string error)
+        {
+            error = null;
+            if (!IsExactConnectionUtilityPrefab(def?.PrefabID)
+                || blueprint?.GetComponent<Constructable>()?.IsReplacementTile != true
+                || def.ReplacementLayer == ObjectLayer.NumLayers)
+                return true;
+            int cell = Grid.PosToCell(blueprint);
+            if (!Grid.IsValidCell(cell) || Grid.Objects[cell, (int)def.ReplacementLayer] != blueprint)
+                return true;
+            var sourceDef = source?.GetComponent<BuildingComplete>()?.Def;
+            if (!UtilityPrefabPolicy.SameFamily(def.PrefabID, sourceDef?.PrefabID)
+                || !EqualsIgnoreCase(blueprint.GetComponent<Building>()?.Def?.PrefabID, def.PrefabID)
+                || !def.CanReplace(source) || Grid.PosToCell(source) != cell)
+                return true;
+            var oldVisualizer = source.GetComponent<KAnimGraphTileVisualizer>();
+            var newVisualizer = blueprint.GetComponent<KAnimGraphTileVisualizer>();
+            if (oldVisualizer == null || newVisualizer == null)
+            {
+                error = "Utility replacement is missing its original or blueprint visualizer.";
+                return false;
+            }
+            // Native completion copies only the blueprint mask. Retain existing
+            // branches even when the requested upgrade path does not traverse them.
+            var desired = newVisualizer.Connections | oldVisualizer.Connections;
+            newVisualizer.UpdateConnections(desired);
+            if (newVisualizer.Connections == desired) return true;
+            error = "Utility replacement did not retain its original connection bits.";
+            return false;
+        }
+
         // Constructable copies the blueprint visualizer's serialized Connections to
         // the completed object. Updating only the network's planned grid loses them.
         private static bool PersistUtilityPathConnections(BuildingDef def, List<CellCoord> path, out string error)
@@ -19,9 +63,12 @@ namespace OniMcp.Tools
             foreach (var point in path)
             {
                 int cell = Grid.XYToCell(point.x, point.y);
-                var go = Grid.Objects[cell, (int)def.ObjectLayer];
+                var source = Grid.Objects[cell, (int)def.ObjectLayer];
+                var go = source;
                 if (go == null || go.GetComponent<Building>()?.Def?.PrefabID != def.PrefabID)
                     blueprints.TryGetValue(cell, out go);
+                if (!PreserveUtilityReplacementConnections(def, go, source, out error))
+                    return false;
                 var visualizer = go?.GetComponent<KAnimGraphTileVisualizer>();
                 if (visualizer == null)
                 {

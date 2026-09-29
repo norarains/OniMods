@@ -14,7 +14,7 @@ namespace OniMcp.Tools
 
     public static partial class BuildPlanningTools
     {
-        private sealed class PlacementDetails
+        private sealed partial class PlacementDetails
         {
             internal int AnchorX, AnchorY, WorldId;
             internal Orientation Orientation;
@@ -110,7 +110,7 @@ namespace OniMcp.Tools
 
 namespace OniMcp.Tools
 {
-    public static class BuildingControlTools
+    public static partial class BuildingControlTools
     {
         internal static bool FileContext;
         internal static OniMcp.Core.CallToolResult WithVirtualFileContext(System.Func<OniMcp.Core.CallToolResult> action)

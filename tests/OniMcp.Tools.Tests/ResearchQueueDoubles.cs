@@ -54,7 +54,7 @@ internal sealed partial class KPrefabID
     internal void AddTag(Tag tag, bool save)
     { Tags.Add(tag); if (save) SerializableTags.Add(tag); }
 }
-internal sealed class Constructable : KMonoBehaviour { }
+internal sealed partial class Constructable : KMonoBehaviour { }
 internal sealed class SaveGame : KMonoBehaviour { internal static SaveGame Instance { get; set; } }
 internal sealed class Tech
 {

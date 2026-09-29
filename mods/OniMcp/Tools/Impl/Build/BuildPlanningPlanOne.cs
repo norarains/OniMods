@@ -219,9 +219,8 @@ int cell = Grid.XYToCell(x, y);
             else
             {
                 var pos = BuildPlacementPosition(cell, def, orientation);
-                go = replacementTarget != null
-                    ? def.TryReplaceTile(null, pos, orientation, materialResult.Elements, facadeResult.TryPlaceId)
-                    : def.TryPlace(null, pos, orientation, materialResult.Elements, facadeResult.TryPlaceId);
+                go = TryPlaceNativeBlueprint(def, pos, orientation, materialResult.Elements,
+                    facadeResult.TryPlaceId, replacementTarget, out string connectionError);
                 if (go == null)
                 {
                     var failureDetails = BuildPlacementFailureDetails(placement, materialResult);
@@ -231,6 +230,16 @@ int cell = Grid.XYToCell(x, y);
                 }
                 SetPriority(go, ToolUtil.GetInt(args, "priority") ?? 5);
                 ConstructionPriorityIntent.Mark(go);
+                if (connectionError != null)
+                {
+                    var failure = ErrorResult(prefabId, x, y, connectionError,
+                        new Dictionary<string, object> { ["reasonCode"] = "utility_network_incomplete", ["replacement"] = replacement });
+                    failure["blueprintPlaced"] = true;
+                    failure["mutationAttempted"] = true;
+                    failure["applied"] = 1;
+                    failure["safeToRetry"] = false;
+                    return failure;
+                }
             }
             RegisterSupportBlueprint(prefabId, x, y, plannedSupportCells);
             var actualPlacement = ActualPlacementDetails(go, def, x, y);

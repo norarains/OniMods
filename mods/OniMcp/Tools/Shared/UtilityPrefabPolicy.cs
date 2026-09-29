@@ -8,7 +8,7 @@ namespace OniMcp.Tools
         private static readonly Dictionary<string, string> Families = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             ["Wire"] = "Wire", ["WireRefined"] = "Wire",
-            ["WireHighWattage"] = "Wire", ["WireRefinedHighWattage"] = "Wire",
+            ["HighWattageWire"] = "Wire", ["WireRefinedHighWattage"] = "Wire",
             ["GasConduit"] = "GasConduit", ["InsulatedGasConduit"] = "GasConduit", ["GasConduitRadiant"] = "GasConduit",
             ["LiquidConduit"] = "LiquidConduit", ["InsulatedLiquidConduit"] = "LiquidConduit", ["LiquidConduitRadiant"] = "LiquidConduit",
             ["SolidConduit"] = "SolidConduit", ["LogicWire"] = "LogicWire", ["LogicRibbon"] = "LogicWire"

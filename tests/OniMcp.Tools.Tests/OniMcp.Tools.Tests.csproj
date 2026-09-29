@@ -33,6 +33,9 @@
     <Compile Include="../../mods/OniMcp/Tools/Impl/Orders/OrdersConduitTools.cs" Link="Source/OrdersConduitTools.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Orders/OrdersPreciseDeconstructionTools.cs" Link="Source/OrdersPreciseDeconstructionTools.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Shared/UtilityPrefabPolicy.cs" Link="Source/UtilityPrefabPolicy.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/WorldEditor/WorldEditorBuildCommands.cs" Link="Source/WorldEditorBuildCommands.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Build/BuildPlanningTileReplacement.cs" Link="Source/BuildPlanningTileReplacement.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Build/BuildPlanningBlueprintConnections.cs" Link="Source/BuildPlanningBlueprintConnections.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Build/FilterMutationTools.cs" Link="Source/FilterMutationTools.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Build/ConstructionWorkCells.cs" Link="Source/ConstructionWorkCells.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Orders/UserMenuMoveAction.cs" Link="Source/UserMenuMoveAction.cs" />

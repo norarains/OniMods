@@ -29,10 +29,10 @@ def main() -> None:
     exact = body(refresh, "private static bool IsExactConnectionUtilityPrefab")
     assert "UtilityPrefabPolicy.IsLinear(prefabId)" in exact
     policy = (ROOT / "mods/OniMcp/Tools/Shared/UtilityPrefabPolicy.cs").read_text()
-    for prefab in ("LogicWire", "Wire", "WireRefined", "WireHighWattage", "WireRefinedHighWattage",
+    for prefab in ("LogicWire", "Wire", "WireRefined", "HighWattageWire", "WireRefinedHighWattage",
                    "LiquidConduit", "InsulatedLiquidConduit", "GasConduit", "InsulatedGasConduit", "SolidConduit"):
         assert f'["{prefab}"]' in policy
-    for invalid in ("LiquidConduitInsulated", "GasConduitInsulated"):
+    for invalid in ("LiquidConduitInsulated", "GasConduitInsulated", "WireHighWattage"):
         assert f'["{invalid}"]' not in policy
     for forbidden in ("Sensor", "Bridge", "Endpoint", "IndexOf", "Contains"):
         assert forbidden not in exact
@@ -88,6 +88,20 @@ def main() -> None:
     assert "pair.Value.Connections != desired[pair.Key]" in blueprints
     assert "ClearCell" not in blueprints
     assert '"utility_network_incomplete"' in placement
+    preserve = body(blueprints, "private static bool PreserveUtilityReplacementConnections")
+    for required in ("IsExactConnectionUtilityPrefab", "IsReplacementTile", "ObjectLayer.NumLayers",
+                     "Grid.Objects[cell, (int)def.ReplacementLayer] != blueprint", "BuildingComplete",
+                     "UtilityPrefabPolicy.SameFamily", "def.CanReplace(source)", "Grid.PosToCell(source) != cell",
+                     "newVisualizer.Connections | oldVisualizer.Connections", "newVisualizer.UpdateConnections(desired)"):
+        assert required in preserve
+    persist = body(blueprints, "private static bool PersistUtilityPathConnections")
+    assert "PreserveUtilityReplacementConnections(def, go, source, out error)" in persist
+    plan_one = (BUILD / "BuildPlanningPlanOne.cs").read_text(encoding="utf-8")
+    planning = body(plan_one, "private static Dictionary<string, object> TryPlanOne")
+    assert "TryPlaceNativeBlueprint(def, pos, orientation, materialResult.Elements" in planning
+    native_placement = body(blueprints, "private static GameObject TryPlaceNativeBlueprint")
+    assert native_placement.find("def.TryReplaceTile") < native_placement.find("PreserveUtilityReplacementConnections")
+    assert planning.find("TryPlaceNativeBlueprint") < planning.find("var actualPlacement = ActualPlacementDetails(go")
 
     LEFT, RIGHT, UP, DOWN = 1, 2, 4, 8
 
