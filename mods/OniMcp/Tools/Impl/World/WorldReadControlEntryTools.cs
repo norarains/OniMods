@@ -16,7 +16,7 @@ namespace OniMcp.Tools
                 Risk = "low",
                 Aliases = new List<string> { "world_inspect", "world_map_read", "world_analysis_read" },
                 Tags = new List<string> { "world", "map", "cell", "terrain", "layout", "thermal", "search", "地图", "格子", "文本地图", "搜索" },
-                Description = "Unified world reader: action=cell_info|cell_detail|element_summary|text_map|area_snapshot|layout_candidates|reachable_area|thermal_overheat_risk|search.",
+                Description = "World reads: element_summary|text_map|area_snapshot|layout_candidates|reachable_area|thermal_overheat_risk|search. Exact cells: world_editor command=read path=/active/map/cell_X_Y.md; cell_info/cell_detail are internal compatibility actions.",
                 Parameters = WorldReadControlParams(),
                 Handler = args =>
                 {

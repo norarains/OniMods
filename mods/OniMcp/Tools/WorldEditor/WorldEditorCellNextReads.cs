@@ -96,8 +96,6 @@ namespace OniMcp.Tools
 
             sb.AppendLine("- temperature: `" + LocalZoomCall(x, y, "temperature")
                 + "` comfort=10~37C, current=" + tempC.ToString("F1") + "C");
-            sb.AppendLine("- temperature detail: `read_control domain=world action=cell_info x="
-                + x + " y=" + y + " includeTemperature=true marginC=15 limit=20`");
         }
 
         private static void AppendCellOperationHints(StringBuilder sb, int x, int y, int cell)
@@ -130,7 +128,7 @@ namespace OniMcp.Tools
             foreach (var pickupable in Components.Pickupables.Items)
             {
                 if (pickupable != null
-                    && pickupable.gameObject != null
+                    && PlayerVisibility.Object(pickupable.gameObject)
                     && Grid.PosToCell(pickupable.gameObject) == cell)
                     return true;
             }

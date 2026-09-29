@@ -14,7 +14,7 @@ namespace OniMcp.Tools
                                         UriTemplate = "oni://world/cell/{x}/{y}",
                                         Name = "read_control",
                                         Title = "世界格子",
-                                        Description = "通过 read_control domain=world action=cell_info 读取指定地图格子的元素、质量、温度、病菌和可见性。",
+                                        Description = "读取指定格子的元素、质量、温度、病菌和可见性；普通工具调用使用 world_editor command=read path=/active/map/cell_X_Y.md。",
                                         MimeType = "application/json"
                                     },
                 new McpResourceTemplateInfo

@@ -37,7 +37,7 @@ namespace OniMcp.Tools
                         ["query"] = "SELECT id,ports FROM ports WHERE near(" + x + "," + y + ",8) LIMIT 20"
                     }
                 },
-                ["tokenHint"] = "Use this cell_info first, then read markdown or a targeted ports query only when more detail is needed."
+                ["tokenHint"] = "Exact cells: world_editor command=read path=/active/map/cell_X_Y.md; request only needed object fields through query."
             };
         }
 

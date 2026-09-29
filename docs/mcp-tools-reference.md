@@ -10,6 +10,7 @@
 
 ## 精确读取与订单契约
 
+- 单格读取使用 `world_editor command=read path=/active/map/cell_X_Y.md`（X/Y 替换为格子坐标），提供地形、温度、对象和管线详情。未知格只返回 unknown；普通聚合入口的 `cell_info` raw-coordinate 配方已停用。
 - `dryRun=true` 的取消、攻击、清空管道、剪断管线不会修改订单，即使同时传 `confirm=true`。`cut_conduits` 创建普通拆除订单，`id` 可精确选择对象；`auto` 只选气体/液体/运输轨道，`all` 才包含电线与逻辑线。
 - 基础设施 `.oni` 计划保留 `prefabId` 的同层线材/管材变体和显式材料。回折路径按唯一格计算材料与施工，按完整路径保存分支连接。原生允许的单格线材/管材升级使用替换蓝图，旧线路保留到建成。`connectionsPersisted` 只证明连接数据已保存；`networkConnected` 才说明整条已建线路通过运行网络检查。
 - `footprintMode=anchors` 将地图中每个修改的建筑 token 作为独立左下角锚点，可表达相邻多格建筑；默认仍解析完整单体 footprint。建造预检返回 `nativeAutoDigTargets`，包括原生隐式挖掘；`autoDigObstructions=false` 会在放置前拒绝这些副作用。MCP 创建的蓝图完工后保留当时的优先级。

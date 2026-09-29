@@ -12,7 +12,7 @@ namespace OniMcp.Tools
             {
                 Row("game", "pause_resume_speed_sandbox_save_load_quit_dlc", "暂停、继续、调速、沙盒模式开关、列出存档、保存/另存为、确认载入存档、退出到主菜单或桌面、读取并激活当前存档可编辑 DLC", "covered", "game_control domain=speed", "game_control domain=speed action=time", "game_control domain=state", "game_control", "game_control domain=save", "game_control domain=dlc"),
                 Row("camera", "camera_navigation", "移动/聚焦/切换世界/切换视图/截图", "covered", "navigation_control"),
-                Row("world", "inspect_world_cells", "检查格子、元素统计、文本地图", "covered", "read_control domain=world action=cell_info", "read_control domain=world action=element_summary", "read_control domain=world action=text_map"),
+                Row("world", "inspect_world_cells", "检查格子、元素统计、文本地图", "covered", "world_editor command=read path=/active/map/cell_X_Y.md", "read_control domain=world action=element_summary", "read_control domain=world action=text_map"),
                 Row("areas", "area_handles", "定义、读取、列出、分块、拼接和遗忘地图区域句柄", "covered", "read_control domain=area"),
                 Row("orders", "dig_sweep_mop_disinfect_attack_priority", "挖掘、清扫、拖地、消毒、取消、收获、攻击、区域优先级", "covered", "orders_control domain=area", "orders_control domain=designation action=attack", "orders_control domain=priority"),
                 Row("orders", "cancel_orders", "取消建筑/挖掘/清扫/收获/攻击/抓捕等差事", "covered", "read_control domain=world action=text_map", "orders_control domain=area action=cancel"),

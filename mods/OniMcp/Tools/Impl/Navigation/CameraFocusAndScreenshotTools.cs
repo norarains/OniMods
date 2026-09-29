@@ -287,7 +287,7 @@ namespace OniMcp.Tools
                             coordinateSystem = "ONI world absolute x/y; grid lines bound cell edges; labels are world cell coordinates"
                         },
                         ["screenshot"] = screenshot["screenshot"],
-                        ["next"] = "Open screenshot.url/latestUrl directly; use visible grid labels to infer exact cell x/y, then call read_control domain=world action=cell_info or read /active/map/cell_X_Y.md through world_editor."
+                        ["next"] = "Open screenshot.url/latestUrl directly; read a labeled cell with world_editor command=read path=/active/map/cell_X_Y.md."
                     }, McpJsonUtil.Settings));
                 }
             };

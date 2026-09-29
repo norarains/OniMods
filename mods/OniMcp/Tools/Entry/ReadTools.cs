@@ -36,7 +36,7 @@ EnumValues = new List<string> { "state", "world", "area", "resources", "infrastr
                 ["action"] = new McpToolParameter
                 {
                     Type = "string",
-Description = "state=current/current_state/overview; world=cell_info/cell_detail/text_map/search/layout_candidates/reachable_area; area=define/get/list/blocks/merge/forget; resources=inventory/food/pins/set_pin; infrastructure=power_summary/rooms.",
+Description = "state=current/current_state/overview; world=text_map/search/layout_candidates/reachable_area (exact cells: world_editor command=read path=/active/map/cell_X_Y.md); area=define/get/list/blocks/merge/forget; resources=inventory/food/pins/set_pin; infrastructure=power_summary/rooms.",
                     Required = true
                 },
                 ["type"] = new McpToolParameter { Type = "string", Description = "Alias subtype filter used by some child actions.", Required = false },
