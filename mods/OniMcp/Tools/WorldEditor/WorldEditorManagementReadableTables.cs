@@ -16,7 +16,7 @@ namespace OniMcp.Tools
             if (WantsManagementJson(args))
                 return StateJsonResult(state);
             var root = ParseManagementState(state);
-            var sb = ManagementHeader("Schedule Table", path, "management_control domain=schedule");
+            var sb = ManagementHeader("Schedule Table", path, "server_control domain=batch action=call_many calls=[{tool:colony_control,args:{domain:management,kind:schedule,action:list}}]");
             sb.AppendLine("## Legend");
             sb.AppendLine("| Code | Group | Name |");
             sb.AppendLine("| --- | --- | --- |");
@@ -67,7 +67,7 @@ namespace OniMcp.Tools
             if (WantsManagementJson(args))
                 return StateJsonResult(state);
             var root = ParseManagementState(state);
-            var sb = ManagementHeader("Duplicant Skill Tree", path, "dupes_control domain=skill");
+            var sb = ManagementHeader("Duplicant Skill Tree", path, "server_control domain=batch action=call_many calls=[{tool:dupes_control,args:{domain:skill,action:list}}]");
             if (!string.IsNullOrEmpty(Str(root, "dupe")))
                 sb.AppendLine("- dupe: `" + Esc(Str(root, "dupe")) + "`");
             sb.AppendLine();
@@ -103,7 +103,7 @@ namespace OniMcp.Tools
             var root = ParseManagementState(state);
             var rows = FindObjectArray(root, "priorities", "dupes", "duplicants", "rows", "items");
             var columns = CollectPriorityColumns(rows);
-            var sb = ManagementHeader("Duplicant Priority Table", path, "dupes_control domain=priority");
+            var sb = ManagementHeader("Duplicant Priority Table", path, "server_control domain=batch action=call_many calls=[{tool:dupes_control,args:{domain:priority,action:list}}]");
             sb.AppendLine("## Priorities");
             if (rows.Count == 0)
             {
@@ -141,7 +141,7 @@ namespace OniMcp.Tools
             var state = DuplicantTools.ControlDupes().Handler(new JObject { ["domain"] = "info", ["action"] = "attributes" });
             if (WantsManagementJson(args))
                 return StateJsonResult(state);
-            var sb = ManagementHeader("Duplicant Files", path, "dupes_control domain=command");
+            var sb = ManagementHeader("Duplicant Files", path, "server_control domain=batch action=call_many calls=[{tool:dupes_control,args:{domain:info,action:attributes}}]");
             sb.AppendLine("## Duplicants");
             sb.AppendLine("| Name | ID | World | Cell | Detail File |");
             sb.AppendLine("| --- | ---: | ---: | --- | --- |");
@@ -172,7 +172,7 @@ namespace OniMcp.Tools
                 return StateJsonResult(state);
             var root = ParseManagementState(state);
             var rows = FindObjectArray(root, "dupes", "duplicants", "rows", "diet", "items");
-            var sb = ManagementHeader("Food Permission Table", path, "management_control domain=diet");
+            var sb = ManagementHeader("Food Permission Table", path, "server_control domain=batch action=call_many calls=[{tool:colony_control,args:{domain:management,kind:diet,action:status}}]");
             sb.AppendLine("## Food Policy");
             if (rows.Count == 0)
             {

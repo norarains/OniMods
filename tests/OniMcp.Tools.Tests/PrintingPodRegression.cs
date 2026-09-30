@@ -23,6 +23,7 @@ internal static partial class PrintingPodRegression
         TestNativeCallbackGuard();
         TestCarePackageLifecycle();
         TestHeadlessPreparation();
+        TestArrivalReceipts();
         Reset();
         Components.Telepads.Items.Clear();
         Components.LiveMinionIdentities.Items.Clear();
@@ -73,7 +74,7 @@ internal static partial class PrintingPodRegression
                 ["candidateId"] = Token(), ["dryRun"] = true, ["confirm"] = confirm, ["maxPopulation"] = 2
             }, pod));
             Check((bool)preview["dryRun"] && (int)preview["populationBefore"] == 1
-                && (int)preview["populationAfter"] == 2, "preview reports bounded planned population");
+                && (int)preview["expectedPopulation"] == 2, "preview labels bounded expected population separately from observed arrival");
             Check(Screen.Selected.Single() == second.Stats, "preview leaves native player's selection untouched");
             NoNativeMutation("recruit preview confirm=" + confirm);
         }
@@ -143,7 +144,7 @@ internal static partial class PrintingPodRegression
         var result = Body(FacilitySideScreenTools.TestPrintingRecruit(new JObject {
             ["candidateId"] = token, ["confirm"] = true, ["maxPopulation"] = 2
         }, pod));
-        Check((bool)result["recruited"] && pod.LastAccepted == first.Stats,
+        Check((bool)result["deliveryAccepted"] && pod.LastAccepted == first.Stats,
             "explicit token replaces player's previous native selection with requested candidate");
         Check(pod.AcceptCalls == 1 && Screen.ProceedCalls == 1 && Immigration.Instance.EndCalls == 1,
             "one native proceed delivers once and owns the one cooldown transition");
@@ -152,8 +153,8 @@ internal static partial class PrintingPodRegression
             && first.gameObject.PrintingOfferDestroyed && second.gameObject.PrintingOfferDestroyed
             && package.gameObject.PrintingOfferDestroyed,
             "native completion cleans every old offer, including unselected choices");
-        Check((int)result["populationAfter"] == 2 && result["duplicants"].Count() == 1
-            && (int)result["duplicants"][0]["id"] == 901,
+        Check((int)result["populationObserved"] == 2 && (string)result["arrivalStatus"] == "registered"
+            && (int)result["duplicant"]["id"] == 901,
             "commit receipt identifies the actual newly delivered duplicant");
         Check(!Screen.IsVisible && !Immigration.Instance.ImmigrantsAvailable,
             "native completion closes the selector and starts cooldown");
@@ -206,6 +207,7 @@ internal static partial class PrintingPodRegression
     private static void Reset(bool materialized = true)
     {
         HeadlessPrintingChoices.Clear();
+        PrintingRecruitmentReceipt.ClearOwner();
         MinionStartingStats.Generated = 0;
         MinionStartingStats.ThrowOnGeneration = false;
         MinionStartingStats.GeneratedResults.Clear();

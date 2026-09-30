@@ -12,7 +12,7 @@ namespace OniMcp.Tools
                 : UtilityPrefabPolicy.SameFamily(prefab, "GasConduit") ? ObjectLayer.GasConduit
                 : UtilityPrefabPolicy.SameFamily(prefab, "LogicWire") ? ObjectLayer.LogicWire
                 : UtilityPrefabPolicy.SameFamily(prefab, "SolidConduit") ? ObjectLayer.SolidConduit : ObjectLayer.LiquidConduit;
-            return new BuildingDef { PrefabID = prefab, ObjectLayer = (int)layer, TileLayer = layer,
+            return new BuildingDef { PrefabID = prefab, ObjectLayer = layer, TileLayer = layer,
                 ReplacementLayer = (ObjectLayer)((int)layer + 2), WidthInCells = 1, HeightInCells = 1 };
         }
         internal static GameObject CreateUtilityBlueprintFixture(BuildingDef def, int x, int y, bool replacement = false)
@@ -25,7 +25,7 @@ namespace OniMcp.Tools
             var underConstruction = new BuildingUnderConstruction { gameObject = go, Def = def };
             go.Components[typeof(BuildingUnderConstruction)] = underConstruction;
             UnityEngine.Object.Registered.Add(underConstruction);
-            int layer = replacement ? (int)def.ReplacementLayer : def.ObjectLayer;
+            int layer = replacement ? (int)def.ReplacementLayer : (int)def.ObjectLayer;
             Grid.Objects[cell, layer] = go;
             PlacementGridCells.Add(System.Tuple.Create(cell, layer));
             return go;

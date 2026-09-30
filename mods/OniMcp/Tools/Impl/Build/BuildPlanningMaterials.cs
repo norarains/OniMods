@@ -263,40 +263,6 @@ namespace OniMcp.Tools
             return kpid != null && kpid.HasTag(category);
         }
 
-        private static int PickupableWorldId(Pickupable pickupable)
-        {
-            int cell = pickupable.cachedCell;
-            if (Grid.IsValidCell(cell) && Grid.IsWorldValidCell(cell))
-                return Grid.WorldIdx[cell];
-            return pickupable.GetMyWorldId();
-        }
-
-        private static float AvailableAmount(int worldId, Tag tag)
-        {
-            if (!tag.IsValid || ClusterManager.Instance == null)
-                return 0f;
-            var world = ClusterManager.Instance.GetWorld(worldId >= 0 ? worldId : ClusterManager.Instance.activeWorldId);
-            if (world == null || world.worldInventory == null)
-                return 0f;
-
-            float amount = ToolUtil.SafeFloat(world.worldInventory.GetTotalAmount(tag, includeRelatedWorlds: true));
-            foreach (var pickupable in Components.Pickupables.Items)
-            {
-                if (pickupable == null || pickupable.KPrefabID == null)
-                    continue;
-                if (pickupable.storage != null || pickupable.KPrefabID.HasTag(GameTags.Stored))
-                    continue;
-                if (!pickupable.KPrefabID.HasTag(tag))
-                    continue;
-                if (PickupableWorldId(pickupable) != world.id)
-                    continue;
-
-                if (pickupable.PrimaryElement != null)
-                    amount += ToolUtil.SafeFloat(pickupable.PrimaryElement.Mass);
-            }
-            return amount;
-        }
-
         private static bool IsFreeBuildContext()
         {
             if (WorldEditorTools.EnforceNormalMaterialRules)

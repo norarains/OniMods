@@ -12,7 +12,7 @@ internal static class UtilityReplacementConnectionsRegression
         BuildPlanningTools.ResetPlacement();
         int cell = Grid.XYToCell(20, 2);
         var oldDef = new BuildingDef { PrefabID = "Wire", WidthInCells = 1, HeightInCells = 1 };
-        var heavy = new BuildingDef { PrefabID = "HighWattageWire", ObjectLayer = (int)ObjectLayer.Wire,
+        var heavy = new BuildingDef { PrefabID = "HighWattageWire", ObjectLayer = ObjectLayer.Wire,
             TileLayer = ObjectLayer.WireTile, ReplacementLayer = ObjectLayer.ReplacementWire };
         var source = new GameObject { Cell = cell };
         source.Components[typeof(Building)] = new Building { Def = oldDef };

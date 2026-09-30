@@ -57,6 +57,7 @@ namespace OniMcp.Tools
         internal JToken Value;
         internal FactPredicate Left, Right;
         internal double X, Y, Radius;
+        private bool containsMembers;
         internal void Validate(FactDataset dataset)
         {
             if (Left != null) { Left.Validate(dataset); Right.Validate(dataset); return; }
@@ -65,13 +66,24 @@ namespace OniMcp.Tools
             var field = dataset.Field(Field);
             Field = field.Name;
             if (Operator == "has_status")
-            { if (field.Type != "array") throw new ArgumentException("has_status requires statuses"); return; }
+            {
+                if (field.Type != "array" && field.Type != "string[]") throw new ArgumentException("has_status requires native statuses");
+                if (dataset.Fields.TryGetValue("statusIds", out var ids) && ids.Type == "string[]") Field = ids.Name;
+                return;
+            }
             if (Operator == "IS NULL" || Operator == "IS NOT NULL") return;
+            if (Operator == "CONTAINS")
+            {
+                if (field.Type == "array" && field.Name == "statuses")
+                    throw new ArgumentException("statuses contains native objects; filter with statusIds CONTAINS 'Flooded' or has_status('Flooded')");
+                if (field.Type != "string" && field.Type != "string[]")
+                    throw new ArgumentException("CONTAINS requires a string or string-array field");
+                containsMembers = field.Type == "string[]";
+            }
             bool number = Value.Type == JTokenType.Integer || Value.Type == JTokenType.Float;
             bool compatible = field.Type == "number" ? number : field.Type == "string" || field.Type == "string[]" && Operator == "CONTAINS" ? Value.Type == JTokenType.String
                 : field.Type == "boolean" && Value.Type == JTokenType.Boolean;
             if (!compatible) throw new ArgumentException("Literal type does not match " + Field + " (" + field.Type + ")");
-            if (Operator == "CONTAINS" && field.Type != "string" && field.Type != "string[]") throw new ArgumentException("CONTAINS requires a string or string-array field");
             if (field.Type == "boolean" && Operator != "=" && Operator != "!=" && Operator != "<>")
                 throw new ArgumentException("Boolean fields support = and != only");
         }
@@ -88,10 +100,13 @@ namespace OniMcp.Tools
             if (Operator == "IS NULL") return IsNull(actual);
             if (Operator == "IS NOT NULL") return !IsNull(actual);
             if (IsNull(actual)) return false;
-            if (Operator == "has_status") return actual is JArray statuses && statuses.Any(s => s["id"]?.ToString() == Value.ToString());
-            if (Operator == "CONTAINS") return actual is JArray array
-                ? array.Any(v => v.Type == JTokenType.String && string.Equals(v.ToString(), Value.ToString(), StringComparison.OrdinalIgnoreCase))
-                : actual.ToString().IndexOf(Value.ToString(), StringComparison.OrdinalIgnoreCase) >= 0;
+            if (Operator == "has_status") return actual is JArray statuses && statuses.Any(s =>
+                s.Type == JTokenType.String ? string.Equals(s.Value<string>(), Value.Value<string>(), StringComparison.Ordinal)
+                : s is JObject status && status["id"]?.ToString() == Value.ToString());
+            if (Operator == "CONTAINS") return containsMembers
+                ? actual is JArray array && array.Any(v => v.Type == JTokenType.String
+                    && string.Equals(v.Value<string>(), Value.Value<string>(), StringComparison.OrdinalIgnoreCase))
+                : actual.Type == JTokenType.String && actual.Value<string>().IndexOf(Value.Value<string>(), StringComparison.OrdinalIgnoreCase) >= 0;
             int comparison = Compare(actual, Value);
             switch (Operator)
             {

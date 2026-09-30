@@ -54,6 +54,7 @@ internal readonly struct Tag : IEquatable<Tag>
 {
     internal static readonly Tag Invalid = default(Tag);
     internal readonly string Name;
+    internal bool IsValid => !string.IsNullOrEmpty(Name);
     internal Tag(string name) { Name = name; }
     public bool Equals(Tag other) => Name == other.Name;
     public override bool Equals(object other) => other is Tag tag && Equals(tag);

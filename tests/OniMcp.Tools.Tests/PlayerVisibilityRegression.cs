@@ -100,14 +100,14 @@ internal static class PlayerVisibilityRegression
 }
 
 internal sealed class Uncoverable { internal bool IsUncovered { get; set; } }
-internal sealed class Pickupable
+internal sealed partial class Pickupable
 {
     internal GameObject gameObject { get; set; }
     internal int cachedCell { get; set; }
     internal Storage storage { get; set; }
 }
 internal sealed class Storage { internal GameObject gameObject { get; set; } }
-internal sealed class WorldContainer { internal bool IsDiscovered { get; set; } = true; }
+internal sealed partial class WorldContainer { internal bool IsDiscovered { get; set; } = true; }
 internal sealed partial class ClusterManager
 {
     internal static ClusterManager Instance { get; } = new ClusterManager();

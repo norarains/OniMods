@@ -26,7 +26,7 @@ namespace OniMcp.Tools
         private static string PlacementObjectPrefabId(GameObject go) => go.GetComponent<Building>()?.Def?.PrefabID;
     }
 }
-internal enum BuildLocationRule { Anywhere, HighWattBridgeTile }
+internal enum BuildLocationRule { Anywhere, HighWattBridgeTile, Tile, NotInTiles }
 internal enum ConduitType { None, Liquid, Gas, Solid }
 internal enum Orientation { Neutral, R90, R180, R270 }
 internal struct CellOffset

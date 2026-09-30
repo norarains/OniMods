@@ -14,6 +14,8 @@ internal static class QueryContractRegression
     {
         checks = 0; failures.Clear();
         Case("identity and boolean predicates", TestPredicates);
+        Case("native status IDs and lazy detail", TestNativeStatusMembership);
+        Case("exact typed array membership", TestStringArrayMembership);
         Case("invalid grammar and typed fields", TestInvalidQueries);
         Case("aggregates retain full input", TestAggregates);
         Case("pagination and lazy evaluation", TestPaginationAndLaziness);
@@ -63,8 +65,9 @@ internal static class QueryContractRegression
             new FactField("stored", "boolean"), new FactField("massKg", "number", "kg"),
             new FactField("worldId", "number"), new FactField("x", "number", "cell"),
             new FactField("y", "number", "cell"), new FactField("name", "string"),
-            new FactField("tags", "string[]"), new FactField("heavy", "string", cost: "expensive"), new FactField("statuses", "array", cost: "expensive")
-        }, () => rows.Select(values => new FactRow(field => {
+            new FactField("tags", "string[]"), new FactField("skills", "string[]"), new FactField("capabilities", "string[]"),
+            new FactField("heavy", "string", cost: "expensive")
+        }.Concat(FactQueryStatusSnapshot.Fields), () => rows.Select(values => new FactRow(field => {
             reading?.Invoke(field);
             return values.TryGetValue(field, out object value) ? value : null;
         })));
@@ -76,8 +79,106 @@ internal static class QueryContractRegression
         return new Dictionary<string, object>(StringComparer.Ordinal) {
             ["id"] = id, ["elementId"] = element, ["massKg"] = mass, ["stored"] = stored,
             ["worldId"] = world, ["x"] = id, ["y"] = 0, ["name"] = "Item " + id,
-            ["heavy"] = "yes", ["statuses"] = new JArray(new JObject { ["id"] = "Blocked", ["text"] = "阻塞" })
+            ["heavy"] = "yes", ["statusIds"] = new[] { "Blocked" },
+            ["statuses"] = new JArray(new JObject { ["id"] = "Blocked", ["text"] = "阻塞" })
         };
+    }
+
+    private static void TestNativeStatusMembership()
+    {
+        int nativeReads = 0, textReads = 0;
+        var native = new[] {
+            new { id = 1, world = 1, statuses = new[] { "Blocked" }, text = "Flooded in localized text only" },
+            new { id = 2, world = 1, statuses = new[] { "Flooded" }, text = "建筑被淹没" },
+            new { id = 3, world = 1, statuses = new[] { "FloodedCritical" }, text = "Flooded" },
+            new { id = 4, world = 2, statuses = new[] { "Flooded" }, text = "Another world" },
+            new { id = 5, world = 1, statuses = new[] { "Flooded", "Flooded" }, text = "两个原生状态条目" },
+            new { id = 6, world = 1, statuses = new string[0], text = "Healthy" }
+        };
+        var fields = new[] {
+            new FactField("id", "number"), new FactField("worldId", "number"), new FactField("prefabId", "string"),
+            new FactField("position", "object")
+        }.Concat(FactQueryStatusSnapshot.Fields);
+        var data = new FactDataset("building_warnings", fields, () => native.Select(item => {
+            var snapshot = new FactQueryStatusSnapshot(() => {
+                nativeReads++;
+                return item.statuses.Select(id => new FactQueryStatus(id, "Bad", () => { textReads++; return item.text; }));
+            });
+            return new FactRow(field => {
+                switch (field)
+                {
+                    case "id": return item.id;
+                    case "worldId": return item.world;
+                    case "prefabId": return "Electrolyzer";
+                    case "position": return new { x = item.id, y = 87 };
+                    case "statusIds": return snapshot.Ids;
+                    case "statuses": return snapshot.Details;
+                    default: throw new ArgumentException(field);
+                }
+            });
+        }));
+        var buildings = new FactDataset("buildings", fields, data.Rows);
+        buildings.IndexedRows = predicate => null;
+        Check(Ids(Query("SELECT id FROM buildings LIMIT 2", buildings)).SequenceEqual(new[] { 1, 2 })
+            && nativeReads == 0 && textReads == 0, "unrequested status fields do not enumerate or localize native data");
+        data.Required = row => row.Get("worldId").Value<int>() == 1 && (row.Get("statusIds") as JArray).Count > 0;
+        Reject(() => Query("SELECT id,prefabId,position,statuses FROM building_warnings WHERE statuses CONTAINS 'Flood' LIMIT 15", data),
+            "known-bad object-array substring query");
+        Check(nativeReads == 0 && textReads == 0, "wrong status predicate fails before touching native status entries");
+        var result = Query("SELECT id,prefabId,position,statuses FROM building_warnings WHERE statusIds CONTAINS 'Flooded' AND worldId = 1 LIMIT 15", data);
+        Check(Ids(result).SequenceEqual(new[] { 2, 5 }), "native canonical status membership ignores substring IDs, localized text and other worlds");
+        Check(nativeReads == 5 && textReads == 3, "IDs enumerate once per scoped row and localized details resolve only for projected matches");
+        Check((string)result["rows"][0][3][0]["id"] == "Flooded"
+            && (string)result["rows"][0][3][0]["text"] == "建筑被淹没"
+            && (string)result["rows"][0][3][0]["type"] == "Bad", "existing native status detail objects retain their shape");
+        nativeReads = textReads = 0;
+        var ids = Query("SELECT id,statusIds FROM building_warnings WHERE statusIds CONTAINS 'flooded'", data);
+        Check(Ids(ids).SequenceEqual(new[] { 2, 5 }) && textReads == 0, "case-insensitive exact statusIds membership never resolves localized names");
+        Check(ids["rows"][1][1].Count() == 1, "compact statusIds deduplicates canonical IDs without dropping detailed entries");
+        nativeReads = textReads = 0;
+        Check(Ids(Query("SELECT id FROM building_warnings WHERE statusIds CONTAINS 'Flood'", data)).Length == 0
+            && textReads == 0, "partial native ID does not match an array member");
+        nativeReads = textReads = 0;
+        var legacy = FactQueryParser.Parse("SELECT id FROM building_warnings WHERE has_status('Flooded')");
+        Check(Ids(FactQueryExecutor.Execute(legacy, data)).SequenceEqual(new[] { 2, 5 }) && textReads == 0,
+            "existing has_status uses the same lazy canonical ID snapshot");
+        Check(Ids(FactQueryExecutor.Execute(legacy, data)).SequenceEqual(new[] { 2, 5 }), "validated native status plans can be reused");
+        Check(Ids(Query("SELECT id FROM building_warnings WHERE has_status('flooded')", data)).Length == 0,
+            "legacy has_status retains its case-sensitive native ID comparison");
+        nativeReads = textReads = 0;
+        var limited = Query("SELECT id,statusIds FROM building_warnings WHERE statusIds CONTAINS 'Flooded' LIMIT 1", data);
+        Check(Ids(limited).SequenceEqual(new[] { 2 }) && (bool)limited["truncated"] && (int)limited["nextOffset"] == 1
+            && textReads == 0, "status membership preserves bounded pagination without full warning reports");
+    }
+
+    private static void TestStringArrayMembership()
+    {
+        var rows = new[] { Row(1), Row(2), Row(3), Row(4), Row(5), Row(6) };
+        rows[0]["skills"] = new[] { "Hauling2", "Engineering1" };
+        rows[1]["skills"] = new[] { "Engineering10" };
+        rows[2]["skills"] = new string[0];
+        rows[3]["skills"] = null;
+        rows[4]["skills"] = new JObject { ["id"] = "Engineering1" };
+        rows[5]["skills"] = new JArray(5, JValue.CreateNull(), new JObject { ["id"] = "Engineering1" });
+        rows[0]["capabilities"] = new[] { "threshold" };
+        rows[1]["capabilities"] = new[] { "threshold_extra" };
+        var data = Dataset(rows);
+        Check(Ids(Query("SELECT id FROM items WHERE skills CONTAINS 'engineering1'", data)).SequenceEqual(new[] { 1 }),
+            "skill membership requires a complete string member, never object serialization or a numeric/null value");
+        Check(Ids(Query("SELECT id FROM items WHERE capabilities CONTAINS 'THRESHOLD'", data)).SequenceEqual(new[] { 1 }),
+            "capability membership uses the same exact typed array contract");
+        Check(Ids(Query("SELECT id FROM items WHERE skills IS NULL", data)).SequenceEqual(new[] { 4 }),
+            "null skill evidence stays unknown rather than an empty or text array");
+        Check(Ids(Query("SELECT id FROM items WHERE skills CONTAINS 'Engineering'", data)).Length == 0,
+            "string array substring is not a supported membership test");
+        foreach (string invalid in new[] {
+            "skills CONTAINS 1", "skills CONTAINS true", "skills = 'Engineering1'", "capabilities > 'threshold'",
+            "statusIds CONTAINS 1", "statusIds = 'Blocked'"
+        }) Reject(() => Query("SELECT id FROM items WHERE " + invalid, data), invalid);
+        var legacy = new FactDataset("items", new[] { new FactField("id", "number"), new FactField("statuses", "array") },
+            () => new[] { new FactRow(field => field == "id" ? (object)7 : new JArray(new JObject { ["id"] = "Flooded" })) });
+        Check(Ids(Query("SELECT id FROM items WHERE has_status('Flooded')", legacy)).SequenceEqual(new[] { 7 }),
+            "object-array-only datasets retain existing has_status compatibility");
     }
 
     private static JObject Query(string sql, FactDataset dataset, int milliseconds = 5000)

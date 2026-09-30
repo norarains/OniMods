@@ -80,7 +80,7 @@ HUD 缺料通知的每个原生目标都已被具体 finding 覆盖时，仅具�
 
 `toggle_move_pickupable` 现在必须提供 `destinationId`（目的格上的对象实例 ID），直接下达搬运差事，不打开鼠标选点工具。已有不同目的地的搬运需先取消；不能隐式覆盖。普通配置并不因为来源是侧屏按钮就要求打开侧屏。
 
-打印舱使用 `building_control domain=side_surface surface=facility kind=printing_pod`。若当轮选项尚未生成，先预检 `action=prepare_choices dryRun=true`，再以 `confirm=true` 通过原生正常逻辑生成；不打开页面、不需要截图或鼠标选择，已有选项不会重抽。经用户授权招募后，`list_candidates` 返回当轮稳定字符串 `candidateId`，以选定的精确 ID 预检 `action=recruit dryRun=true`，再用相同 ID `confirm=true` 招募。可传 `maxPopulation` 限制招募后人口，接口无默认人口上限；姓名、卡片序号和过期 ID 不可替代候选 ID。未就绪或候选过期时重新读取并预检，完成后验证返回的新复制人和花名册。`claim rewardIndex=…` 仍仅领取补给包。所有列表和 dryRun 均不生成选项、重抽或消费打印机会。
+打印舱使用 `building_control domain=side_surface surface=facility kind=printing_pod`。若当轮选项尚未生成，先预检 `action=prepare_choices dryRun=true`，再以 `confirm=true` 通过原生正常逻辑生成；不打开页面、不需要截图或鼠标选择，已有选项不会重抽。经用户授权招募后，`list_candidates` 返回当轮稳定字符串 `candidateId`，以选定的精确 ID 预检 `action=recruit dryRun=true`，再用相同 ID `confirm=true` 招募。可传 `maxPopulation` 限制招募后人口，接口无默认人口上限；姓名、卡片序号和过期 ID 不可替代候选 ID。未就绪或候选过期时重新读取并预检，返回 `deliveryAccepted`、精确 `duplicant` 及 `arrivalStatus`；`pending` 在现有打印舱 `status` 中被动更新，`populationObserved` 只表示已登记人口。`claim rewardIndex=…` 仍仅领取补给包。所有列表和 dryRun 均不生成选项、重抽或消费打印机会。
 
 HUD 通知和 UI 状态读取仍需要游戏的 UI 实例，但不会接管输入；这不是无窗口服务器。暂停、速度、存档/读档属于共享游戏状态：手动改订单/配置、读档、切星球或接管时间前应交接。`continue` 观察到手动暂停返回 `external_pause` 时，agent 必须保持暂停，等用户明确交回控制，不自动再次继续。
 
@@ -289,7 +289,7 @@ Prefer extending aggregate entrypoints in `Tools/Entry/` for new public capabili
 
 ## Selective colony queries
 
-`server_control domain=query action=select query="SELECT ..."` reads one paused main-thread sample. `action=schema` lists datasets/grammar; add `dataset=buildings` for only its fields, types, units and cost. Supported datasets: building_defs, buildings, items, dupes, orders, ports, building_warnings. SELECT supports exact comparisons, CONTAINS, AND/OR, IS NULL, COUNT/SUM, one GROUP BY or ORDER BY key, LIMIT and OFFSET. Predicates has_status(nativeId), in_area(handle), near(x,y,radiusCells) use native status IDs or geometric anchor positions, never implied reachability. String-array CONTAINS tests membership; string CONTAINS tests a substring.
+`server_control domain=query action=select query="SELECT ..."` reads one paused main-thread sample. `action=schema` lists datasets/grammar; add `dataset=buildings` for only its fields, types, units and cost. Supported datasets: building_defs, buildings, items, dupes, orders, ports, building_warnings. SELECT supports exact comparisons, CONTAINS, AND/OR, IS NULL, COUNT/SUM, one GROUP BY or ORDER BY key, LIMIT and OFFSET. Predicates has_status(nativeId), in_area(handle), near(x,y,radiusCells) use native status IDs or geometric anchor positions, never implied reachability. Use `statusIds CONTAINS 'Flooded'` for full native-ID membership (case-insensitive), or `has_status('Flooded')` (case-sensitive). `statuses` contains localized detail objects. String CONTAINS tests a substring.
 
 Define a reusable rectangle with a SEARCH/REPLACE edit of `/active/ops/read.md`: `area label=module x1=10 y1=20 x2=15 y2=25 worldId=0`. Preview validates the bounds without creating a handle; confirm returns its areaId for `in_area`.
 

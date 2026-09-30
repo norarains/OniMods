@@ -55,7 +55,7 @@ def main() -> int:
     failures: list[str] = []
     runtime = read("BuildPlanningRuntimePlacement.cs")
     safety = read("BuildPlanningPlacementSafety.cs")
-    obstructions = read("BuildPlanningObstructions.cs")
+    obstructions = read("BuildPlanningFootprintObstructions.cs")
     plan_one = read("BuildPlanningPlanOne.cs")
     build_area = read("BuildPlanningActionBuildArea.cs")
     placement = read("BuildPlanningUtilityConnect.cs")

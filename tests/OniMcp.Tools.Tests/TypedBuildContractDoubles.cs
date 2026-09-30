@@ -41,6 +41,8 @@ namespace OniMcp.Tools
         {
             internal int Cell;
             internal bool Valid = true, Visible = true, InWorld = true;
+            internal int X => Grid.CellColumn(Cell);
+            internal int Y => Grid.CellRow(Cell);
         }
         private sealed partial class PlacementDetails
         {

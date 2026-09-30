@@ -15,6 +15,7 @@ internal static class Program
     {
         MaintenanceRegression.Run();
         PlayerVisibilityRegression.Run();
+        MaterialSupplyRegression.Run();
         DigDiscoveryRegression.Run();
         QueryContractRegression.Run();
         OniToolRegistry.Tools["ok"] = new McpTool

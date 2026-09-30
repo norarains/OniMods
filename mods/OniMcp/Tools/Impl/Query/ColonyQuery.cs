@@ -18,10 +18,10 @@ namespace OniMcp.Tools
         {
             var building = Identity.Concat(new[] {
                 F("blueprint", "boolean"), F("orientation", "string"), F("isOperational", "boolean"), F("isActive", "boolean"),
-                F("priority"), F("statuses", "array", cost:"native_status"), F("work", "array", "seconds", "native_work"),
+                F("priority"), F("work", "array", "seconds", "native_work"),
                 F("config", "object", cost:"native_config"), F("ports", "array", cost:"native_ports")
                 , F("capabilities", "string[]", cost:"native_config")
-            }).ToArray();
+            }).Concat(FactQueryStatusSnapshot.Fields).ToArray();
             var result = new Dictionary<string, FactDataset>(StringComparer.OrdinalIgnoreCase) {
                 ["buildings"] = new FactDataset("buildings", building, () => BuildingRows(false)),
                 ["building_warnings"] = new FactDataset("building_warnings", building, () => BuildingRows(true)),
@@ -44,13 +44,13 @@ namespace OniMcp.Tools
                 }), DupeRows),
                 ["orders"] = new FactDataset("orders", Identity.Concat(new[] {
                     F("kind", "string"), F("priority"), F("workSecondsRemaining", unit:"s"),
-                    F("materials", "object", "tag:kg/units", "native_fetch"), F("statuses", "array", cost:"native_status"),
+                    F("materials", "object", "tag:kg/units", "native_fetch"),
                     F("cellReachable", "boolean", cost:"navigation")
-                }), OrderRows)
+                }).Concat(FactQueryStatusSnapshot.Fields), OrderRows)
             };
             foreach (string name in new[] { "buildings", "building_warnings", "ports" })
                 result[name].IndexedRows = predicate => IndexedBuildingRows(predicate, name == "building_warnings");
-            result["building_warnings"].Required = row => (row.Get("statuses") as JArray)?.Count > 0;
+            result["building_warnings"].Required = row => (row.Get("statusIds") as JArray)?.Count > 0;
             return result;
         }
 
@@ -82,7 +82,7 @@ namespace OniMcp.Tools
             if (string.IsNullOrEmpty(name)) return new JObject {
                 ["datasets"] = new JArray(datasets.Keys), ["grammar"] = "SELECT fields|COUNT(*)|SUM(field) [AS alias] FROM dataset [WHERE comparisons AND/OR ...] [GROUP BY field] [ORDER BY field ASC|DESC] [LIMIT 1..200] [OFFSET n]",
                 ["predicates"] = "= != < <= > >= CONTAINS, IS [NOT] NULL, has_status('nativeId'), in_area('handle'), near(x,y,radiusCells)",
-                ["semantics"] = "Exact comparisons are case-sensitive; CONTAINS is case-insensitive. All queries are read-only and require pause. null means unknown/not applicable. SUM is null if any input is unknown; COUNT(field) counts known values. No joins or mutations.",
+                ["semantics"] = "Exact comparisons are case-sensitive; CONTAINS is case-insensitive substring matching for string fields and exact member matching for string[] fields. statuses contains native objects; use statusIds CONTAINS 'Flooded' or has_status('Flooded') to filter IDs. All queries are read-only and require pause. null means unknown/not applicable. SUM is null if any input is unknown; COUNT(field) counts known values. No joins or mutations.",
                 ["budgets"] = new JObject { ["scan"] = FactQueryExecutor.MaxScan, ["milliseconds"] = 250, ["outputChars"] = FactQueryExecutor.MaxOutputChars },
                 ["discovery"] = "action=schema dataset=<name>"
             };
@@ -93,8 +93,8 @@ namespace OniMcp.Tools
                 ["notes"] = name == "orders" ? "Queued construction, dig and marked deconstruction only. materials=null means fetch evidence unavailable. cellReachable checks the exact cell, not work/fetch eligibility."
                     : name == "ports" ? "One row per owner; ports contains native port cells, roles and local line evidence. Blueprint connections are unknown."
                     : name == "items" ? "Visible pickupables, including stored objects. Mass does not establish fetchability. cellReachable is explicit navigation, not delivery eligibility."
-                    : name == "building_warnings" ? "One row per building with native warning statuses. Includes intended interactions; no stop or repair is implied."
-                    : name == "buildings" ? "Includes completed buildings, visible geysers and blueprints. work lists native Workables, not pending orders. Config thresholds use native units (temperature K)."
+                    : name == "building_warnings" ? "One row per building with native warning statuses; statusIds lists their canonical IDs. Includes intended interactions; no stop or repair is implied."
+                    : name == "buildings" ? "Includes completed buildings, visible geysers and blueprints. statusIds lists native status IDs; statuses supplies localized details. work lists native Workables, not pending orders. Config thresholds use native units (temperature K)."
                     : "Exact canonical IDs and localized names; null is unknown/not applicable."
             };
         }

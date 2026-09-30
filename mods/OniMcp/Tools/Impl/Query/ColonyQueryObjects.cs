@@ -31,6 +31,7 @@ namespace OniMcp.Tools
             {
                 int cell = Grid.PosToCell(go);
                 if (!PlayerVisibility.Object(go)) continue;
+                FactQueryStatusSnapshot statuses = null;
                 yield return new FactRow(field => {
                     switch (field.ToLowerInvariant())
                     {
@@ -38,7 +39,8 @@ namespace OniMcp.Tools
                         case "orientation": return go.GetComponent<Rotatable>()?.GetOrientation().ToString() ?? "Neutral";
                         case "isoperational": return go.GetComponent<Operational>()?.IsOperational;
                         case "isactive": return go.GetComponent<Operational>()?.IsActive;
-                        case "statuses": return Statuses(go, warnings);
+                        case "statusids": return (statuses ?? (statuses = NativeStatusSnapshot(go, warnings))).Ids;
+                        case "statuses": return (statuses ?? (statuses = NativeStatusSnapshot(go, warnings))).Details;
                         case "work": return go.GetComponents<Workable>().Select(w => new { type = w.GetType().Name, secondsRemaining = Finite(w.WorkTimeRemaining) }).ToArray();
                         case "config": return BuildingConfigTools.SnapshotConfig(go);
                         case "capabilities": return BuildingConfigTools.SnapshotConfig(go)["capabilities"];
@@ -49,19 +51,20 @@ namespace OniMcp.Tools
             }
         }
 
-        internal static JArray Statuses(GameObject go, bool warnings = false)
+        private static FactQueryStatusSnapshot NativeStatusSnapshot(GameObject go, bool warnings = false)
+            => new FactQueryStatusSnapshot(() => NativeStatuses(go, warnings));
+
+        private static IEnumerable<FactQueryStatus> NativeStatuses(GameObject go, bool warnings)
         {
-            var result = new JArray();
             var group = go.GetComponent<KSelectable>()?.GetStatusItemGroup();
-            if (group == null) return result;
+            if (group == null) yield break;
             foreach (var entry in group)
             {
                 if (entry.item == null) continue;
                 string type = entry.item.notificationType.ToString();
                 if (warnings && !HudFindingPolicy.IsNotificationWarning(type)) continue;
-                result.Add(new JObject { ["id"] = entry.item.Id, ["text"] = ToolUtil.CleanName(entry.GetName()), ["type"] = type });
+                yield return new FactQueryStatus(entry.item.Id, type, () => ToolUtil.CleanName(entry.GetName()));
             }
-            return result;
         }
 
         private static IEnumerable<FactRow> DefinitionRows()

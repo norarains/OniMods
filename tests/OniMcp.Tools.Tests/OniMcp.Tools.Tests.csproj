@@ -18,6 +18,8 @@
     <Compile Include="../../mods/OniMcp/Tools/WorldEditor/AreaOperation.cs" Link="Source/AreaOperation.cs" />
     <Compile Include="../../mods/OniMcp/Tools/WorldEditor/WorldEditorOperationPreflight.cs" Link="Source/WorldEditorOperationPreflight.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Build/BuildPlanningPortSafety.cs" Link="Source/BuildPlanningPortSafety.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Build/BuildPlanningFootprintObstructions.cs" Link="Source/BuildPlanningFootprintObstructions.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Build/BuildPlanningTileLocationSafety.cs" Link="Source/BuildPlanningTileLocationSafety.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Build/TemperatureSampleReadiness.cs" Link="Source/TemperatureSampleReadiness.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Build/PlannedAccessChain.cs" Link="Source/PlannedAccessChain.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Query/QueryArguments.cs" Link="Source/QueryArguments.cs" />
@@ -30,6 +32,8 @@
     <Compile Include="../../mods/OniMcp/Tools/Impl/Facility/FacilityPrintingPodRewardTools.cs" Link="Source/FacilityPrintingPodRewardTools.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Facility/FacilityPrintingPodCandidateTools.cs" Link="Source/FacilityPrintingPodCandidateTools.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Facility/PrintingPodNativeChoices.cs" Link="Source/PrintingPodNativeChoices.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Facility/PrintingRecruitmentReceipt.cs" Link="Source/PrintingRecruitmentReceipt.cs" />
+    <Compile Include="../../mods/OniMcp/Patches/PrintingRecruitmentCapturePatch.cs" Link="Source/PrintingRecruitmentCapturePatch.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Facility/HeadlessPrintingChoices.cs" Link="Source/HeadlessPrintingChoices.cs" />
     <Compile Include="../../mods/OniMcp/Patches/PrintingChoiceUiPatches.cs" Link="Source/PrintingChoiceUiPatches.cs" />
     <Compile Include="../../mods/OniMcp/Patches/ConstructionPriorityIntent.cs" Link="Source/ConstructionPriorityIntent.cs" />
@@ -65,6 +69,7 @@
     <Compile Include="../../mods/OniMcp/Tools/Impl/Core/ContinueStopEvents.cs" Link="ContinueStopEvents.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Core/GameContinuePolicy.cs" Link="Source/GameContinuePolicy.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Build/BuildMaterialBudget.cs" Link="Source/BuildMaterialBudget.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Build/BuildPlanningMaterialSupply.cs" Link="Source/BuildPlanningMaterialSupply.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Build/BuildMaterialRequirements.cs" Link="Source/BuildMaterialRequirements.cs" />
     <Compile Include="../../mods/OniMcp/Tools/WorldEditor/BuildingIndexFilter.cs" Link="Source/BuildingIndexFilter.cs" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />

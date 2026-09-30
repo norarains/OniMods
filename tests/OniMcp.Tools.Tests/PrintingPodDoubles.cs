@@ -29,7 +29,11 @@ internal sealed partial class Immigration
         PrintingUiNativeHooks.Invoke(typeof(OniMcp.PrintingChoiceRoundEndedPatch), "Postfix");
         return spawnIdx;
     }
-    internal void OnPrefabInit() => PrintingUiNativeHooks.Invoke(typeof(OniMcp.PrintingChoiceOwnerInitializedPatch), "Postfix");
+    internal void OnPrefabInit()
+    {
+        PrintingUiNativeHooks.Invoke(typeof(OniMcp.PrintingChoiceOwnerInitializedPatch), "Postfix");
+        PrintingUiNativeHooks.Invoke(typeof(OniMcp.PrintingRecruitmentOwnerPatch), "Postfix");
+    }
 }
 
 internal sealed class Telepad : KMonoBehaviour
@@ -37,20 +41,34 @@ internal sealed class Telepad : KMonoBehaviour
     internal int AcceptCalls;
     internal ITelepadDeliverable LastAccepted;
     internal bool ThrowAfterEnd { get; set; }
+    internal bool ThrowAfterDelivery { get; set; }
+    internal bool DeferArrivalRegistration { get; set; }
+    internal bool SuppressArrivalId { get; set; }
+    internal Action BeforeDelivery;
+    internal Action AfterDelivery;
+    internal GameObject LastDeliveredObject;
     public void OnAcceptDelivery(ITelepadDeliverable value)
     {
         AcceptCalls++;
         LastAccepted = value;
         Immigration.Instance.EndImmigration();
         if (ThrowAfterEnd) throw new InvalidOperationException("native delivery failed after consuming round");
+        BeforeDelivery?.Invoke();
         if (value is MinionStartingStats stats)
         {
-            var dupe = new MinionIdentity();
-            dupe.gameObject.Cell = gameObject.Cell;
-            dupe.gameObject.name = stats.Name;
-            dupe.gameObject.Components[typeof(KPrefabID)] = new KPrefabID { InstanceID = 901 };
-            Components.LiveMinionIdentities.Items.Add(dupe);
+            stats.DeliveryCell = gameObject.Cell;
+            stats.SuppressDeliveryId = SuppressArrivalId;
+            LastDeliveredObject = stats.Deliver(default(Vector3));
+            if (!DeferArrivalRegistration) RegisterArrival();
         }
+        AfterDelivery?.Invoke();
+        if (ThrowAfterDelivery) throw new InvalidOperationException("native callbacks failed after delivering exact object");
+    }
+
+    internal void RegisterArrival()
+    {
+        var identity = LastDeliveredObject.GetComponent<MinionIdentity>();
+        if (!Components.LiveMinionIdentities.Items.Contains(identity)) Components.LiveMinionIdentities.Items.Add(identity);
     }
 }
 
@@ -198,6 +216,21 @@ internal sealed partial class MinionStartingStats : ITelepadDeliverable
     public readonly List<Klei.AI.Trait> Traits = new List<Klei.AI.Trait>();
     public readonly Dictionary<string, int> StartingLevels = new Dictionary<string, int>();
     public readonly Dictionary<Database.SkillGroup, float> skillAptitudes = new Dictionary<Database.SkillGroup, float>();
+    internal int DeliveryCell;
+    internal bool SuppressDeliveryId;
+    internal int DeliveryCalls;
+    public GameObject Deliver(Vector3 position)
+    {
+        DeliveryCalls++;
+        var identity = new MinionIdentity();
+        var result = identity.gameObject;
+        result.Cell = DeliveryCell;
+        result.name = Name;
+        result.Components[typeof(MinionIdentity)] = identity;
+        if (!SuppressDeliveryId) result.Components[typeof(KPrefabID)] = new KPrefabID { InstanceID = 901 };
+        PrintingUiNativeHooks.Invoke(typeof(OniMcp.PrintingRecruitmentCapturePatch), "Postfix", this, result);
+        return result;
+    }
 }
 internal sealed partial class Personality
 {

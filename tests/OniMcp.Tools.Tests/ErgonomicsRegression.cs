@@ -180,7 +180,7 @@ internal static class ErgonomicsRegression
     private static void TestOccupancy()
     {
         var pod = new UnityEngine.GameObject();
-        var def = new BuildingDef { ObjectLayer = 1, WidthInCells = 4, HeightInCells = 4 };
+        var def = new BuildingDef { ObjectLayer = (ObjectLayer)1, WidthInCells = 4, HeightInCells = 4 };
         for (int cell = 282; cell <= 285; cell++) Grid.Objects[cell, 1] = pod;
         Check(RegisteredBuildingOccupancy.Contains(pod, 282, def), "native left edge occupied");
         Check(RegisteredBuildingOccupancy.Contains(pod, 285, def), "native right edge occupied");
@@ -189,16 +189,16 @@ internal static class ErgonomicsRegression
             && bounds.SequenceEqual(new[] { 282, 0, 285, 0 }), "bounds follow native registrations, not pivot plus width");
         Grid.Objects[500, 1] = pod;
         Check(RegisteredBuildingOccupancy.Contains(pod, 500, def), "registered rotated footprint honored");
-        Check(!RegisteredBuildingOccupancy.Contains(pod, 285, new BuildingDef { ObjectLayer = 0 }), "layers not conflated");
+        Check(!RegisteredBuildingOccupancy.Contains(pod, 285, new BuildingDef { ObjectLayer = (ObjectLayer)0 }), "layers not conflated");
         Check(!RegisteredBuildingOccupancy.Contains(new UnityEngine.GameObject(), 285, def), "instance identity required");
         var replacement = new UnityEngine.GameObject();
         Grid.Objects[510, 0] = replacement;
-        var replacementDef = new BuildingDef { ObjectLayer = 1, ReplacementLayer = global::ObjectLayer.LiquidConduit };
+        var replacementDef = new BuildingDef { ObjectLayer = (ObjectLayer)1, ReplacementLayer = global::ObjectLayer.LiquidConduit };
         Check(RegisteredBuildingOccupancy.Contains(replacement, 510, replacementDef), "replacement-layer blueprint registration is observed");
         Check(!RegisteredBuildingOccupancy.Contains(pod, 510, replacementDef), "replacement layer still requires exact object identity");
         var rotated = new UnityEngine.GameObject();
         for (int y = 2; y <= 4; y++) Grid.Objects[Grid.XYToCell(20, y), 1] = rotated;
-        Check(RegisteredBuildingOccupancy.TryGetBounds(rotated, Grid.XYToCell(20, 3), new BuildingDef { ObjectLayer = 1, WidthInCells = 3, HeightInCells = 1 }, out int[] rotatedBounds)
+        Check(RegisteredBuildingOccupancy.TryGetBounds(rotated, Grid.XYToCell(20, 3), new BuildingDef { ObjectLayer = (ObjectLayer)1, WidthInCells = 3, HeightInCells = 1 }, out int[] rotatedBounds)
             && rotatedBounds.SequenceEqual(new[] { 20, 2, 20, 4 }), "rotated native bounds override unrotated definition dimensions");
     }
     private static void TestPreflight()
@@ -291,7 +291,7 @@ namespace UnityEngine
         public T GetComponent<T>() where T : class => Components.Values.OfType<T>().FirstOrDefault();
     }
 }
-internal sealed partial class BuildingDef { internal string PrefabID { get; set; } internal ObjectLayer ReplacementLayer { get; set; } = global::ObjectLayer.NumLayers; internal int ObjectLayer { get; set; } internal int WidthInCells { get; set; } internal int HeightInCells { get; set; } internal UnityEngine.GameObject BuildingComplete { get; set; } }
+internal sealed partial class BuildingDef { internal string PrefabID { get; set; } internal ObjectLayer ReplacementLayer { get; set; } = global::ObjectLayer.NumLayers; internal ObjectLayer ObjectLayer { get; set; } internal int WidthInCells { get; set; } internal int HeightInCells { get; set; } internal UnityEngine.GameObject BuildingComplete { get; set; } }
 internal static partial class Grid
 {
     internal const int WidthInCells = 1024, HeightInCells = 8;

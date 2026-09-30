@@ -84,7 +84,7 @@ dupes_control domain=priority action=list id=<id>   # verify
 
 Resolve name to numeric ID from the roster before tools that require `id`.
 
-For authorized Printing Pod recruitment, use `building_control domain=side_surface surface=facility kind=printing_pod`. `list_candidates` passively returns current-round `candidateId` values. If offers are unmaterialized, preview/confirm headless `prepare_choices` to generate the normal native round without rerolling or opening UI. Preview `recruit candidateId=<id> dryRun=true`, then confirm the same ID with `confirm=true`; optional `maxPopulation` guards the caller's limit. Stale/unready offers require a fresh list and preview. Verify the returned duplicant and roster. Care-package `list_rewards/claim` remains separate; no default population cap or name/index-based recruitment.
+For authorized Printing Pod recruitment, use `building_control domain=side_surface surface=facility kind=printing_pod`. `list_candidates` passively returns current-round `candidateId` values. If offers are unmaterialized, preview/confirm headless `prepare_choices` to generate the normal native round without rerolling or opening UI. Preview `recruit candidateId=<id> dryRun=true`, then confirm the same ID with `confirm=true`; optional `maxPopulation` guards the caller's limit. Stale/unready offers require a fresh list and preview. Acceptance returns `deliveryAccepted`, exact `duplicant` and `arrivalStatus`; `pending` resolves passively in existing Printing Pod `status`. `populationObserved` is the registered roster count. Care-package `list_rewards/claim` remains separate; no default population cap or name/index-based recruitment.
 
 ### Batch configuration
 

@@ -81,7 +81,7 @@ namespace OniMcp.Tools
             });
         }
 
-        private static Dictionary<string, object> PrintingRewardStatus(Telepad telepad)
+        private static Dictionary<string, object> PrintingRewardStatus(Telepad telepad, bool includeRecruitment = true)
         {
             var immigration = Immigration.Instance;
             var rewards = CurrentCarePackages(telepad)
@@ -89,7 +89,7 @@ namespace OniMcp.Tools
                 .ToList();
             bool available = immigration != null && immigration.ImmigrantsAvailable;
 
-            return new Dictionary<string, object>
+            var result = new Dictionary<string, object>
             {
                 ["available"] = available,
                 ["timeRemainingSeconds"] = immigration == null ? (object)null : Math.Round(ToolUtil.SafeFloat(immigration.GetTimeRemaining()), 1),
@@ -101,6 +101,9 @@ namespace OniMcp.Tools
                 ["prepared"] = rewards.Count > 0 || CurrentPrintingCandidates(telepad).Count > 0,
                 ["prepareAction"] = "prepare_choices; dryRun or confirm=true"
             };
+            var recruitment = includeRecruitment ? PrintingRecruitmentReceipt.Status(telepad) : null;
+            if (recruitment != null) result["recruitment"] = recruitment;
+            return result;
         }
 
         private static CarePackageContainer.CarePackageInstanceData ResolvePrintingReward(JObject args, List<CarePackageContainer.CarePackageInstanceData> rewards)

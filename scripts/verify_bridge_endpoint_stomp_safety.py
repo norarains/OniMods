@@ -32,7 +32,7 @@ def ordered(source: str, *needles: str) -> None:
 
 def main() -> None:
     safety = (BUILD / "BuildPlanningPlacementSafety.cs").read_text(encoding="utf-8")
-    obstructions = (BUILD / "BuildPlanningObstructions.cs").read_text(encoding="utf-8")
+    obstructions = (BUILD / "BuildPlanningFootprintObstructions.cs").read_text(encoding="utf-8")
     geometry = (BUILD / "BuildPlanningPlacementGeometry.cs").read_text(encoding="utf-8")
     models = (BUILD / "BuildPlanningTools.cs").read_text(encoding="utf-8")
     plan_one = (BUILD / "BuildPlanningPlanOne.cs").read_text(encoding="utf-8")
@@ -107,7 +107,11 @@ def main() -> None:
     assert planning.count("ValidateFootprint(") >= 2
     ordered(planning, "var executionFootprintResult = ValidateFootprint(placement)",
             "HasUnsafeExecutionConflict(executionFootprintResult)",
-            "TryBuildVirtualFileInstantBuild", "def.TryPlace(")
+            "TryBuildVirtualFileInstantBuild", "TryPlaceNativeBlueprint(")
+    native_blueprints = (BUILD / "BuildPlanningBlueprintConnections.cs").read_text(encoding="utf-8")
+    placement_call = body(native_blueprints, "private static GameObject TryPlaceNativeBlueprint")
+    assert "def.TryPlace(null, position, orientation, elements, facadeId)" in placement_call
+    assert "def.TryReplaceTile(null, position, orientation, elements, facadeId)" in placement_call
 
     retry = body(completion, "private static Dictionary<string, object> TryCompleteExistingVirtualFileBlueprint")
     ordered(retry, "Orientation orientation = rotatable == null ? Orientation.Neutral : rotatable.GetOrientation()",

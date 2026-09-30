@@ -150,35 +150,27 @@ namespace OniMcp.Tools
                 return JsonResult(new Dictionary<string, object>
                 {
                     ["dryRun"] = true, ["selectedCandidate"] = info,
-                    ["populationBefore"] = population, ["populationAfter"] = population + 1,
+                    ["populationBefore"] = population, ["expectedPopulation"] = population + 1,
                     ["worldId"] = telepad.gameObject.GetMyWorldId()
                 });
             if (!ToolUtil.GetBool(args, "confirm", false))
                 return CallToolResult.Error("confirm=true required to recruit a Printing Pod duplicant.");
 
-            var existing = new HashSet<int>(Components.LiveMinionIdentities.Items.Where(dupe => dupe != null)
-                .Select(dupe => dupe.gameObject.GetInstanceID()));
-            try { PrintingPodNativeChoices.Accept(telepad, candidate); }
-            catch (Exception exception)
+            using (var capture = PrintingRecruitmentReceipt.Begin(telepad, candidate, candidateId, population))
             {
-                return CallToolResult.Error("Native recruitment failed: " + exception.GetBaseException().Message
-                    + ". Delivery may have started; inspect population and current choices before retrying.");
-            }
-            var arrived = Components.LiveMinionIdentities.Items
-                .Where(dupe => dupe != null && !existing.Contains(dupe.gameObject.GetInstanceID()))
-                .Select(dupe => new Dictionary<string, object>
+                try { PrintingPodNativeChoices.Accept(telepad, candidate); }
+                catch (Exception exception)
                 {
-                    ["id"] = dupe.GetComponent<KPrefabID>()?.InstanceID,
-                    ["name"] = ToolUtil.CleanName(dupe.gameObject.GetProperName()),
-                    ["worldId"] = dupe.gameObject.GetMyWorldId()
-                }).ToList();
-            return JsonResult(new Dictionary<string, object>
-            {
-                ["recruited"] = true, ["selectedCandidate"] = info, ["duplicants"] = arrived,
-                ["populationBefore"] = population,
-                ["populationAfter"] = Components.LiveMinionIdentities.Items.Count(dupe => dupe != null),
-                ["printingRewards"] = PrintingRewardStatus(telepad)
-            });
+                    var failed = JsonResult(capture.Finish(false, "Native recruitment failed: "
+                        + exception.GetBaseException().Message + ". An accepted or consumed delivery must not be replayed."));
+                    failed.IsError = true;
+                    return failed;
+                }
+                var receipt = capture.Finish(true);
+                receipt["selectedCandidate"] = info;
+                receipt["printingRewards"] = PrintingRewardStatus(telepad, includeRecruitment: false);
+                return JsonResult(receipt);
+            }
         }
     }
 }

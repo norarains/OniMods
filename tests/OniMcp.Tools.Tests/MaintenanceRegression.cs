@@ -16,6 +16,7 @@ internal static class MaintenanceRegression
         DefineAreas();
         PowerPending();
         PortSafety();
+        TileLocationSafety();
         IndexedQueries();
         LadderDependencies();
         Check(!TemperatureSampleReadiness.Ready(new float[8], 0), "uninitialized sensor is unknown");
@@ -131,6 +132,110 @@ internal static class MaintenanceRegression
         joint.BuildingComplete.Components.Clear();
         Check(BuildPlanningTools.PortConflictsFixture(joint, 30, 3).Count == 1, "missing joint link metadata fails closed");
         Array.Clear(Grid.Objects, 0, Grid.Objects.Length);
+    }
+
+    private static void TileLocationSafety()
+    {
+        Array.Clear(Grid.Objects, 0, Grid.Objects.Length);
+        Grid.Hidden.Clear();
+        int cell = Grid.XYToCell(292, 6), second = cell + 1;
+        var tile = new BuildingDef { PrefabID = "Tile", BuildLocationRule = BuildLocationRule.Tile,
+            ObjectLayer = ObjectLayer.Building, TileLayer = ObjectLayer.FoundationTile,
+            WidthInCells = 1, HeightInCells = 1 };
+        var heavy = new BuildingDef { PrefabID = "HighWattageWire", BuildLocationRule = BuildLocationRule.NotInTiles };
+        var wire = TileObstruction(heavy, cell, 32538);
+        Grid.Objects[cell, (int)ObjectLayer.Wire] = wire;
+        var conflicts = BuildPlanningTools.FootprintObstructionsFixture(tile, new[] { cell });
+        Check(conflicts.Count == 1 && (string)conflicts[0]["reasonCode"] == "wire_obstruction",
+            "actual footprint preflight rejects tile over Heavi-Watt wire before native TryPlace");
+        Check((int)conflicts[0]["existingId"] == 32538 && (string)conflicts[0]["actualPrefabId"] == "HighWattageWire"
+            && (int)conflicts[0]["x"] == 292 && (int)conflicts[0]["y"] == 6
+            && (string)conflicts[0]["layer"] == "Wire", "tile conflict identifies exact native wire and cell");
+        Check(Grid.Objects[cell, (int)ObjectLayer.Wire] == wire && tile.NativePlaceCalls == 0
+            && tile.NativeReplaceCalls == 0 && wire.NativeTriggers == 0, "preflight does not alter occupancy or dispatch construction");
+        Check(BuildPlanningTools.FootprintObstructionsFixture(tile, new[] { cell }, wire).Count == 0,
+            "an explicitly ignored source does not obstruct itself");
+        heavy.PrefabID = "ModdedHighWattageWire";
+        Check(BuildPlanningTools.FootprintObstructionsFixture(tile, new[] { cell }).Count == 1,
+            "native NotInTiles rule covers modded wire IDs");
+        heavy.BuildLocationRule = BuildLocationRule.Anywhere;
+        Check(BuildPlanningTools.FootprintObstructionsFixture(tile, new[] { cell }).Count == 0,
+            "ordinary wire is allowed through native tile footprint");
+        heavy.BuildLocationRule = BuildLocationRule.NotInTiles;
+        foreach (string prefab in new[] { "MeshTile", "GasPermeableMembrane", "InsulationTile" })
+        {
+            tile.PrefabID = prefab;
+            Check(BuildPlanningTools.FootprintObstructionsFixture(tile, new[] { cell }).Count == 1,
+                "native Tile rule includes " + prefab);
+        }
+        tile.PrefabID = "Tile";
+        var passable = new BuildingDef { PrefabID = "Ladder", BuildLocationRule = BuildLocationRule.Anywhere,
+            ObjectLayer = ObjectLayer.Building };
+        Check(BuildPlanningTools.FootprintObstructionsFixture(passable, new[] { cell }).Count == 0,
+            "Heavi-Watt wire can overlap a passable building");
+        Grid.Objects[cell, (int)ObjectLayer.Wire] = null;
+        Grid.Objects[second, (int)ObjectLayer.Wire] = wire;
+        Check(BuildPlanningTools.FootprintObstructionsFixture(tile, new[] { cell, second }).Count == 1,
+            "preflight checks every native footprint cell, not only the origin");
+        Check(BuildPlanningTools.FootprintObstructionsFixture(tile, new[] { cell }).Count == 0,
+            "adjacent Heavi-Watt wire does not obstruct a tile");
+        Grid.Objects[second, (int)ObjectLayer.Wire] = null;
+
+        var joint = new BuildingDef { PrefabID = "WireBridgeHighWattage",
+            BuildLocationRule = BuildLocationRule.HighWattBridgeTile, ObjectLayer = ObjectLayer.Building,
+            TileLayer = ObjectLayer.FoundationTile, WidthInCells = 1, HeightInCells = 1 };
+        var jointObject = TileObstruction(joint, second, 451);
+        Grid.Objects[cell, (int)ObjectLayer.WireConnectors] = jointObject;
+        Check(BuildPlanningTools.FootprintObstructionsFixture(tile, new[] { cell }).Count == 1,
+            "a joint plate endpoint remains uncovered by a neighboring tile");
+        Check(BuildPlanningTools.FootprintObstructionsFixture(joint, new[] { cell }).Count == 1,
+            "joint plate center keeps native tile obstruction checks");
+        Grid.Objects[cell, (int)ObjectLayer.WireConnectors] = null;
+        Grid.Objects[second, (int)ObjectLayer.WireConnectors] = jointObject;
+        Check(BuildPlanningTools.FootprintObstructionsFixture(joint, new[] { cell }).Count == 0,
+            "an unoccupied joint plate center is valid despite its own adjacent endpoint");
+        Check(BuildPlanningTools.FootprintObstructionsFixture(joint, new[] { cell, second }).Count == 0,
+            "HighWattBridgeTile native tile-location check applies only at its origin");
+        Grid.Objects[second, (int)ObjectLayer.WireConnectors] = null;
+
+        var backwall = TileObstruction(new BuildingDef { PrefabID = "NotInTilesBackwall",
+            BuildLocationRule = BuildLocationRule.NotInTiles }, cell, 452);
+        Grid.Objects[cell, (int)ObjectLayer.Backwall] = backwall;
+        Check((string)BuildPlanningTools.FootprintObstructionsFixture(tile, new[] { cell })[0]["reasonCode"] == "backwall_obstruction",
+            "native tile backwall restriction is reflected in the same preflight");
+        var oldDef = new BuildingDef { PrefabID = "MeshTile", WidthInCells = 1, HeightInCells = 1,
+            TileLayer = ObjectLayer.FoundationTile };
+        var oldTile = TileObstruction(oldDef, cell, 453);
+        oldTile.Components[typeof(BuildingComplete)] = new BuildingComplete { Def = oldDef };
+        tile.ReplacementLayer = ObjectLayer.ReplacementTile;
+        tile.ReplacementCandidate = oldTile;
+        Grid.Objects[cell, (int)ObjectLayer.Building] = oldTile;
+        Grid.Solid[cell] = true;
+        Check(BuildPlanningTools.FootprintObstructionsFixture(tile, new[] { cell }).Count == 0,
+            "native valid tile replacement retains its backwall exception and solid-cell filter");
+        joint.ReplacementLayer = ObjectLayer.ReplacementTile; joint.ReplacementCandidate = oldTile;
+        Check(BuildPlanningTools.FootprintObstructionsFixture(joint, new[] { cell }).Count == 0,
+            "native joint plate can replace a foundation tile at its center");
+        Grid.Objects[cell, (int)ObjectLayer.Wire] = wire;
+        Check((string)BuildPlanningTools.FootprintObstructionsFixture(tile, new[] { cell })[0]["reasonCode"] == "wire_obstruction",
+            "tile replacement does not suppress unrelated Heavi-Watt obstruction");
+        Grid.Objects[cell, (int)ObjectLayer.Wire] = null;
+        tile.NativeCanReplace = false;
+        Check(BuildPlanningTools.FootprintObstructionsFixture(tile, new[] { cell }).Any(c => (string)c["reasonCode"] == "backwall_obstruction"),
+            "replacement exemption requires native CanReplace approval");
+        Grid.Hidden.Add(cell);
+        Check(BuildPlanningTools.FootprintObstructionsFixture(tile, new[] { cell }).Count == 0,
+            "unexplored cell does not expose obstructing building identity");
+        Grid.Hidden.Clear(); Grid.Solid[cell] = false;
+        Array.Clear(Grid.Objects, 0, Grid.Objects.Length);
+    }
+
+    private static GameObject TileObstruction(BuildingDef def, int cell, int id)
+    {
+        var go = new GameObject { Cell = cell };
+        go.Components[typeof(Building)] = new Building { Def = def };
+        go.Components[typeof(KPrefabID)] = new KPrefabID { InstanceID = id };
+        return go;
     }
 
     private static void IndexedQueries()

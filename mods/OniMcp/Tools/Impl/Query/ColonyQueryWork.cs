@@ -53,13 +53,15 @@ namespace OniMcp.Tools
         private static FactRow OrderRow(GameObject go, string kind, Component component)
         {
             int cell = Grid.PosToCell(go);
+            FactQueryStatusSnapshot statuses = null;
             return new FactRow(field => {
                 switch (field.ToLowerInvariant())
                 {
                     case "kind": return kind;
                     case "worksecondsremaining": return component is Workable work ? Finite(work.WorkTimeRemaining) : null;
                     case "materials": return component is Constructable constructable ? RemainingMaterials(constructable) : null;
-                    case "statuses": return Statuses(go);
+                    case "statusids": return (statuses ?? (statuses = NativeStatusSnapshot(go))).Ids;
+                    case "statuses": return (statuses ?? (statuses = NativeStatusSnapshot(go))).Details;
                     case "cellreachable": return CellReachable(cell);
                     default: return IdentityValue(go, cell, field);
                 }
