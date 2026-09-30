@@ -58,11 +58,12 @@ internal readonly struct Tag : IEquatable<Tag>
     public bool Equals(Tag other) => Name == other.Name;
     public override bool Equals(object other) => other is Tag tag && Equals(tag);
     public override int GetHashCode() => Name?.GetHashCode() ?? 0;
+    public override string ToString() => Name;
     public static bool operator ==(Tag a, Tag b) => a.Equals(b);
     public static bool operator !=(Tag a, Tag b) => !a.Equals(b);
     public static implicit operator Tag(int value) => value == 0 ? Invalid : new Tag("#" + value);
 }
-internal static class GameTags
+internal static partial class GameTags
 {
     internal static readonly Tag Stored = 1;
     internal static readonly Tag Void = new Tag("Void");

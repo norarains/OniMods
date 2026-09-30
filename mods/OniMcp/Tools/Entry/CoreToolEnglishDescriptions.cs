@@ -12,7 +12,7 @@ namespace OniMcp.Tools
             switch (tool.Name)
             {
                 case "building_control":
-                    tool.Description = "Use colony-wide modular design: clear responsibilities, boundaries, interfaces, capacities and failure containment; stage upgrades and verify integration. Automatic power routing is opt-in. Smart battery thresholds: domain=config action=set_battery_thresholds lowThreshold/highThreshold (percent), dryRun supported. Printing Pod care package rewards: domain=side_surface surface=facility kind=printing_pod action=list_rewards (claim requires confirm=true). Unified building entrypoint. Use action plus query, target, search, id, plan, or areaId for locating targets. Coordinate input is not accepted here; use world_editor map SEARCH/REPLACE patches for exact cells.";
+                    tool.Description = "Use colony-wide modular design: clear responsibilities, boundaries, interfaces, capacities and failure containment; stage upgrades and verify integration. Automatic power routing is opt-in. Smart battery thresholds: domain=config action=set_battery_thresholds lowThreshold/highThreshold (percent), dryRun supported. Printing Pod: domain=side_surface surface=facility kind=printing_pod; passive list_rewards/list_candidates; prepare_choices explicitly generates native offers without opening UI; claim care packages or recruit exact candidateId with dryRun/confirm. Optional maxPopulation guards recruitment. Unified building entrypoint. Use action plus query, target, search, id, plan, or areaId for locating targets. Coordinate input is not accepted here; use world_editor map SEARCH/REPLACE patches for exact cells.";
                     Describe(tool, BuildingDescriptions());
                     break;
                 case "colony_control":
@@ -96,7 +96,7 @@ namespace OniMcp.Tools
         {
             var d = CommonDescriptions();
             d["domain"] = "Building subsystem: planning, config, production, storage, filter, tile_selection, receptacle, side_surface, space_building, space_story, special, story_facility, or rocket.";
-            d["action"] = "Building action. Planning examples: materials/preview/placement_candidates. Exact construction is virtual-file only: edit /active/map/viewport.md with world_editor. Public build_area coordinate or anchor calls are forbidden.";
+            d["action"] = "Building action. Printing Pod: list_rewards/list_candidates/prepare_choices/claim/recruit. Planning examples: materials/preview/placement_candidates. Exact construction is virtual-file only: edit /active/map/viewport.md with world_editor. Public build_area coordinate or anchor calls are forbidden.";
             d["surface"] = "Side-screen surface subtype for side_surface actions.";
             d["rocketDomain"] = "Rocket subsystem used when domain=rocket.";
             d["mode"] = "Optional mode used by selected sub-actions.";
@@ -116,6 +116,8 @@ namespace OniMcp.Tools
             d["includeRecipes"] = "Include recipe summaries in production list results.";
             d["includeLocked"] = "Include locked recipes when listing recipes.";
             d["forbid"] = "Reject mutant seeds where supported.";
+            d["candidateId"] = "Opaque current-round Printing Pod candidate ID from list_candidates; recruit requires this exact ID, not a name or card index.";
+            d["maxPopulation"] = "Optional recruitment population ceiling; no default cap. Rejects the arrival if it would exceed this value.";
             return d;
         }
 

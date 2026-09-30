@@ -54,15 +54,30 @@ namespace OniMcp.Tools
                 if (!args.HasValues) row["argumentsRequired"] = true;
                 rows.Add(row);
             }
-            if (new[] { "printing", "care", "reward", "telepad", "打印", "补给" }.Any(query.Contains)
-                && OniToolRegistry.TryGetTool("building_control", out var buildingTool))
+            bool printingQuery = new[] { "printing", "care", "reward", "telepad", "打印", "补给" }.Any(query.Contains);
+            bool recruitmentQuery = new[] { "recruit", "candidate", "immigration", "duplicant", "dupe", "招募", "候选", "新人", "复制人" }.Any(query.Contains);
+            if ((printingQuery || recruitmentQuery) && OniToolRegistry.TryGetTool("building_control", out var buildingTool))
+            {
+                if (printingQuery)
+                {
+                    rows.Add(new Dictionary<string, object> {
+                        ["name"] = "printing_pod_rewards", ["score"] = 100, ["directlyCallable"] = true,
+                        ["call"] = new JObject { ["tool"] = "building_control", ["args"] = new JObject {
+                            ["domain"] = "side_surface", ["surface"] = "facility", ["kind"] = "printing_pod",
+                            ["action"] = "list_rewards", ["task"] = "Inspect current Printing Pod choices"
+                        } }
+                    });
+                }
                 rows.Add(new Dictionary<string, object> {
-                    ["name"] = "printing_pod_rewards", ["score"] = 100, ["directlyCallable"] = true,
+                    ["name"] = "printing_pod_candidates", ["score"] = recruitmentQuery ? 110 : 90,
+                    ["directlyCallable"] = true,
+                    ["description"] = "Passive current-round candidates. If unmaterialized, preview/confirm headless prepare_choices; then preview/confirm recruit with exact candidateId and optional maxPopulation.",
                     ["call"] = new JObject { ["tool"] = "building_control", ["args"] = new JObject {
                         ["domain"] = "side_surface", ["surface"] = "facility", ["kind"] = "printing_pod",
-                        ["action"] = "list_rewards", ["task"] = "Inspect current Printing Pod choices"
+                        ["action"] = "list_candidates"
                     } }
                 });
+            }
             return rows.OrderByDescending(row => Convert.ToInt32(row["score"]))
                 .ThenBy(row => row["name"].ToString()).Take(limit).ToList();
         }

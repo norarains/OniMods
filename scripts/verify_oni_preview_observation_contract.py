@@ -47,9 +47,12 @@ for mutation in ('delivery.Pause(', 'delivery.capacity =', 'delivery.refillMass 
     assert manual.count(mutation) == mutations.count(mutation) == 1
 reward = (ROOT / 'Impl/Facility/FacilityPrintingPodRewardTools.cs').read_text()
 claim = extract_block(reward, 'private static CallToolResult ClaimPrintingReward')
-assert claim.index('!Immigration.Instance.ImmigrantsAvailable') < claim.index('CurrentCarePackages()') < claim.index('telepad.OnAcceptDelivery')
-current = extract_block(reward, 'private static IEnumerable<CarePackageInfo> CurrentCarePackages')
-assert current.index('!Immigration.Instance.ImmigrantsAvailable') < current.index('GetField("containers"')
+assert claim.index('PrintingPodActionError(telepad)') < claim.index('CurrentCarePackages(telepad)') < claim.index('PrintingPodNativeChoices.Accept(')
+current = extract_block(reward, 'private static IEnumerable<CarePackageContainer.CarePackageInstanceData> CurrentCarePackages')
+assert current.index('!Immigration.Instance.ImmigrantsAvailable') < current.index('PrintingPodNativeChoices.Containers')
+assert 'CarePackageContainer).GetField' not in reward
+assert 'EndImmigration()' not in claim
+assert claim.index('if (ToolUtil.GetBool(args, "dryRun", false))') < claim.index('PrintingPodNativeChoices.Accept(')
 assert '"priorityAction"' not in reward and '"priorityPlan"' not in reward
 assert '"entityKind"' in reward and '"quantity"' in reward
 runner = (ROOT / 'Impl/Core/GameContinueRunner.cs').read_text()

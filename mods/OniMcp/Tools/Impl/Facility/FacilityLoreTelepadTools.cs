@@ -134,14 +134,16 @@ namespace OniMcp.Tools
                 Risk = "low",
                 Aliases = new List<string> { "printing_pod_control", "telepad_open_screen" },
                 Tags = new List<string> { "story", "telepad", "printing-pod", "printing_pod", "care", "package", "rewards", "immigration", "side-screen" },
-                Description = "兼容入口：请使用 building_control domain=side_surface surface=facility kind=telepad action=list_rewards/claim/open_immigrants/open_colony_summary/open_skills/open_research",
+                Description = "兼容入口：请使用 building_control domain=side_surface surface=facility kind=telepad action=prepare_choices/list_rewards/claim/list_candidates/recruit/open_immigrants/open_colony_summary/open_skills/open_research",
                 Hidden = true,
                 Parameters = LookupParams(new Dictionary<string, McpToolParameter>
                 {
-                    ["action"] = new McpToolParameter { Type = "string", Description = "list_rewards/status/rewards、claim、open_immigrants、open_colony_summary、open_skills 或 open_research", Required = true, EnumValues = new List<string> { "list_rewards", "rewards", "status", "claim", "open_immigrants", "open_colony_summary", "open_skills", "open_research" } },
+                    ["action"] = new McpToolParameter { Type = "string", Description = "prepare_choices、list_rewards/status/rewards、claim、list_candidates、recruit、open_immigrants、open_colony_summary、open_skills 或 open_research", Required = true, EnumValues = new List<string> { "prepare_choices", "list_candidates", "recruit", "list_rewards", "rewards", "status", "claim", "open_immigrants", "open_colony_summary", "open_skills", "open_research" } },
+                    ["candidateId"] = new McpToolParameter { Type = "string", Description = "recruit：list_candidates 返回的当前候选 token，必须显式指定", Required = false },
+                    ["maxPopulation"] = new McpToolParameter { Type = "integer", Description = "recruit：可选殖民地人口上限", Required = false },
                     ["rewardIndex"] = new McpToolParameter { Type = "integer", Description = "action=claim 时领取 rewards[index]，默认 0", Required = false },
                     ["itemId"] = new McpToolParameter { Type = "string", Description = "action=claim 时按奖励 prefab/tag/id 匹配", Required = false },
-                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "action=claim 时只预览不领取，默认 false", Required = false },
+                    ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "prepare_choices/claim/recruit 时只预览不生成或领取，默认 false", Required = false },
                     ["confirm"] = new McpToolParameter { Type = "boolean", Description = "打开 UI 或领取奖励时必须为 true；list_rewards/status 不需要", Required = false }
                 }),
                 Handler = args =>
@@ -152,6 +154,14 @@ namespace OniMcp.Tools
                     var telepad = go.GetComponent<Telepad>();
                     string action = (args["action"]?.ToString() ?? "").Trim().ToLowerInvariant();
                     var before = TelepadInfo(telepad, includeVictory: false);
+
+                    if (action == "list_candidates")
+                        return JsonResult(new Dictionary<string, object>
+                        {
+                            ["target"] = TargetInfo(go), ["printingCandidates"] = PrintingCandidateStatus(telepad)
+                        });
+                    if (action == "prepare_choices") return PreparePrintingChoices(args, telepad, before);
+                    if (action == "recruit") return RecruitPrintingCandidate(args, telepad, before);
 
                     if (action == "list_rewards" || action == "rewards" || action == "status")
                     {

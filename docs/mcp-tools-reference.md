@@ -74,11 +74,13 @@ HUD 缺料通知的每个原生目标都已被具体 finding 覆盖时，仅具�
 | `navigation_control` 相机、覆盖层、聚焦/跟随、切换世界；显式地图同步 | 操作本来就是改变视图 | 该调用期间不要同时改相同视图 |
 | 屏幕截图、坐标截图、覆盖层截图（`world_editor command=screenshot` / `navigation_control`） | Unity 渲染和当前 UI；截图可能跨帧等待 | 等待截图完成再移动、切覆盖层或打开面板 |
 | `game_control domain=ui` 打开页面/热键；通知 `click`；关联实体 `select` | 原生面板、选择、聚焦或回调 | 调用期间交出 UI；热键可能留下交互工具，需要完成或取消 |
-| 打印舱 `open_immigrants`、选择新人和现有 care-package `claim` | 原生 UI 生成选择；领取后关闭选择页以防重复领取 | 奖励选择/领取期间不要同时操作打印舱。列表本身不会打开页面 |
+| 打印舱可选 `open_immigrants` | 显式打开原生选择页 | 手动 UI 与 MCP 共用当轮选项，生成/领取/招募期间不要同时操作同一打印舱；正常 typed 操作不要求打开页面 |
 | 原生侧屏 `kind=button action=press`、剧情/日志阅读、殖民地总结、星图面板 | 原生回调可能打开模态 UI；通用按钮返回 `uiEffect=native_callback_may_open_ui` | 先查按钮和预检，可能打开 UI 的操作需交出 UI |
 | 用户菜单 `follow_navigator` / `toggle_navigation_paths` | 相机跟随 / 导航可视化 | 不与玩家相同视图操作并行 |
 
 `toggle_move_pickupable` 现在必须提供 `destinationId`（目的格上的对象实例 ID），直接下达搬运差事，不打开鼠标选点工具。已有不同目的地的搬运需先取消；不能隐式覆盖。普通配置并不因为来源是侧屏按钮就要求打开侧屏。
+
+打印舱使用 `building_control domain=side_surface surface=facility kind=printing_pod`。若当轮选项尚未生成，先预检 `action=prepare_choices dryRun=true`，再以 `confirm=true` 通过原生正常逻辑生成；不打开页面、不需要截图或鼠标选择，已有选项不会重抽。经用户授权招募后，`list_candidates` 返回当轮稳定字符串 `candidateId`，以选定的精确 ID 预检 `action=recruit dryRun=true`，再用相同 ID `confirm=true` 招募。可传 `maxPopulation` 限制招募后人口，接口无默认人口上限；姓名、卡片序号和过期 ID 不可替代候选 ID。未就绪或候选过期时重新读取并预检，完成后验证返回的新复制人和花名册。`claim rewardIndex=…` 仍仅领取补给包。所有列表和 dryRun 均不生成选项、重抽或消费打印机会。
 
 HUD 通知和 UI 状态读取仍需要游戏的 UI 实例，但不会接管输入；这不是无窗口服务器。暂停、速度、存档/读档属于共享游戏状态：手动改订单/配置、读档、切星球或接管时间前应交接。`continue` 观察到手动暂停返回 `external_pause` 时，agent 必须保持暂停，等用户明确交回控制，不自动再次继续。
 

@@ -108,7 +108,7 @@ internal sealed class Pickupable
 }
 internal sealed class Storage { internal GameObject gameObject { get; set; } }
 internal sealed class WorldContainer { internal bool IsDiscovered { get; set; } = true; }
-internal sealed class ClusterManager
+internal sealed partial class ClusterManager
 {
     internal static ClusterManager Instance { get; } = new ClusterManager();
     private readonly Dictionary<int, WorldContainer> worlds = new Dictionary<int, WorldContainer> {

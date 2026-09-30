@@ -203,7 +203,7 @@ namespace OniMcp.Tools
                     || (new[] { "storage", "stores", "filter", "filters", "tile_selection", "receptacle" }.Contains(domain)
                         && new[] { "list", "detail" }.Contains(action))
                     || (new[] { "side_surface", "surface", "generic_surface" }.Contains(domain)
-                        && new[] { "list", "status", "list_rewards", "list_geysers" }.Contains(action))
+                        && new[] { "list", "status", "list_rewards", "list_candidates", "list_geysers" }.Contains(action))
                     || (new[] { "config", "configuration", "side_screen" }.Contains(domain)
                     && new[] { "get_access", "state_list" }.Contains(action))
                     || domain == "planning" && (

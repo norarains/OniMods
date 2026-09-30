@@ -36,6 +36,7 @@ def verify_building_blueprint_safety(
         "runtime": build_root / "BuildPlanningRuntimePlacement.cs",
         "placement": build_root / "BuildPlanningUtilityConnect.cs",
         "plan_one": build_root / "BuildPlanningPlanOne.cs",
+        "blueprint": build_root / "BuildPlanningBlueprintConnections.cs",
         "materials": build_root / "BuildPlanningMaterials.cs",
     }
     for path in paths.values():
@@ -82,13 +83,30 @@ def verify_building_blueprint_safety(
             "TryBuildVirtualFileInstantBuild",
             "return InstantCompletionFailureResult",
             "else",
-            "def.TryPlace(",
+            "TryPlaceNativeBlueprint(",
             'return ErrorResult(prefabId, x, y, "Placement failed"',
             "return PowerConnectionReceipt(new Dictionary<string, object>",
             '["blueprintPlaced"] = !completedImmediately,',
             '["buildingCompleted"] = completedImmediately,',
         ),
         "TryPlanOne must distinguish successful blueprints from successful instant completion",
+    )
+
+    native_blueprint = extract_block(
+        selected[paths["blueprint"]],
+        "private static GameObject TryPlaceNativeBlueprint",
+    )
+    require_order(
+        native_blueprint,
+        (
+            "var blueprint = replacementTarget != null",
+            "? def.TryReplaceTile(",
+            ": def.TryPlace(",
+            "if (blueprint != null && replacementTarget != null)",
+            "PreserveUtilityReplacementConnections(",
+            "return blueprint;",
+        ),
+        "native blueprint helper must retain replacement and ordinary placement branches",
     )
 
     materials = selected[paths["materials"]]

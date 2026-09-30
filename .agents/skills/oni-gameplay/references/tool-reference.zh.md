@@ -84,6 +84,8 @@ dupes_control domain=priority action=list id=<id>   # 验证
 
 在使用需要 `id` 的工具前，先从花名册解析到数值 ID。
 
+经用户授权招募后，使用 `building_control domain=side_surface surface=facility kind=printing_pod`。`list_candidates` 只读返回当轮稳定 `candidateId`；选项未生成时先预检并确认 `prepare_choices`，按原生正常逻辑生成，不重抽已有选项，也不打开页面。以精确候选 ID 预检 `recruit candidateId=<id> dryRun=true`，再用相同 ID `confirm=true` 招募；可选 `maxPopulation` 执行用户人口上限，接口无默认上限。未就绪或 ID 过期时重新读取并预检，成功后核对新复制人及花名册。补给包仍用 `list_rewards/claim`，姓名和卡片序号不能用于招募。
+
 ### 配置批量更新
 
 ```text

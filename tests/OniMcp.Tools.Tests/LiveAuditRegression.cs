@@ -103,7 +103,8 @@ internal static class LiveAuditRegression
         OniToolRegistry.Internal["building_control"] = new McpTool { Name = "building_control", Mode = "execute", Risk = "dangerous",
             Handler = args => { calls++; return CallToolResult.Text("{id:33,requestedSeed:'BasicPlantSeed',hasActiveRequest:true,harvestWhenReady:true,after:{acceptedTags:['Food']},queue:['A','B']}"); } };
         foreach (string args in new[] { "{domain:'receptacle',action:'list'}", "{domain:'production',action:'list_recipes'}",
-            "{domain:'storage',action:'detail'}", "{domain:'side_surface',surface:'user_menu',action:'list'}" })
+            "{domain:'storage',action:'detail'}", "{domain:'side_surface',surface:'user_menu',action:'list'}",
+            "{domain:'side_surface',surface:'facility',kind:'printing_pod',action:'list_candidates'}" })
         {
             var response = ToolBatchTools.CallMany().Handler(new JObject { ["calls"] = new JArray(new JObject {
                 ["tool"] = "building_control", ["args"] = JObject.Parse(args) }) });
@@ -113,7 +114,16 @@ internal static class LiveAuditRegression
                 "summary retains postconditions without duplicate text");
         }
         var blocked = ToolBatchTools.CallMany().Handler(JObject.Parse("{calls:[{tool:'building_control',args:{domain:'production',action:'batch'}}]}"));
-        Check(blocked.IsError && calls == 4, "queue write still requires confirmation");
+        Check(blocked.IsError && calls == 5, "queue write still requires confirmation");
+        foreach (string action in new[] { "prepare_choices", "recruit" })
+        {
+            blocked = ToolBatchTools.CallMany().Handler(new JObject { ["calls"] = new JArray(new JObject {
+                ["tool"] = "building_control", ["args"] = new JObject {
+                    ["domain"] = "side_surface", ["surface"] = "facility", ["kind"] = "printing_pod",
+                    ["action"] = action, ["candidateId"] = "current-offer", ["maxPopulation"] = 10
+                } }) });
+            Check(blocked.IsError && calls == 5, "Printing Pod mutation still requires confirmation " + action);
+        }
         OniToolRegistry.Internal.Clear();
     }
 }

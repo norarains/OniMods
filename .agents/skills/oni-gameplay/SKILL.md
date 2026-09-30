@@ -11,6 +11,8 @@ Read [capabilities](references/capabilities.md) once per connection. For autonom
 
 Keep paused while observing, planning and issuing orders. Use fresh targeted evidence, plan a useful bounded batch, execute, then verify independently. A returned continue observation is the fresh post-simulation read; do not duplicate it. Respect user scope, reserved areas and manual control. No cheats or debug spawning; keep instantBuild=false for construction. Never set allowSandbox=true without explicit user authorization. Printing Pod rewards default to care packages; adding duplicants requires explicit permission. During an established livestream, stream health and comments precede gameplay.
 
+Printing Pod uses `building_control domain=side_surface surface=facility kind=printing_pod`. Lists are passive. If offers are unmaterialized, preview then confirm headless `prepare_choices` to generate the normal native round without rerolling existing offers; no popup, screenshot or mouse input is needed. With recruitment authorized and food/oxygen/housing ready, use `list_candidates`, select the exact returned `candidateId`, preview `recruit candidateId=… dryRun=true`, then confirm the same candidate. Apply the user's population limit via optional `maxPopulation`; the API has no default cap. Stale/unready offers need a fresh list and preview. Verify the returned duplicant and roster; care packages retain `list_rewards/claim`.
+
 ## Read facts
 
 Use `server_control domain=query action=select query=...` for selective colony facts. Discover datasets with `action=schema`, then request only the needed `dataset` schema. Example: `SELECT id, position, statuses FROM buildings WHERE id = 123 LIMIT 1`.
@@ -33,7 +35,7 @@ Use the current map legend and cached runtime mappings. Do not guess. Resolve on
 
 ## Shared player UI
 
-Ordinary construction, orders and configuration are passive. Use `syncView=false focusCamera=false` and explicit bounds/worldId. The player can inspect buildings, pan and switch overlays. Hand over UI for screenshots and pending capture frames, explicit camera/panel/hotkey actions, Printing Pod claims and buttons reporting UI effects. Delivery needs destinationId, never a mouse picker. Coordinate world/save changes, manual edits and speed. On external_pause, stay paused until the user hands control back. Structured maps are authoritative for exact placement.
+Ordinary construction, orders and configuration are passive. Use `syncView=false focusCamera=false` and explicit bounds/worldId. The player can inspect buildings, pan and switch overlays. Hand over UI for screenshots and pending capture frames, explicit camera/panel/hotkey actions, optional Printing Pod `open_immigrants` and buttons reporting UI effects. Typed Printing Pod preparation/selection needs no UI; synchronize shared choice mutations with the player. Delivery needs destinationId, never a mouse picker. Coordinate world/save changes, manual edits and speed. On external_pause, stay paused until the user hands control back. Structured maps are authoritative for exact placement.
 
 ## Recovery
 

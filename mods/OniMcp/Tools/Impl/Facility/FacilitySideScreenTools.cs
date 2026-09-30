@@ -210,12 +210,14 @@ namespace OniMcp.Tools
         {
             return LookupParams(RectParams(new Dictionary<string, McpToolParameter>
             {
-                ["kind"] = new McpToolParameter { Type = "string", Description = "dispenser、suit_locker、lore_bearer、telepad 或 artifact", Required = true },
-                ["action"] = new McpToolParameter { Type = "string", Description = "list/status 或对应操作：select_item/order/cancel、request_suit/no_suit/drop_suit、press、list_rewards/claim/open_immigrants/open_colony_summary/open_skills/open_research、open", Required = false },
+                ["kind"] = new McpToolParameter { Type = "string", Description = "dispenser、suit_locker、lore_bearer、telepad/printing_pod 或 artifact", Required = true },
+                ["action"] = new McpToolParameter { Type = "string", Description = "list/status 或对应操作：select_item/order/cancel、request_suit/no_suit/drop_suit、press、list_rewards/list_candidates/prepare_choices/claim/recruit/open_immigrants/open_colony_summary/open_skills/open_research、open", Required = false },
                 ["query"] = new McpToolParameter { Type = "string", Description = "action=list 时按名称、prefabId、状态或物品筛选；artifact 也可筛选 artifact id", Required = false },
                 ["limit"] = new McpToolParameter { Type = "integer", Description = "action=list 返回上限", Required = false },
                 ["itemId"] = new McpToolParameter { Type = "string", Description = "kind=dispenser action=select_item 或 kind=telepad action=claim 时的目标 Tag/prefab id", Required = false },
                 ["rewardIndex"] = new McpToolParameter { Type = "integer", Description = "kind=telepad action=claim 时领取 rewards[index]，默认 0", Required = false },
+                ["candidateId"] = new McpToolParameter { Type = "string", Description = "kind=printing_pod action=recruit 必须提供 list_candidates 返回的当轮精确候选 ID；不接受姓名或卡片序号", Required = false },
+                ["maxPopulation"] = new McpToolParameter { Type = "integer", Description = "可选招募后人口上限；超过则拒绝，无默认上限", Required = false },
                 ["itemIndex"] = new McpToolParameter { Type = "integer", Description = "kind=dispenser action=select_item 时的可分发物品序号", Required = false },
                 ["artifactId"] = new McpToolParameter { Type = "string", Description = "kind=artifact action=open 时的已分析 artifact prefab id", Required = false },
                 ["interactableOnly"] = new McpToolParameter { Type = "boolean", Description = "kind=lore_bearer action=list 时只返回可交互对象", Required = false },
@@ -223,7 +225,8 @@ namespace OniMcp.Tools
                 ["includeStations"] = new McpToolParameter { Type = "boolean", Description = "kind=artifact action=list 时是否包含分析站状态，默认 true", Required = false },
                 ["includeWorldArtifacts"] = new McpToolParameter { Type = "boolean", Description = "kind=artifact action=list 时是否包含场上 artifact，默认 true", Required = false },
                 ["force"] = new McpToolParameter { Type = "boolean", Description = "kind=lore_bearer action=press 时跳过 interactable 检查", Required = false },
-                ["confirm"] = new McpToolParameter { Type = "boolean", Description = "执行写入/打开 UI/弹窗动作时按旧工具要求传 true", Required = false }
+                ["dryRun"] = new McpToolParameter { Type = "boolean", Description = "prepare_choices/claim/recruit 仅预检；不生成候选、不领取、不招募", Required = false },
+                ["confirm"] = new McpToolParameter { Type = "boolean", Description = "执行写入/生成选项/领取/招募/打开 UI 时按工具要求传 true", Required = false }
             }));
         }
 

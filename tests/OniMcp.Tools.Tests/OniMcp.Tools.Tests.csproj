@@ -27,6 +27,11 @@
     <Compile Include="../../mods/OniMcp/Tools/Impl/Build/ConfigMutation.cs" Link="Source/ConfigMutation.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Management/ResearchTargetQueue.cs" Link="Source/ResearchTargetQueue.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Management/ResearchTools.cs" Link="Source/ResearchTools.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Facility/FacilityPrintingPodRewardTools.cs" Link="Source/FacilityPrintingPodRewardTools.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Facility/FacilityPrintingPodCandidateTools.cs" Link="Source/FacilityPrintingPodCandidateTools.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Facility/PrintingPodNativeChoices.cs" Link="Source/PrintingPodNativeChoices.cs" />
+    <Compile Include="../../mods/OniMcp/Tools/Impl/Facility/HeadlessPrintingChoices.cs" Link="Source/HeadlessPrintingChoices.cs" />
+    <Compile Include="../../mods/OniMcp/Patches/PrintingChoiceUiPatches.cs" Link="Source/PrintingChoiceUiPatches.cs" />
     <Compile Include="../../mods/OniMcp/Patches/ConstructionPriorityIntent.cs" Link="Source/ConstructionPriorityIntent.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Orders/OrdersDesignationTools.cs" Link="Source/OrdersDesignationTools.cs" />
     <Compile Include="../../mods/OniMcp/Tools/Impl/Orders/OrdersCombatTools.cs" Link="Source/OrdersCombatTools.cs" />

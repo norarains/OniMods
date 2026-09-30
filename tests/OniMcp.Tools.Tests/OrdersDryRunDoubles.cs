@@ -30,7 +30,7 @@ namespace UnityEngine
         internal int GetMyWorldId() => Grid.WorldIdx[Cell];
     }
     public enum FindObjectsSortMode { None }
-    public static class Object
+    public static partial class Object
     {
         internal static readonly List<object> Registered = new List<object>();
         internal static T[] FindObjectsByType<T>(FindObjectsSortMode order)
@@ -115,7 +115,7 @@ internal sealed class Capturable
     { Calls++; Marked = value; }
 }
 internal sealed class ComponentCollection<T> { internal readonly List<T> Items = new List<T>(); }
-internal static class Components
+internal static partial class Components
 {
     internal static readonly ComponentCollection<FactionAlignment> FactionAlignments = new ComponentCollection<FactionAlignment>();
     internal static readonly ComponentCollection<Capturable> Capturables = new ComponentCollection<Capturable>();

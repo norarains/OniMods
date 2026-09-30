@@ -412,7 +412,12 @@ namespace OniMcp.Tools
             else if (relative == "ops/server.md")
                 yield return "call domain=catalog action=manifest";
             else if (relative == "ops/facilities.md")
+            {
                 yield return "call tool=building_control domain=side_surface surface=facility kind=printing_pod action=list_rewards";
+                yield return "call tool=building_control domain=side_surface surface=facility kind=printing_pod action=list_candidates";
+                yield return "call tool=building_control domain=side_surface surface=facility kind=printing_pod action=prepare_choices dryRun=true";
+                yield return "call tool=building_control domain=side_surface surface=facility kind=printing_pod action=recruit candidateId=<candidateId> dryRun=true";
+            }
             else if (relative == "ops/storage.md")
                 yield return "call tool=building_control domain=side_surface surface=storage action=status";
             else if (relative == "ops/power.md")

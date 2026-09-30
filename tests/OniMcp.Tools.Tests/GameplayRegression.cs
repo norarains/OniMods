@@ -143,11 +143,11 @@ namespace OniMcp.Tools
     }
 }
 
-internal sealed class MinionIdentity
+internal sealed partial class MinionIdentity
 {
     internal Amounts StoredAmounts;
     // The old Unity component path returns nothing: Amounts is not a component.
-    public T GetComponent<T>() where T : class => null;
+    public T GetComponent<T>() where T : class => gameObject.GetComponent<T>();
 }
 internal sealed partial class Db
 {

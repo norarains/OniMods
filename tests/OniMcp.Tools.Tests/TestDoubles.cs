@@ -70,7 +70,11 @@ namespace OniMcp.Tools
 
         public static bool VisibleCellAllowed(int cell, bool visible) => Grid.IsValidCell(cell);
         public static int ResolveWorldId(JObject args) => GetInt(args, "worldId") ?? 0;
-        public static int? GetInt(JObject args, string name) => args[name]?.Value<int?>();
+        public static int? GetInt(JObject args, string name)
+        {
+            int value;
+            return args[name] != null && int.TryParse(args[name].ToString(), out value) ? value : (int?)null;
+        }
         public static float SafeFloat(float value) => float.IsNaN(value) || float.IsInfinity(value) ? 0f : value;
     }
 
@@ -109,7 +113,7 @@ namespace OniMcp.Tools
 }
 
 internal enum SimHashes { TestElement }
-internal static class Assets
+internal static partial class Assets
 {
     internal static readonly List<TestBuildingDef> BuildingDefs = new List<TestBuildingDef>();
 }

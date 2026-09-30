@@ -13,6 +13,7 @@ namespace HarmonyLib
         internal Type TargetType { get; }
         internal string MethodName { get; }
         public HarmonyPatch(Type type, string method) { TargetType = type; MethodName = method; }
+        public HarmonyPatch(Type type, string method, Type[] parameters) : this(type, method) { }
     }
 }
 namespace KSerialization

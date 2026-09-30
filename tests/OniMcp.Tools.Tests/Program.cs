@@ -41,6 +41,7 @@ internal static class Program
         UtilityReplacementConnectionsRegression.Run();
         OrdersDryRunRegression.Run();
         ResearchQueueRegression.Run();
+        PrintingPodRegression.Run();
         ConstructionPriorityRegression.Run();
         ConstructionAndFilterRegression.Run();
         PickupableMoveRegression.Run();
